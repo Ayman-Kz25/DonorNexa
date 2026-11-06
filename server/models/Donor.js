@@ -26,6 +26,12 @@ const donorSchema = new mongoose.Schema(
       min: 1,
     },
 
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     isAvailable: {
       type: Boolean,
       default: false,

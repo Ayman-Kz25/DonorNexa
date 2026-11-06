@@ -14,9 +14,9 @@ export const createDonorProfile = async (req, res) => {
       });
     }
 
-    const { bloodGroup, dateOfBirth, weight } = req.body;
+    const { bloodGroup, dateOfBirth, weight, city } = req.body;
 
-    if (!bloodGroup || !dateOfBirth || weight === undefined) {
+    if (!bloodGroup || !dateOfBirth || weight === undefined || !city?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Blood group, date of birth and weight are required.",
@@ -39,6 +39,7 @@ export const createDonorProfile = async (req, res) => {
           bloodGroup,
           dateOfBirth,
           weight,
+          city: city.trim(),
         },
         $setOnInsert: {
           user: user._id,

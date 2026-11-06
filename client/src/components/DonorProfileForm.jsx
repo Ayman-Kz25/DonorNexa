@@ -1,87 +1,84 @@
-
-import { useState, useEffect } from 'react'
-import { useApi } from '../hooks/useApi'
+import { useState, useEffect } from "react";
+import { useApi } from "../hooks/useApi";
 
 function DonorProfileForm() {
-  const { request } = useApi()
+  const { request } = useApi();
 
   const [formData, setFormData] = useState({
-    bloodGroup: '',
-    dateOfBirth: '',
-    weight: '',
-  })
+    bloodGroup: "",
+    dateOfBirth: "",
+    weight: "",
+  });
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isEditing, setIsEditing] = useState(true)
-  const [message, setMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
+  const [message, setMessage] = useState("");
+  const [city, setCity] = useState("");
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const response = await request({
-          method: 'GET',
-          url: '/api/donors/profile',
-        })
+          method: "GET",
+          url: "/api/donors/profile",
+        });
 
-        const donor = response.data.donor
+        const donor = response.data.donor;
 
         setFormData({
           bloodGroup: donor.bloodGroup,
-          dateOfBirth: new Date(donor.dateOfBirth)
-            .toISOString()
-            .split('T')[0],
+          dateOfBirth: new Date(donor.dateOfBirth).toISOString().split("T")[0],
           weight: donor.weight,
-        })
+        });
 
-        setIsEditing(false)
+        setCity(response.data.donor.city || "");
+        setIsEditing(false);
       } catch (error) {
         if (error.response?.status !== 404) {
-          setMessage('Unable to load donor profile.')
+          setMessage("Unable to load donor profile.");
         }
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadProfile()
-  }, [request])
+    loadProfile();
+  }, [request]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSaving(true)
-    setMessage('')
+    e.preventDefault();
+    setIsSaving(true);
+    setMessage("");
 
     try {
       const response = await request({
-        method: 'POST',
-        url: '/api/donors/profile',
+        method: "POST",
+        url: "/api/donors/profile",
         data: {
           ...formData,
           weight: Number(formData.weight),
         },
-      })
+      });
 
-      setMessage(response.data.message)
-      setIsEditing(false)
+      setMessage(response.data.message);
+      setIsEditing(false);
     } catch (error) {
-      setMessage(
-        error.response?.data?.message || 'Unable to save profile.'
-      )
+      setMessage(error.response?.data?.message || "Unable to save profile.");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (isLoading) {
-    return <p className="text-center text-[#96334F]">Loading profile...</p>
+    return <p className="text-center text-[#96334F]">Loading profile...</p>;
   }
 
   return (
@@ -90,9 +87,7 @@ function DonorProfileForm() {
       className="w-full max-w-md rounded-xl bg-white p-6 shadow-md"
     >
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[#96334F]">
-          Donor Profile
-        </h2>
+        <h2 className="text-2xl font-bold text-[#96334F]">Donor Profile</h2>
 
         {!isEditing && (
           <button
@@ -115,14 +110,28 @@ function DonorProfileForm() {
         className="mb-4 w-full rounded-lg border p-3 disabled:bg-gray-100"
       >
         <option value="">Select blood group</option>
-        {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(
-          (group) => (
-            <option key={group} value={group}>
-              {group}
-            </option>
-          )
-        )}
+        {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => (
+          <option key={group} value={group}>
+            {group}
+          </option>
+        ))}
       </select>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-[#29232A]">
+          City
+        </label>
+
+        <input
+          type="text"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          placeholder="Enter your city"
+          disabled={!isEditing}
+          className="w-full rounded-lg border border-[#E8C5D0] px-3 py-2 outline-none focus:border-[#BE4565] disabled:bg-gray-100"
+          required
+        />
+      </div>
 
       <label className="mb-2 block font-medium">Date of Birth</label>
       <input
@@ -153,17 +162,15 @@ function DonorProfileForm() {
           disabled={isSaving}
           className="w-full rounded-lg bg-[#BE4565] px-5 py-3 font-semibold text-white hover:bg-[#96334F] disabled:opacity-50"
         >
-          {isSaving ? 'Saving...' : 'Save Profile'}
+          {isSaving ? "Saving..." : "Save Profile"}
         </button>
       )}
 
       {message && (
-        <p className="mt-4 text-center text-sm text-[#96334F]">
-          {message}
-        </p>
+        <p className="mt-4 text-center text-sm text-[#96334F]">{message}</p>
       )}
     </form>
-  )
+  );
 }
 
-export default DonorProfileForm
+export default DonorProfileForm;
