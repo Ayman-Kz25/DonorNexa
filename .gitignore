@@ -1,0 +1,182 @@
+# ====================================================================
+# COMPREHENSIVE UNIVERSAL .GITIGNORE TEMPLATE
+# ====================================================================
+# Covers Operating Systems, Common Editors/IDEs, Dependency Managers, 
+# Development Caches, Logs, and Sensitive Secrets.
+
+# --------------------------------------------------------------------
+# 1. SENSITIVE DATA & SECRETS (Never commit these!)
+# --------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+*.cert
+*.pfx
+credentials.json
+secrets.json
+
+# --------------------------------------------------------------------
+# 2. OPERATING SYSTEM SPECIFIC FILES
+# --------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.lnk
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+[Dd]ownloads/
+\$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.trash/
+.nfs*
+
+# --------------------------------------------------------------------
+# 3. IDE, EDITORS & WORKSPACES
+# --------------------------------------------------------------------
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+*.code-workspace
+
+# JetBrains (IntelliJ, WebStorm, PyCharm, etc.)
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Sublime Text / Atom / Vim
+*.sublime-project
+*.sublime-workspace
+.atom/
+.project
+.classpath
+.factorypath
+*.swp
+*.swo
+.netrwhist
+
+# --------------------------------------------------------------------
+# 4. DEPENDENCIES & PACKAGE MANAGERS (Always reinstall via package manager)
+# --------------------------------------------------------------------
+# Node / JavaScript
+node_modules/
+/jspm_packages/
+.npm/
+.eslintcache
+.stylelintcache
+.turbo/
+
+# Python (Virtual Environments)
+.venv/
+venv/
+ENV/
+env/
+.env/
+bin/
+lib/
+lib64/
+include/
+share/
+pyvenv.cfg
+.pytest_cache/
+.mypy_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage
+.coverage.*
+
+# PHP
+vendor/
+
+# Ruby
+.bundle/
+vendor/bundle/
+pkg/
+Gemfile.lock
+
+# Java / Gradle / Maven
+.gradle/
+build/
+target/
+.mtj.tmp/
+*.class
+
+# --------------------------------------------------------------------
+# 5. COMPILED CODE, BINARIES & BUILD OUTPUTS
+# --------------------------------------------------------------------
+# General Build Output Folders
+dist/
+out/
+bin/
+obj/
+
+# Compiled Formats
+*.exe
+*.dll
+*.so
+*.dylib
+*.jar
+*.war
+*.ear
+*.rar
+*.zip
+*.tar.gz
+*.7z
+
+# Python compiled bytecode
+__pycache__/
+*.py[cod]
+*\$py.class
+
+# Next.js / Nuxt.js / Remix / SvelteKit / Gatsby
+.next/
+.nuxt/
+.out/
+.svelte-kit/
+.cache/
+.gatsby/
+
+# --------------------------------------------------------------------
+# 6. LOGS, CACHES & TEMPORARY FILES
+# --------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+pid
+*.pid
+*.seed
+*.pid.lock
+.history/
