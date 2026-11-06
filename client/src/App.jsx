@@ -1,16 +1,37 @@
-import {
-  Show,
-  SignInButton,
-  SignUpButton,
-  useAuth,
-  UserButton,
-} from "@clerk/react";
-import { useApi } from "./hooks/useApi.js";
 import { useEffect } from "react";
-import DonorProfileForm from "./components/DonorProfileForm.jsx";
-import DonorAvailability from "./components/DonorAvailability.jsx";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@clerk/react";
+
+import { useApi } from "./hooks/useApi";
+import { useSocket } from "./hooks/useSocket";
+
+import MainLayout from "./layouts/MainLayout";
+
+import Home from "./pages/Home";
+import FindDonors from "./pages/FindDonors";
+import EmergencyRequests from "./pages/EmergencyRequests";
+import About from "./pages/About";
+import DonorDashboard from "./pages/DonorDashboard";
+import HospitalDashboard from "./pages/HospitalDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+
+function ProtectedRoute({ children }) {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
+
+  if (!isSignedIn) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
 
 function App() {
+  useSocket();
+
   const { isLoaded, isSignedIn } = useAuth();
   const { request } = useApi();
 
@@ -37,38 +58,46 @@ function App() {
   }, [isLoaded, isSignedIn, request]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-6">
-      <h1 className="text-3xl font-bold text-[#96334F]">DonorNexa</h1>
+    <Routes>
+      <Route element={<MainLayout />}>
+        {/* Public Pages */}
+        <Route path="/" element={<Home />} />
+        <Route path="/find-donors" element={<FindDonors />} />
+        <Route path="/emergency-requests" element={<EmergencyRequests />} />
+        <Route path="/about" element={<About />} />
 
-      <p className="text-gray-600">
-        Connecting Donors. Bridging Lives. Saving Hope.
-      </p>
+        {/* Protected Dashboards */}
+        <Route
+          path="/donor/dashboard"
+          element={
+            <ProtectedRoute>
+              <DonorDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      <Show when="signed-out">
-        <div className="flex gap-4">
-          <SignInButton mode="modal">
-            <button className="rounded-lg bg-[#BE4565] px-6 py-3 text-white">
-              Sign In
-            </button>
-          </SignInButton>
+        <Route
+          path="/hospital/dashboard"
+          element={
+            <ProtectedRoute>
+              <HospitalDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-          <SignUpButton mode="modal">
-            <button className="rounded-lg border border-[#BE4565] px-6 py-3 text-green-700">
-              Sign Up
-            </button>
-          </SignUpButton>
-        </div>
-      </Show>
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      <Show when="signed-in">
-        <div className="flex flex-col items-center gap-6">
-          <p className="text-gray-700">Welcome to DonorNexa!</p>
-          <UserButton />
-          <DonorProfileForm />
-          <DonorAvailability />
-        </div>
-      </Show>
-    </div>
+        {/* Unknown URL */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
   );
 }
 

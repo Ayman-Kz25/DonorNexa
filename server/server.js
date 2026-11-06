@@ -8,14 +8,35 @@ import donorRoutes from "./routes/donorRoutes.js";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
 import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
 import startExpirationJob from "./jobs/expireBloodRequests.js";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 
 const app = express();
 
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH"],
+  },
+});
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  socket.on("disconnect", () => {});
+  console.log(`Socket disconnected: ${socket.id}`);
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(clerkMiddleware());
+
 app.use("/api/users", userRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/hospitals", hospitalRoutes);
@@ -54,7 +75,7 @@ const PORT = process.env.PORT || 5000;
 connectDB().then(() => {
   startExpirationJob();
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 });
