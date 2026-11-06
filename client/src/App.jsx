@@ -7,6 +7,8 @@ import {
 } from "@clerk/react";
 import { useApi } from "./hooks/useApi.js";
 import { useEffect } from "react";
+import DonorProfileForm from "./components/DonorProfileForm.jsx";
+import DonorAvailability from "./components/DonorAvailability.jsx";
 
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -36,7 +38,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-6">
-      <h1 className="text-3xl font-bold text-green-800">DonorNexa</h1>
+      <h1 className="text-3xl font-bold text-[#96334F]">DonorNexa</h1>
 
       <p className="text-gray-600">
         Connecting Donors. Bridging Lives. Saving Hope.
@@ -45,13 +47,13 @@ function App() {
       <Show when="signed-out">
         <div className="flex gap-4">
           <SignInButton mode="modal">
-            <button className="rounded-lg bg-green-700 px-6 py-3 text-white">
+            <button className="rounded-lg bg-[#BE4565] px-6 py-3 text-white">
               Sign In
             </button>
           </SignInButton>
 
           <SignUpButton mode="modal">
-            <button className="rounded-lg border border-green-700 px-6 py-3 text-green-700">
+            <button className="rounded-lg border border-[#BE4565] px-6 py-3 text-green-700">
               Sign Up
             </button>
           </SignUpButton>
@@ -59,9 +61,11 @@ function App() {
       </Show>
 
       <Show when="signed-in">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-6">
           <p className="text-gray-700">Welcome to DonorNexa!</p>
           <UserButton />
+          <DonorProfileForm />
+          <DonorAvailability />
         </div>
       </Show>
     </div>

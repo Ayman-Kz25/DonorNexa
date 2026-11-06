@@ -28,7 +28,7 @@ const donorSchema = new mongoose.Schema(
 
     isAvailable: {
       type: Boolean,
-      default: true,
+      default: false,
     },
 
     lastDonationDate: {
