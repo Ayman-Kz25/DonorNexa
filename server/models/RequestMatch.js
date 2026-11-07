@@ -14,7 +14,7 @@ const requestMatchSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "declined", "expired"],
+      enum: ["pending", "accepted", "declined", "expired", "completed"],
       default: "pending",
     },
     notifiedAt: {

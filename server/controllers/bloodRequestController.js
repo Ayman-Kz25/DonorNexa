@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 import BloodRequest from "../models/BloodRequest.js";
+import rankDonors from "../utils/rankDonors.js";
+import RequestMatch from "../models/RequestMatch.js";
 
 export const createBloodRequest = async (req, res) => {
   try {
@@ -144,6 +146,16 @@ export const cancelBloodRequest = async (req, res) => {
     bloodRequest.status = "cancelled";
     await bloodRequest.save();
 
+    await RequestMatch.updateMany(
+      {
+        bloodRequest: bloodRequest._id,
+        status: "pending",
+      },
+      {
+        $set: { status: "expired" },
+      },
+    );
+
     return res.status(200).json({
       success: true,
       message: "Blood request cancelled successfully.",
@@ -206,6 +218,26 @@ export const getMatchingDonors = async (req, res) => {
 
     const rankedDonors = rankDonors(matchingDonors);
 
+    await RequestMatch.bulkWrite(
+      rankedDonors.map((donor) => ({
+        updateOne: {
+          filter: {
+            bloodRequest: bloodRequest._id,
+            donor: donor.donorId,
+          },
+          update: {
+            $setOnInsert: {
+              bloodRequest: bloodRequest._id,
+              donor: donor.donorId,
+              status: "pending",
+              notifiedAt: new Date(),
+            },
+          },
+          upsert: true,
+        },
+      })),
+    );
+
     return res.status(200).json({
       success: true,
       requestId: bloodRequest._id,
@@ -220,6 +252,55 @@ export const getMatchingDonors = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to find matching donors.",
+    });
+  }
+};
+
+export const markBloodRequestFulfilled = async (req, res) => {
+  try {
+    const bloodRequest = await BloodRequest.findOne({
+      _id: req.params.id,
+      hospital: req.hospital._id,
+    });
+
+    if (!bloodRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Blood request not found.",
+      });
+    }
+
+    if (bloodRequest.status !== "open") {
+      return res.status(400).json({
+        success: false,
+        message: "Only open requests can be marked as fulfilled.",
+      });
+    }
+
+    bloodRequest.status = "fulfilled";
+    await bloodRequest.save();
+
+    await RequestMatch.updateMany(
+      {
+        bloodRequest: bloodRequest._id,
+        status: "pending",
+      },
+      {
+        $set: { status: "expired" },
+      },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Blood request marked as fulfilled successfully.",
+      bloodRequest,
+    });
+  } catch (error) {
+    console.error("Fulfill blood request error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to mark blood request as fulfilled.",
     });
   }
 };

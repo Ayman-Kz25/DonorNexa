@@ -11,8 +11,97 @@ import {
   MapPin,
   ChevronDown,
 } from "lucide-react";
+import { useCurrentUser } from "../context/UserContext";
 
 function Home() {
+  const { user, userLoading } = useCurrentUser();
+  const role = user?.role;
+
+  const getHomeCTA = () => {
+    if (userLoading) {
+      return {
+        primaryText: "Loading...",
+        primaryLink: null,
+        secondaryText: "View Blood Requests",
+        secondaryLink: "/emergency-requests",
+        finalHeading: "Connecting Donors. Bridging Lives.",
+        finalDescription:
+          "Explore how DonorNexa brings donors and hospitals together.",
+        finalText: "Explore DonorNexa",
+        finalLink: "/find-donors",
+      };
+    }
+
+    if (!user) {
+      return {
+        primaryText: "Find Donors",
+        primaryLink: "/find-donors",
+        secondaryText: "View Blood Requests",
+        secondaryLink: "/emergency-requests",
+        finalHeading: "Become Part of DonorNexa",
+        finalDescription: "Sign in and explore the features available to you.",
+        finalText: "Get Started",
+        finalLink: "/find-donors",
+      };
+    }
+
+    switch (role) {
+      case "donor":
+        return {
+          primaryText: "Donor Dashboard",
+          primaryLink: "/donor/dashboard",
+          secondaryText: "View Blood Requests",
+          secondaryLink: "/emergency-requests",
+          finalHeading: "Your Contribution Matters.",
+          finalDescription:
+            "Manage your donor profile and keep your availability updated.",
+          finalText: "Open Donor Dashboard",
+          finalLink: "/donor/dashboard",
+        };
+
+      case "hospital":
+        return {
+          primaryText: "Hospital Dashboard",
+          primaryLink: "/hospital/dashboard",
+          secondaryText: "View Blood Requests",
+          secondaryLink: "/emergency-requests",
+          finalHeading: "Manage Your Hospital Activities.",
+          finalDescription:
+            "Access your hospital dashboard to manage requests and donor matching.",
+          finalText: "Open Hospital Dashboard",
+          finalLink: "/hospital/dashboard",
+        };
+
+      case "admin":
+        return {
+          primaryText: "Admin Dashboard",
+          primaryLink: "/admin/dashboard",
+          secondaryText: "View Blood Requests",
+          secondaryLink: "/emergency-requests",
+          finalHeading: "Oversee DonorNexa.",
+          finalDescription:
+            "Access platform administration and monitor its activities.",
+          finalText: "Open Admin Dashboard",
+          finalLink: "/admin/dashboard",
+        };
+
+      default:
+        return {
+          primaryText: "Find Donors",
+          primaryLink: "/find-donors",
+          secondaryText: "View Blood Requests",
+          secondaryLink: "/emergency-requests",
+          finalHeading: "Become Part of DonorNexa",
+          finalDescription:
+            "Explore how DonorNexa connects donors and hospitals.",
+          finalText: "Get Started",
+          finalLink: "/find-donors",
+        };
+    }
+  };
+
+  const homeCTA = getHomeCTA();
+
   const steps = [
     {
       icon: Users,
@@ -114,19 +203,25 @@ function Home() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                to="/find-donors"
-                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-7 py-3.5 font-semibold text-white shadow-lg shadow-rose-400/30 ring-1 ring-white/30 transition duration-200 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50"
-              >
-                Find Donors
-                <ArrowRight size={18} />
-              </Link>
+              {homeCTA.primaryLink ? (
+                <Link
+                  to={homeCTA.primaryLink}
+                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-7 py-3.5 font-semibold text-white shadow-lg shadow-rose-400/30 ring-1 ring-white/30 transition duration-200 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50"
+                >
+                  {homeCTA.primaryText}
+                  <ArrowRight size={18} />
+                </Link>
+              ) : (
+                <span className="rounded-full bg-[#BE4565] px-7 py-3.5 font-semibold text-white opacity-70">
+                  {homeCTA.primaryText}
+                </span>
+              )}
 
               <Link
-                to="/emergency"
+                to={homeCTA.secondaryLink}
                 className="rounded-full border border-[#BE4565]/50 bg-white/50 px-7 py-3.5 font-semibold text-[#96334F] backdrop-blur-md transition duration-200 hover:bg-white/90 hover:shadow-md hover:shadow-rose-200/50"
               >
-                View Blood Requests
+                {homeCTA.secondaryText}
               </Link>
             </div>
 
@@ -192,7 +287,9 @@ function Home() {
         <div className="mx-auto max-w-7xl rounded-3xl border border-white/80 bg-gradient-to-r from-white/80 via-rose-50/70 to-white/80 px-6 py-8 shadow-xl shadow-rose-100/60 ring-1 ring-rose-200/40 backdrop-blur-xl sm:px-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-md">
-              <h2 className="text-2xl font-bold">Looking for a specific blood group?</h2>
+              <h2 className="text-2xl font-bold">
+                Looking for a specific blood group?
+              </h2>
               <p className="mt-2 leading-7 text-gray-600">
                 Start with the blood group you need and find compatible donors
                 in your city.
@@ -374,7 +471,7 @@ function Home() {
             </span>
 
             <h2 className="mt-6 text-3xl font-bold sm:text-4xl">
-              Your One Step Can Make a Difference.
+              {homeCTA.finalHeading}
             </h2>
 
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-rose-100">
@@ -383,10 +480,10 @@ function Home() {
             </p>
 
             <Link
-              to="/find-donors"
+              to={homeCTA.finalLink}
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
             >
-              Get Started
+              {homeCTA.finalText}
               <ArrowRight size={18} />
             </Link>
           </div>

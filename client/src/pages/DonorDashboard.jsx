@@ -8,8 +8,9 @@ import {
   CalendarCheck,
 } from 'lucide-react'
 
-import DonorProfileForm from '../components/DonorProfileForm'
-import DonorAvailability from '../components/DonorAvailability'
+import DonorProfileForm from '../components/donor/DonorProfileForm'
+import DonorAvailability from '../components/donor/DonorAvailability'
+import DonorMatchedRequests from '../components/donor/DonorMatchedRequests'
 
 function DonorDashboard() {
   const infoCards = [
@@ -51,12 +52,13 @@ function DonorDashboard() {
           </h1>
 
           <p className="mt-3 max-w-2xl text-gray-600">
-            Manage your donor profile and keep your availability updated.
+            Manage your donor profile, keep your availability updated, and
+            respond to blood requests matched with you.
           </p>
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl space-y-8 px-6 py-10">
+      <main className="mx-auto max-w-7xl space-y-10 px-6 py-10">
         {/* Information Cards */}
         <div className="grid gap-5 md:grid-cols-3">
           {infoCards.map((card) => {
@@ -82,46 +84,52 @@ function DonorDashboard() {
           })}
         </div>
 
-        {/* Profile */}
-        <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm shadow-rose-100/50 sm:p-8">
-          <div className="mb-7 flex items-center gap-3 border-b border-rose-100 pb-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FCE7ED] text-[#BE4565]">
-              <ClipboardList size={23} />
+        {/* Matched requests come first: they are the actionable part */}
+        <DonorMatchedRequests />
+
+        {/* Profile + Availability side by side on large screens */}
+        <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
+          {/* Profile */}
+          <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm shadow-rose-100/50 sm:p-8 lg:col-span-2">
+            <div className="mb-7 flex items-center gap-3 border-b border-rose-100 pb-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FCE7ED] text-[#BE4565]">
+                <ClipboardList size={23} />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-[#29232A]">
+                  Donor Information
+                </h2>
+                <p className="text-sm text-gray-500">
+                  View and update your personal donor details.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-bold text-[#29232A]">
-                Donor Information
-              </h2>
-              <p className="text-sm text-gray-500">
-                View and update your personal donor details.
-              </p>
+            <DonorProfileForm />
+          </section>
+
+          {/* Availability */}
+          <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm shadow-rose-100/50 sm:p-8 lg:sticky lg:top-28">
+            <div className="mb-7 flex items-center gap-3 border-b border-rose-100 pb-6">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#FCE7ED] text-[#BE4565]">
+                <CalendarCheck size={23} />
+              </div>
+
+              <div>
+                <h2 className="text-xl font-bold text-[#29232A]">
+                  Donation Availability
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Control whether hospitals can consider you for potential
+                  matches.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <DonorProfileForm />
-        </section>
-
-        {/* Availability */}
-        <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm shadow-rose-100/50 sm:p-8">
-          <div className="mb-7 flex items-center gap-3 border-b border-rose-100 pb-6">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FCE7ED] text-[#BE4565]">
-              <CalendarCheck size={23} />
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-[#29232A]">
-                Donation Availability
-              </h2>
-              <p className="text-sm text-gray-500">
-                Control whether hospitals can consider you for potential
-                matches.
-              </p>
-            </div>
-          </div>
-
-          <DonorAvailability />
-        </section>
+            <DonorAvailability />
+          </section>
+        </div>
 
         {/* Emergency Requests Link */}
         <section className="relative flex flex-col justify-between gap-5 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#96334F] to-[#7A2840] p-8 text-white shadow-2xl shadow-rose-300/40 sm:flex-row sm:items-center">
@@ -139,10 +147,13 @@ function DonorDashboard() {
 
           <Link
             to="/emergency-requests"
-            className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
+            className="group relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
           >
             View Requests
-            <ArrowRight size={18} />
+            <ArrowRight
+              size={18}
+              className="transition-transform duration-200 group-hover:translate-x-1"
+            />
           </Link>
         </section>
       </main>

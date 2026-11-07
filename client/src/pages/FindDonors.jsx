@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { useApi } from "../hooks/useApi";
+import { Link } from "react-router-dom";
 import {
   Search,
   ShieldCheck,
@@ -6,39 +8,153 @@ import {
   Droplet,
   HeartHandshake,
   ArrowRight,
-} from 'lucide-react'
+} from "lucide-react";
+import { useCurrentUser } from "../context/UserContext";
 
 const bloodGroups = [
-  { group: 'A+', donatesTo: 'A+, AB+' },
-  { group: 'A-', donatesTo: 'A+, A-, AB+, AB-' },
-  { group: 'B+', donatesTo: 'B+, AB+' },
-  { group: 'B-', donatesTo: 'B+, B-, AB+, AB-' },
-  { group: 'AB+', donatesTo: 'AB+' },
-  { group: 'AB-', donatesTo: 'AB+, AB-' },
-  { group: 'O+', donatesTo: 'O+, A+, B+, AB+' },
-  { group: 'O-', donatesTo: 'All blood groups' },
-]
+  { group: "A+", donatesTo: "A+, AB+" },
+  { group: "A-", donatesTo: "A+, A-, AB+, AB-" },
+  { group: "B+", donatesTo: "B+, AB+" },
+  { group: "B-", donatesTo: "B+, B-, AB+, AB-" },
+  { group: "AB+", donatesTo: "AB+" },
+  { group: "AB-", donatesTo: "AB+, AB-" },
+  { group: "O+", donatesTo: "O+, A+, B+, AB+" },
+  { group: "O-", donatesTo: "All blood groups" },
+];
 
 const matchingSteps = [
   {
     icon: ShieldCheck,
-    title: 'Verified Hospitals',
-    description: 'Only approved hospitals can access donor matching features.',
+    title: "Verified Hospitals",
+    description: "Only approved hospitals can access donor matching features.",
   },
   {
     icon: Droplet,
-    title: 'Blood Compatibility',
+    title: "Blood Compatibility",
     description:
-      'Potential donors are identified using preliminary blood group compatibility rules.',
+      "Potential donors are identified using preliminary blood group compatibility rules.",
   },
   {
     icon: MapPin,
-    title: 'Location-Based Search',
-    description: 'Matching also considers donor availability and city.',
+    title: "Location-Based Search",
+    description: "Matching also considers donor availability and city.",
   },
-]
+];
 
 function FindDonors() {
+  const { user, userLoading } = useCurrentUser();
+  const role = user?.role;
+
+  const { request } = useApi();
+
+  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [hospitalLoading, setHospitalLoading] = useState(false);
+
+  useEffect(() => {
+    if (userLoading || role !== "hospital") return;
+
+    const fetchHospitalStatus = async () => {
+      setHospitalLoading(true);
+
+      try {
+        const response = await request({
+          method: "GET",
+          url: "/api/hospitals/profile",
+        });
+
+        const hospital = response.data.hospital || response.data;
+
+        setVerificationStatus(hospital?.verificationStatus || "pending");
+      } catch (error) {
+        if (error.response?.status === 404) {
+          setVerificationStatus("not-registered");
+        } else {
+          console.error(
+            "Hospital Profile Error:",
+            error.response?.data || error.message,
+          );
+          setVerificationStatus("unknown");
+        }
+      } finally {
+        setHospitalLoading(false);
+      }
+    };
+
+    fetchHospitalStatus();
+  }, [userLoading, role, request]);
+
+  const getCTA = () => {
+    if (userLoading || hospitalLoading) {
+      return {
+        text: "Loading...",
+        link: null,
+      };
+    }
+
+    if (!user) {
+      return {
+        text: "Sign in to Continue",
+        link: null,
+      };
+    }
+
+    switch (role) {
+      case "donor":
+        return {
+          text: "Go to Donor Dashboard",
+          link: "/donor/dashboard",
+        };
+
+      case "hospital":
+        if (verificationStatus === "verified") {
+          return {
+            text: "Go to Hospital Dashboard",
+            link: "/hospital/dashboard",
+          };
+        }
+
+        if (verificationStatus === "pending") {
+          return {
+            text: "View Verification Status",
+            link: "/hospital/dashboard",
+          };
+        }
+
+        if (verificationStatus === "rejected") {
+          return {
+            text: "Review Hospital Registration",
+            link: "/hospital/dashboard",
+          };
+        }
+
+        if (verificationStatus === "not-registered") {
+          return {
+            text: "Register Your Hospital",
+            link: "/hospital/dashboard",
+          };
+        }
+
+        return {
+          text: "Check Hospital Dashboard",
+          link: "/hospital/dashboard",
+        };
+
+      case "admin":
+        return {
+          text: "Go to Admin Dashboard",
+          link: "/admin/dashboard",
+        };
+
+      default:
+        return {
+          text: "Sign in to Continue",
+          link: null,
+        };
+    }
+  };
+
+  const cta = getCTA();
+
   return (
     <div className="min-h-screen bg-[#FFF8FA]">
       {/* Hero */}
@@ -63,17 +179,21 @@ function FindDonors() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-gray-600">
-            DonorNexa helps verified hospitals identify potential blood
-            donors based on blood group compatibility and location.
+            DonorNexa helps verified hospitals identify potential blood donors
+            based on blood group compatibility and location.
           </p>
 
-          <Link
-            to="/hospital/dashboard"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-7 py-3.5 font-semibold text-white shadow-lg shadow-rose-400/30 ring-1 ring-white/30 transition duration-200 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50"
-          >
-            Go to Hospital Dashboard
-            <ArrowRight size={18} />
-          </Link>
+          {cta.link ? (
+            <Link
+              to={cta.link}
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-7 py-3.5 font-semibold text-white shadow-lg shadow-rose-400/30 ring-1 ring-white/30 transition duration-200 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50"
+            >
+              {cta.text}
+              <ArrowRight size={18} />
+            </Link>
+          ) : (
+            <p className="mt-8 font-medium text-[#96334F]">{cta.text}</p>
+          )}
         </div>
       </section>
 
@@ -81,9 +201,7 @@ function FindDonors() {
       <section className="border-y border-rose-100 bg-gradient-to-b from-white to-[#FFF3F6] px-6 py-16">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-[#29232A]">
-              Blood Groups
-            </h2>
+            <h2 className="text-3xl font-bold text-[#29232A]">Blood Groups</h2>
             <p className="mt-3 text-gray-600">
               Donor matching considers blood group compatibility.
             </p>
@@ -124,7 +242,7 @@ function FindDonors() {
 
         <div className="mt-12 grid gap-8 md:grid-cols-3">
           {matchingSteps.map((step) => {
-            const Icon = step.icon
+            const Icon = step.icon;
 
             return (
               <div
@@ -139,7 +257,7 @@ function FindDonors() {
                   {step.description}
                 </p>
               </div>
-            )
+            );
           })}
         </div>
       </section>
@@ -156,9 +274,9 @@ function FindDonors() {
               Donor Privacy Matters
             </h3>
             <p className="mt-2 leading-7 text-gray-700">
-              Donor contact information is not publicly displayed.
-              Hospitals access potential donor matches through authorized
-              accounts, helping protect donor privacy.
+              Donor contact information is not publicly displayed. Hospitals
+              access potential donor matches through authorized accounts,
+              helping protect donor privacy.
             </p>
           </div>
         </div>
@@ -171,24 +289,48 @@ function FindDonors() {
           <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#BE4565]/40 blur-3xl" />
 
           <div className="relative">
-            <h2 className="text-3xl font-bold">Are You a Hospital?</h2>
+            <h2 className="text-3xl font-bold">
+              {role === "hospital"
+                ? "Hospital Access"
+                : role === "donor"
+                  ? "Your Contribution Matters"
+                  : role === "admin"
+                    ? "Platform Administration"
+                    : "Join the DonorNexa Community"}
+            </h2>
+
             <p className="mx-auto mt-4 max-w-xl leading-7 text-rose-100">
-              Register your hospital and get access to donor matching
-              after verification.
+              {role === "hospital"
+                ? verificationStatus === "verified"
+                  ? "Your hospital is verified. Access your dashboard to manage blood requests and find compatible donors."
+                  : verificationStatus === "pending"
+                    ? "Your hospital registration is awaiting verification. Visit your dashboard to check its status."
+                    : verificationStatus === "rejected"
+                      ? "Your hospital registration needs attention. Visit your dashboard to review its status."
+                      : verificationStatus === "not-registered"
+                        ? "Register your hospital to request blood and access donor matching after verification."
+                        : "Visit your hospital dashboard to check your registration status."
+                : role === "donor"
+                  ? "Manage your donor profile, update your availability, and help people in need."
+                  : role === "admin"
+                    ? "Access the administration dashboard to oversee DonorNexa."
+                    : "Sign in to access your account and explore the features available to you."}
             </p>
 
-            <Link
-              to="/hospital/dashboard"
-              className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
-            >
-              Access Hospital Dashboard
-              <ArrowRight size={18} />
-            </Link>
+            {cta.link && (
+              <Link
+                to={cta.link}
+                className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
+              >
+                {cta.text}
+                <ArrowRight size={18} />
+              </Link>
+            )}
           </div>
         </div>
       </section>
     </div>
-  )
+  );
 }
 
-export default FindDonors
+export default FindDonors;

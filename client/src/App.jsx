@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 
 import { useApi } from "./hooks/useApi";
 import { useSocket } from "./hooks/useSocket";
+import { UserProvider } from "./context/UserContext";
 
 import MainLayout from "./layouts/MainLayout";
 
@@ -35,69 +36,96 @@ function App() {
   const { isLoaded, isSignedIn } = useAuth();
   const { request } = useApi();
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+  const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
 
-    const syncUser = async () => {
-      try {
-        const response = await request({
-          method: "POST",
-          url: "/api/users/sync",
-        });
+  const refreshUser = useCallback(async () => {
+    if (!isLoaded) return null;
 
-        console.log("User Sync:", response.data);
-      } catch (error) {
-        console.error(
-          "User Sync Failed:",
-          error.response?.data || error.message,
-        );
-      }
-    };
+    if (!isSignedIn) {
+      setUser(null);
+      setUserLoading(false);
+      return null;
+    }
 
-    syncUser();
+    setUserLoading(true);
+
+    try {
+      const response = await request({
+        method: "POST",
+        url: "/api/users/sync",
+      });
+
+      const syncedUser = response.data.user;
+
+      setUser(syncedUser);
+
+      console.log("User Sync:", syncedUser);
+
+      return syncedUser;
+    } catch (error) {
+      console.error("User Sync Failed:", error.response?.data || error.message);
+
+      setUser(null);
+      return null;
+    } finally {
+      setUserLoading(false);
+    }
   }, [isLoaded, isSignedIn, request]);
 
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
   return (
-    <Routes>
-      <Route element={<MainLayout />}>
-        {/* Public Pages */}
-        <Route path="/" element={<Home />} />
-        <Route path="/find-donors" element={<FindDonors />} />
-        <Route path="/emergency-requests" element={<EmergencyRequests />} />
-        <Route path="/about" element={<About />} />
+    <UserProvider
+      value={{
+        user,
+        setUser,
+        userLoading,
+        refreshUser,
+      }}
+    >
+      <Routes>
+        <Route element={<MainLayout />}>
+          {/* Public Pages */}
+          <Route path="/" element={<Home />} />
+          <Route path="/find-donors" element={<FindDonors />} />
+          <Route path="/emergency-requests" element={<EmergencyRequests />} />
+          <Route path="/about" element={<About />} />
 
-        {/* Protected Dashboards */}
-        <Route
-          path="/donor/dashboard"
-          element={
-            <ProtectedRoute>
-              <DonorDashboard />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected Dashboards */}
+          <Route
+            path="/donor/dashboard"
+            element={
+              <ProtectedRoute>
+                <DonorDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/hospital/dashboard"
-          element={
-            <ProtectedRoute>
-              <HospitalDashboard />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/hospital/dashboard"
+            element={
+              <ProtectedRoute>
+                <HospitalDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Unknown URL */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </UserProvider>
   );
 }
 

@@ -4,7 +4,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { useApi } from "../hooks/useApi";
+import { useApi } from "../../hooks/useApi";
 
 function DonorAvailability() {
   const { request } = useApi();

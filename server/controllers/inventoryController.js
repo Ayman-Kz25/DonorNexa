@@ -1,0 +1,84 @@
+import BloodInventory from "../models/BloodInventory.js";
+
+// Get hospital blood inventory
+export const getHospitalInventory = async (req, res) => {
+  try {
+    const inventory = await BloodInventory.find({
+      hospital: req.hospital._id,
+    }).sort({ bloodGroup: 1 });
+
+    res.status(200).json({
+      success: true,
+      inventory,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Unable to fetch blood inventory.",
+      error: error.message,
+    });
+  }
+};
+
+// Add or update blood inventory
+export const updateHospitalInventory = async (req, res) => {
+  try {
+    const { bloodGroup, unitsAvailable } = req.body;
+
+    const validGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+    if (!validGroups.includes(bloodGroup)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid blood group.",
+      });
+    }
+
+    if (
+      unitsAvailable === undefined ||
+      !Number.isInteger(Number(unitsAvailable)) ||
+      Number(unitsAvailable) < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Units available must be a non-negative whole number.",
+      });
+    }
+
+    const inventory = await BloodInventory.findOneAndUpdate(
+      {
+        hospital: req.hospital._id,
+        bloodGroup,
+      },
+      {
+        $set: {
+          unitsAvailable: Number(unitsAvailable),
+          lastUpdated: new Date(),
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Blood inventory updated successfully.",
+      inventory,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Unable to update blood inventory.",
+      error: error.message,
+    });
+  }
+};
+
+export default {
+  getHospitalInventory,
+  updateHospitalInventory,
+};

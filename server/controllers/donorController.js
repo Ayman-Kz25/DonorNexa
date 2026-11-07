@@ -14,23 +14,42 @@ export const createDonorProfile = async (req, res) => {
       });
     }
 
-    const { bloodGroup, dateOfBirth, weight, city } = req.body;
+    const { bloodGroup, dateOfBirth, weight, city, phone } = req.body;
 
-    if (!bloodGroup || !dateOfBirth || weight === undefined || !city?.trim()) {
+    if (
+      !bloodGroup ||
+      !dateOfBirth ||
+      weight === undefined ||
+      !city?.trim() ||
+      !phone?.trim()
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Blood group, date of birth and weight are required.",
+        message: "All donor details, including phone number, are required.",
+      });
+    }
+
+    const cleanedPhone = phone.trim();
+
+    if (cleanedPhone.length < 7 || cleanedPhone.length > 20) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid phone number.",
       });
     }
 
     const user = await User.findOne({ clerkUserId: userId });
 
-    if (!user || user.role !== "donor") {
+    if (!user || user.role !== "donor" || !user.isActive) {
       return res.status(403).json({
         success: false,
         message: "Donor account not found or unauthorized.",
       });
     }
+
+    // Save phone number in the User collection
+    user.phone = cleanedPhone;
+    await user.save();
 
     const donor = await Donor.findOneAndUpdate(
       { user: user._id },
@@ -46,13 +65,16 @@ export const createDonorProfile = async (req, res) => {
           isAvailable: false,
         },
       },
-      { new: true, upsert: true, runValidators: true },
+      { returnDocument: "after", upsert: true, runValidators: true },
     );
 
     return res.status(201).json({
       success: true,
       message: "Donor profile saved successfully.",
-      donor,
+      donor: {
+        ...donor.toObject(),
+        phone: user.phone,
+      },
     });
   } catch (error) {
     console.error("Donor profile error:", error);
@@ -95,7 +117,10 @@ export const getDonorProfile = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      donor,
+      donor: {
+        ...donor.toObject(),
+        phone: user.phone || "",
+      },
     });
   } catch (error) {
     console.error("Get donor profile error:", error);

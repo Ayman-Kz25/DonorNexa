@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 import {
   Heart,
   Target,
@@ -7,44 +7,108 @@ import {
   Users,
   HeartHandshake,
   ArrowRight,
-} from 'lucide-react'
+} from "lucide-react";
+import { useCurrentUser } from "../context/UserContext";
 
 function About() {
+  const { user, userLoading } = useCurrentUser();
+  const role = user?.role;
+
+  const getAboutCTA = () => {
+    if (userLoading) {
+      return {
+        heading: "Discover DonorNexa.",
+        description: "Connecting donors and hospitals through one platform.",
+        text: "Explore DonorNexa",
+        link: "/find-donors",
+      };
+    }
+
+    if (!user) {
+      return {
+        heading: "Be Part of Something Meaningful.",
+        description:
+          "Join DonorNexa and help build a more connected blood donation community.",
+        text: "Get Started",
+        link: "/find-donors",
+      };
+    }
+
+    switch (role) {
+      case "donor":
+        return {
+          heading: "Your Contribution Matters.",
+          description:
+            "Manage your donor profile and keep your availability updated.",
+          text: "Donor Dashboard",
+          link: "/donor/dashboard",
+        };
+
+      case "hospital":
+        return {
+          heading: "Connect With Potential Donors.",
+          description:
+            "Access your hospital dashboard to manage requests and donor matching.",
+          text: "Hospital Dashboard",
+          link: "/hospital/dashboard",
+        };
+
+      case "admin":
+        return {
+          heading: "Keep DonorNexa Connected.",
+          description:
+            "Oversee platform activities through your administration dashboard.",
+          text: "Admin Dashboard",
+          link: "/admin/dashboard",
+        };
+
+      default:
+        return {
+          heading: "Be Part of Something Meaningful.",
+          description: "Explore how DonorNexa connects donors and hospitals.",
+          text: "Get Started",
+          link: "/find-donors",
+        };
+    }
+  };
+
+  const aboutCTA = getAboutCTA();
+
   const values = [
     {
       icon: Heart,
-      title: 'Compassion',
+      title: "Compassion",
       description:
-        'We believe that helping others begins with care, kindness, and a willingness to make a difference.',
+        "We believe that helping others begins with care, kindness, and a willingness to make a difference.",
     },
     {
       icon: ShieldCheck,
-      title: 'Trust & Privacy',
+      title: "Trust & Privacy",
       description:
-        'We prioritize secure access, hospital verification, and responsible handling of donor information.',
+        "We prioritize secure access, hospital verification, and responsible handling of donor information.",
     },
     {
       icon: Users,
-      title: 'Community',
+      title: "Community",
       description:
-        'We aim to bring donors and hospitals together through an organized coordination platform.',
+        "We aim to bring donors and hospitals together through an organized coordination platform.",
     },
-  ]
+  ];
 
   const purpose = [
     {
       icon: Target,
-      title: 'Our Mission',
+      title: "Our Mission",
       description:
-        'To simplify blood donation coordination by connecting available donors with verified hospitals through a centralized digital platform.',
+        "To simplify blood donation coordination by connecting available donors with verified hospitals through a centralized digital platform.",
     },
     {
       icon: Eye,
-      title: 'Our Vision',
+      title: "Our Vision",
       description:
-        'To contribute towards a more connected and organized blood donation community where finding potential donors becomes easier and faster.',
+        "To contribute towards a more connected and organized blood donation community where finding potential donors becomes easier and faster.",
     },
-  ]
+  ];
 
   return (
     <div className="bg-[#FFF8FA] text-[#29232A]">
@@ -70,9 +134,9 @@ function About() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            DonorNexa is a blood donation coordination platform designed
-            to make connections between potential donors and hospitals
-            easier, more organized, and more accessible.
+            DonorNexa is a blood donation coordination platform designed to make
+            connections between potential donors and hospitals easier, more
+            organized, and more accessible.
           </p>
         </div>
       </section>
@@ -81,7 +145,7 @@ function About() {
       <section className="border-y border-rose-100 bg-gradient-to-b from-white to-[#FFF3F6] px-6 py-20">
         <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-2">
           {purpose.map((item) => {
-            const Icon = item.icon
+            const Icon = item.icon;
 
             return (
               <div
@@ -102,7 +166,7 @@ function About() {
                   </p>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </section>
@@ -119,14 +183,14 @@ function About() {
           </h2>
 
           <p className="mx-auto mt-4 max-w-2xl leading-7 text-gray-600">
-            The principles that guide the way DonorNexa is designed
-            and developed.
+            The principles that guide the way DonorNexa is designed and
+            developed.
           </p>
         </div>
 
         <div className="mt-12 grid gap-7 md:grid-cols-3">
           {values.map((value) => {
-            const Icon = value.icon
+            const Icon = value.icon;
 
             return (
               <div
@@ -143,7 +207,7 @@ function About() {
                   {value.description}
                 </p>
               </div>
-            )
+            );
           })}
         </div>
       </section>
@@ -164,10 +228,9 @@ function About() {
               <p className="mt-4 leading-8 text-gray-700">
                 DonorNexa is a coordination platform, not a medical
                 decision-making system. Blood compatibility and donor
-                eligibility information provided by the platform is
-                preliminary. Final suitability, testing, and donation
-                decisions must always be confirmed by qualified
-                healthcare professionals.
+                eligibility information provided by the platform is preliminary.
+                Final suitability, testing, and donation decisions must always
+                be confirmed by qualified healthcare professionals.
               </p>
             </div>
           </div>
@@ -186,12 +249,11 @@ function About() {
             </span>
 
             <h2 className="mt-6 text-3xl font-bold sm:text-4xl">
-              Be Part of Something Meaningful.
+              {aboutCTA.heading}
             </h2>
 
             <p className="mx-auto mt-4 max-w-xl leading-7 text-rose-100">
-              Join DonorNexa and help build a more connected blood donation
-              community.
+              {aboutCTA.description}
             </p>
 
             <Link
@@ -205,7 +267,7 @@ function About() {
         </div>
       </section>
     </div>
-  )
+  );
 }
 
-export default About
+export default About;

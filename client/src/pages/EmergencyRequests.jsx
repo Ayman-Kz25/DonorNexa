@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertCircle,
   Droplet,
@@ -8,71 +8,197 @@ import {
   RefreshCw,
   HeartHandshake,
   ArrowRight,
-} from 'lucide-react'
-import api from '../lib/api'
+} from "lucide-react";
+import api from "../lib/api";
+import { useCurrentUser } from "../context/UserContext";
+import { useApi } from "../hooks/useApi";
 
 function EmergencyRequests() {
-  const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const { user, userLoading } = useCurrentUser();
+  const role = user?.role;
+
+  const { request: authenticatedRequest } = useApi();
+
+  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [hospitalLoading, setHospitalLoading] = useState(false);
 
   const fetchRequests = async () => {
     try {
-      setLoading(true)
-      setError('')
+      setLoading(true);
+      setError("");
 
-      const response = await api.get('/api/blood-requests/active')
+      const response = await api.get("/api/blood-requests/active");
 
-      const data = response.data
+      const data = response.data;
       const activeRequests = Array.isArray(data)
         ? data
-        : data.requests || []
+        : data.bloodRequests || [];
 
-      setRequests(activeRequests)
+      setRequests(activeRequests);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        'Unable to load blood requests. Please try again.'
-      )
+          "Unable to load blood requests. Please try again.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchRequests()
-  }, [])
+    fetchRequests();
+  }, []);
 
   const formatDate = (date) => {
-    if (!date) return 'Not specified'
+    if (!date) return "Not specified";
 
-    return new Date(date).toLocaleString('en-PK', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    })
-  }
+    return new Date(date).toLocaleString("en-PK", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  useEffect(() => {
+    if (userLoading || role !== "hospital") return;
+
+    const fetchHospitalStatus = async () => {
+      setHospitalLoading(true);
+
+      try {
+        const response = await authenticatedRequest({
+          method: "GET",
+          url: "/api/hospitals/profile",
+        });
+
+        const hospital = response.data.hospital || response.data;
+
+        setVerificationStatus(hospital?.verificationStatus || "pending");
+      } catch (err) {
+        if (err.response?.status === 404) {
+          setVerificationStatus("not-registered");
+        } else {
+          console.error("Hospital Profile Error:", err);
+          setVerificationStatus("unknown");
+        }
+      } finally {
+        setHospitalLoading(false);
+      }
+    };
+
+    fetchHospitalStatus();
+  }, [userLoading, role, authenticatedRequest]);
 
   const getUrgencyStyle = (urgency) => {
     switch (urgency) {
-      case 'critical':
-        return 'bg-rose-100 text-rose-800 ring-rose-200'
-      case 'urgent':
-        return 'bg-orange-100 text-orange-700 ring-orange-200'
+      case "critical":
+        return "bg-rose-100 text-rose-800 ring-rose-200";
+      case "urgent":
+        return "bg-orange-100 text-orange-700 ring-orange-200";
       default:
-        return 'bg-gray-100 text-gray-700 ring-gray-200'
+        return "bg-gray-100 text-gray-700 ring-gray-200";
     }
-  }
+  };
 
   const getUrgencyAccent = (urgency) => {
     switch (urgency) {
-      case 'critical':
-        return 'from-[#BE4565] to-[#96334F]'
-      case 'urgent':
-        return 'from-orange-400 to-orange-500'
+      case "critical":
+        return "from-[#BE4565] to-[#96334F]";
+      case "urgent":
+        return "from-orange-400 to-orange-500";
       default:
-        return 'from-rose-200 to-rose-300'
+        return "from-rose-200 to-rose-300";
     }
-  }
+  };
+
+  const roleMessage = () => {
+    if (userLoading || hospitalLoading) return null;
+
+    if (!user) {
+      return "You can explore publicly available emergency blood requests.";
+    }
+
+    switch (role) {
+      case "donor":
+        return "Explore active blood requests and keep your donor profile and availability updated.";
+
+      case "hospital":
+        if (verificationStatus === "verified") {
+          return "Your hospital is verified. Manage your blood requests through your hospital dashboard.";
+        }
+
+        if (verificationStatus === "pending") {
+          return "Your hospital registration is awaiting verification. You can view public emergency requests while you wait.";
+        }
+
+        if (verificationStatus === "rejected") {
+          return "Your hospital registration was rejected. Visit your dashboard to review its status.";
+        }
+
+        if (verificationStatus === "not-registered") {
+          return "Your hospital profile is not registered yet. Register to access hospital features after verification.";
+        }
+
+        return "Visit your hospital dashboard to check your registration status.";
+
+      case "admin":
+        return "Monitor public emergency requests and use your admin dashboard for platform management.";
+
+      default:
+        return null;
+    }
+  };
+
+  const getCTA = () => {
+    if (userLoading || hospitalLoading) return null;
+
+    if (!user) {
+      return {
+        heading: "Want to Help Someone in Need?",
+        description: "Sign in to access your DonorNexa account.",
+        text: null,
+        link: null,
+      };
+    }
+
+    if (role === "donor") {
+      return {
+        heading: "Your Donation Can Save a Life",
+        description: "Manage your donor profile and update your availability.",
+        text: "Donor Dashboard",
+        link: "/donor/dashboard",
+      };
+    }
+
+    if (role === "hospital") {
+      return {
+        heading: "Hospital Request Management",
+        description:
+          verificationStatus === "verified"
+            ? "Manage your hospital's blood requests and find compatible donors."
+            : "Visit your hospital dashboard to manage your registration and verification status.",
+        text: "Hospital Dashboard",
+        link: "/hospital/dashboard",
+      };
+    }
+
+    if (role === "admin") {
+      return {
+        heading: "Platform Administration",
+        description:
+          "Monitor and manage DonorNexa through your admin dashboard.",
+        text: "Admin Dashboard",
+        link: "/admin/dashboard",
+      };
+    }
+
+    return null;
+  };
+
+  const cta = getCTA();
 
   return (
     <div className="min-h-screen bg-[#FFF8FA]">
@@ -97,8 +223,8 @@ function EmergencyRequests() {
               </h1>
 
               <p className="mt-4 max-w-2xl leading-7 text-gray-600">
-                Explore active blood requests submitted by hospitals.
-                Your availability may help someone in need.
+                Explore active blood requests submitted by hospitals. Your
+                availability may help someone in need.
               </p>
             </div>
 
@@ -107,10 +233,7 @@ function EmergencyRequests() {
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-white bg-white/80 px-6 py-3 font-semibold text-[#96334F] shadow-md shadow-rose-200/50 ring-1 ring-rose-200/40 backdrop-blur-md transition duration-200 hover:bg-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
             >
-              <RefreshCw
-                size={17}
-                className={loading ? 'animate-spin' : ''}
-              />
+              <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
               Refresh
             </button>
           </div>
@@ -119,13 +242,27 @@ function EmergencyRequests() {
 
       {/* Requests */}
       <section className="mx-auto max-w-7xl px-6 py-14">
+        {roleMessage() && (
+          <div className="mb-8 rounded-2xl border border-rose-200 bg-gradient-to-r from-white to-[#FFF3F6] p-5 shadow-sm">
+            <p className="leading-7 text-gray-700">{roleMessage()}</p>
+
+            {role === "hospital" && (
+              <Link
+                to="/hospital/dashboard"
+                className="mt-3 inline-flex items-center gap-2 font-semibold text-[#BE4565] hover:text-[#96334F]"
+              >
+                Visit Hospital Dashboard
+                <ArrowRight size={16} />
+              </Link>
+            )}
+          </div>
+        )}
+
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-[#29232A]">
-            Active Requests
-          </h2>
+          <h2 className="text-2xl font-bold text-[#29232A]">Active Requests</h2>
 
           <span className="rounded-full border border-white bg-[#FCE7ED] px-4 py-2 text-sm font-semibold text-[#96334F] shadow-sm ring-1 ring-rose-200/50">
-            {requests.length} {requests.length === 1 ? 'Request' : 'Requests'}
+            {requests.length} {requests.length === 1 ? "Request" : "Requests"}
           </span>
         </div>
 
@@ -172,8 +309,8 @@ function EmergencyRequests() {
               No Active Requests
             </h3>
             <p className="mx-auto mt-2 max-w-md text-gray-600">
-              There are currently no active blood requests.
-              Please check again later.
+              There are currently no active blood requests. Please check again
+              later.
             </p>
           </div>
         ) : (
@@ -198,12 +335,12 @@ function EmergencyRequests() {
                   <span
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ring-1 ${getUrgencyStyle(request.urgency)}`}
                   >
-                    {request.urgency || 'Normal'}
+                    {request.urgency || "Normal"}
                   </span>
                 </div>
 
                 <h3 className="mt-6 text-lg font-bold text-[#29232A]">
-                  {request.hospital?.hospitalName || 'Hospital Request'}
+                  {request.hospital?.hospitalName || "Hospital Request"}
                 </h3>
 
                 <div className="mt-4 space-y-3 text-sm text-gray-600">
@@ -212,8 +349,8 @@ function EmergencyRequests() {
                       <Droplet size={16} className="text-[#BE4565]" />
                     </span>
                     <span>
-                      {request.unitsRequired}{' '}
-                      {request.unitsRequired === 1 ? 'unit' : 'units'} required
+                      {request.unitsRequired}{" "}
+                      {request.unitsRequired === 1 ? "unit" : "units"} required
                     </span>
                   </div>
 
@@ -243,37 +380,38 @@ function EmergencyRequests() {
         )}
       </section>
 
-      {/* Donor CTA */}
-      <section className="px-6 pb-8">
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#96334F] to-[#7A2840] px-8 py-12 text-center text-white shadow-2xl shadow-rose-300/40 md:flex-row md:px-12 md:text-left">
-          <div className="pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-rose-300/20 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#BE4565]/40 blur-3xl" />
+      {/* Role-Based CTA */}
+      {cta && (
+        <section className="px-6 pb-8">
+          <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#96334F] to-[#7A2840] px-8 py-12 text-center text-white shadow-2xl shadow-rose-300/40 md:flex-row md:px-12 md:text-left">
+            <div className="pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-rose-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#BE4565]/40 blur-3xl" />
 
-          <div className="relative flex flex-col items-center gap-4 md:flex-row">
-            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md">
-              <HeartHandshake size={34} />
-            </span>
-            <div>
-              <h2 className="text-2xl font-bold">
-                Ready to Become a Donor?
-              </h2>
-              <p className="mt-2 text-rose-100">
-                Register and manage your donor availability.
-              </p>
+            <div className="relative flex flex-col items-center gap-4 md:flex-row">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md">
+                <HeartHandshake size={34} />
+              </span>
+
+              <div>
+                <h2 className="text-2xl font-bold">{cta.heading}</h2>
+                <p className="mt-2 text-rose-100">{cta.description}</p>
+              </div>
             </div>
-          </div>
 
-          <Link
-            to="/donor/dashboard"
-            className="relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
-          >
-            Donor Dashboard
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
+            {cta.link && (
+              <Link
+                to={cta.link}
+                className="relative inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-[#96334F] shadow-lg shadow-black/10 transition duration-200 hover:bg-rose-50 hover:shadow-xl"
+              >
+                {cta.text}
+                <ArrowRight size={18} />
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
     </div>
-  )
+  );
 }
 
-export default EmergencyRequests
+export default EmergencyRequests;

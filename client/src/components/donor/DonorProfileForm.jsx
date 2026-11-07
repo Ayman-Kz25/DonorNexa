@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
-import { useApi } from "../hooks/useApi";
+import { useApi } from "../../hooks/useApi";
 
 const TOAST_DURATION = 4000; // ms — toast disappears after 4 seconds
 
@@ -31,6 +31,7 @@ const initialFormData = {
   dateOfBirth: "",
   weight: "",
   city: "",
+  phone: "",
 };
 
 // Normalises form values so we can reliably tell if anything changed
@@ -39,6 +40,7 @@ const toComparable = (data) => ({
   dateOfBirth: data.dateOfBirth || "",
   weight: String(data.weight ?? ""),
   city: (data.city || "").trim(),
+  phone: (data.phone || "").trim(),
 });
 
 function DonorProfileForm() {
@@ -91,6 +93,7 @@ function DonorProfileForm() {
           : "",
         weight: donor.weight ?? "",
         city: donor.city || "",
+        phone: donor.phone || "",
       };
 
       setFormData(loaded);
@@ -153,6 +156,7 @@ function DonorProfileForm() {
       dateOfBirth: formData.dateOfBirth,
       weight: Number(formData.weight),
       city: formData.city.trim(),
+      phone: formData.phone.trim(),
     };
 
     if (
@@ -195,6 +199,7 @@ function DonorProfileForm() {
             : payload.dateOfBirth,
           weight: donor.weight ?? payload.weight,
           city: donor.city || payload.city,
+          phone: donor.phone || payload.phone,
         };
       }
 
@@ -418,7 +423,7 @@ function DonorProfileForm() {
         </div>
 
         {/* Date of Birth */}
-        <div className="sm:col-span-2">
+        <div>
           <label htmlFor="dateOfBirth" className={labelClass}>
             Date of Birth
           </label>
@@ -434,6 +439,28 @@ function DonorProfileForm() {
               disabled={!isEditing}
               required
               max={new Date().toISOString().split("T")[0]}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {/* Phone Number */}
+        <div >
+          <label htmlFor="phone" className={labelClass}>
+            Phone Number
+          </label>
+
+          <div className="group relative">
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="e.g. 03XXXXXXXXX"
+              disabled={!isEditing}
+              required
+              maxLength={20}
               className={inputClass}
             />
           </div>

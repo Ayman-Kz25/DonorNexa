@@ -8,6 +8,7 @@ import donorRoutes from "./routes/donorRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
 import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
 import startExpirationJob from "./jobs/expireBloodRequests.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -42,6 +43,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/hospitals", hospitalRoutes);
+app.use("/api/inventory", inventoryRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
 
 app.get("/", (req, res) => {
