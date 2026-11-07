@@ -5,6 +5,7 @@ import { clerkMiddleware, getAuth } from "@clerk/express";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import donorRoutes from "./routes/donorRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
 import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
 import startExpirationJob from "./jobs/expireBloodRequests.js";
@@ -39,6 +40,7 @@ app.use(clerkMiddleware());
 
 app.use("/api/users", userRoutes);
 app.use("/api/donors", donorRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
 

@@ -15,8 +15,8 @@ router.post("/register", registerHospital);
 router.get("/profile", getHospitalProfile);
 
 // Admin-only routes
+router.get("/pending", requireAdmin, getPendingHospitals);
 router.patch("/:id/approve", requireAdmin, approveHospital);
 router.patch("/:id/reject", requireAdmin, rejectHospital);
-router.patch("/pending", requireAdmin, getPendingHospitals);
 
 export default router;

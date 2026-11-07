@@ -1,6 +1,7 @@
 import { getAuth } from "@clerk/express";
 import User from "../models/User.js";
 import Hospital from "../models/Hospital.js";
+import logAdminAction from "../utils/logAdminAction.js";
 
 export const registerHospital = async (req, res) => {
   try {
@@ -156,6 +157,14 @@ export const approveHospital = async (req, res) => {
 
     await hospital.save();
 
+    await logAdminAction({
+      adminId: req.user._id,
+      action: "HOSPITAL_APPROVED",
+      targetType: "Hospital",
+      targetId: hospital._id,
+      description: `Approved hospital: ${hospital.hospitalName}`,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Hospital verified successfully.",
@@ -204,6 +213,14 @@ export const rejectHospital = async (req, res) => {
 
     await hospital.save();
 
+    await logAdminAction({
+      adminId: req.user._id,
+      action: "HOSPITAL_REJECTED",
+      targetType: "Hospital",
+      targetId: hospital._id,
+      description: `Rejected hospital: ${hospital.hospitalName}`,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Hospital registration rejected.",
@@ -222,22 +239,22 @@ export const rejectHospital = async (req, res) => {
 export const getPendingHospitals = async (req, res) => {
   try {
     const hospitals = await Hospital.find({
-      verificationStatus: 'pending',
+      verificationStatus: "pending",
     })
-      .populate('user', 'name email phone')
-      .sort({ createdAt: -1 })
+      .populate("user", "name email phone")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
       count: hospitals.length,
       hospitals,
-    })
+    });
   } catch (error) {
-    console.error('Pending hospitals error:', error)
+    console.error("Pending hospitals error:", error);
 
     return res.status(500).json({
       success: false,
-      message: 'Unable to retrieve pending hospitals.',
-    })
+      message: "Unable to retrieve pending hospitals.",
+    });
   }
-}
+};
