@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Loader2,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
 function DonorAvailability() {
@@ -14,6 +10,7 @@ function DonorAvailability() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
   const [reasons, setReasons] = useState([]);
+  const [eligibleAgainDate, setEligibleAgainDate] = useState(null);
 
   // Load donor profile
   const loadDonor = useCallback(async () => {
@@ -36,7 +33,7 @@ function DonorAvailability() {
         setMessage("Donor profile not found. Please save your profile first.");
       } else {
         setMessage(
-          error.response?.data?.message || "Unable to load donor profile."
+          error.response?.data?.message || "Unable to load donor profile.",
         );
       }
     } finally {
@@ -55,10 +52,7 @@ function DonorAvailability() {
     window.addEventListener("donor-profile-updated", handleProfileUpdate);
 
     return () => {
-      window.removeEventListener(
-        "donor-profile-updated",
-        handleProfileUpdate
-      );
+      window.removeEventListener("donor-profile-updated", handleProfileUpdate);
     };
   }, [loadDonor]);
 
@@ -70,6 +64,7 @@ function DonorAvailability() {
       setUpdating(true);
       setMessage("");
       setReasons([]);
+      setEligibleAgainDate(null);
 
       const response = await request({
         method: "PATCH",
@@ -89,10 +84,12 @@ function DonorAvailability() {
       console.error("Update availability error:", error);
 
       setMessage(
-        error.response?.data?.message || "Unable to update availability."
+        error.response?.data?.message || "Unable to update availability.",
       );
 
       setReasons(error.response?.data?.reasons || []);
+
+      setEligibleAgainDate(error.response?.data?.eligibleAgainDate || null);
     } finally {
       setUpdating(false);
     }
@@ -140,9 +137,7 @@ function DonorAvailability() {
         }`}
       >
         <div>
-          <p className="font-semibold text-[#29232A]">
-            Availability Status
-          </p>
+          <p className="font-semibold text-[#29232A]">Availability Status</p>
 
           <p
             className={`mt-1 flex items-center gap-2 text-sm font-medium ${
@@ -194,10 +189,7 @@ function DonorAvailability() {
               }`}
             >
               {updating && (
-                <Loader2
-                  size={15}
-                  className="animate-spin text-[#BE4565]"
-                />
+                <Loader2 size={15} className="animate-spin text-[#BE4565]" />
               )}
             </span>
           </button>
@@ -225,6 +217,22 @@ function DonorAvailability() {
               <li key={index}>{reason}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {eligibleAgainDate && (
+        <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+          <p className="text-sm font-medium text-orange-800">
+            You can try donating again on:
+          </p>
+
+          <p className="mt-1 text-sm font-semibold text-orange-900">
+            {new Date(eligibleAgainDate).toLocaleDateString("en-PK", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
         </div>
       )}
     </div>
