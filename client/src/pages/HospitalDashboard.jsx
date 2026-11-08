@@ -71,14 +71,6 @@ function HospitalDashboard() {
   const [notRegistered, setNotRegistered] = useState(false);
   const [filter, setFilter] = useState("all");
 
-  const [registrationData, setRegistrationData] = useState({
-    hospitalName: "",
-    licenseNumber: "",
-    contactPerson: "",
-    address: "",
-    city: "",
-  });
-
   const [matchingRequestId, setMatchingRequestId] = useState(null);
   const [matchingResults, setMatchingResults] = useState({});
   const [matchingLoading, setMatchingLoading] = useState({});
@@ -143,36 +135,6 @@ function HospitalDashboard() {
 
     fetchHospital();
   }, [request, fetchRequests]);
-
-  const handleRegistrationChange = (e) => {
-    setRegistrationData({
-      ...registrationData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleRegistration = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const response = await request({
-        method: "POST",
-        url: "/api/hospitals/register",
-        data: registrationData,
-      });
-
-      setHospital(response.data.hospital || response.data);
-      setNotRegistered(false);
-      setSuccess("Hospital registration submitted successfully.");
-    } catch (err) {
-      setError(err.response?.data?.message || "Hospital registration failed.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleRequestChange = (e) => {
     setFormData({
@@ -469,6 +431,13 @@ function HospitalDashboard() {
       state: isVerified ? "done" : isRejected ? "rejected" : "upcoming",
     },
   ];
+
+  const getLocalDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+
+    return now.toISOString().slice(0, 16);
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF8FA]">
@@ -911,7 +880,7 @@ function HospitalDashboard() {
                             name="requiredBy"
                             value={formData.requiredBy}
                             onChange={handleRequestChange}
-                            min={new Date().toISOString().slice(0, 16)}
+                            min={getLocalDateTime()}
                             className={`${inputClass} h-12`}
                             required
                           />

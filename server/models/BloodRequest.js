@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const bloodRequestSchema = new mongoose.Schema(
@@ -17,6 +18,21 @@ const bloodRequestSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+
+    // Units currently reserved by accepted donors
+    unitsReserved: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Units successfully donated and verified
+    unitsFulfilled: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     urgency: {
       type: String,
       enum: ["normal", "urgent", "critical"],

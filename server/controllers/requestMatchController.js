@@ -3,10 +3,11 @@ import User from "../models/User.js";
 import Donor from "../models/Donor.js";
 import RequestMatch from "../models/RequestMatch.js";
 import BloodRequest from "../models/BloodRequest.js";
+import BloodInventory from "../models/BloodInventory.js";
+import Donation from "../models/Donation.js";
 import mongoose from "mongoose";
 
 // Get requests matched with the logged-in donor
-
 export const getMyMatches = async (req, res) => {
   try {
     const { userId } = getAuth(req);
@@ -48,7 +49,9 @@ export const getMyMatches = async (req, res) => {
         return (
           match.status === "pending" &&
           bloodRequest &&
-          (bloodRequest.status !== "open" || bloodRequest.expiresAt <= now)
+          (bloodRequest.status !== "open" ||
+            bloodRequest.expiresAt <= now ||
+            bloodRequest.requiredBy <= now)
         );
       })
       .map((match) => match._id);
@@ -91,8 +94,10 @@ export const getMyMatches = async (req, res) => {
   }
 };
 
-// Accept or decline a matched request
+// Accept or decline a matched request safely
 export const respondToMatch = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { userId } = getAuth(req);
     const { status } = req.body;
@@ -122,47 +127,123 @@ export const respondToMatch = async (req, res) => {
       });
     }
 
-    const match = await RequestMatch.findOne({
-      _id: req.params.matchId,
-      donor: donor._id,
-      status: "pending",
-    }).populate("bloodRequest");
+    let updatedMatch;
 
-    if (!match) {
-      return res.status(404).json({
-        success: false,
-        message: "Pending matched request not found.",
-      });
-    }
+    await session.withTransaction(async () => {
+      const match = await RequestMatch.findOne({
+        _id: req.params.matchId,
+        donor: donor._id,
+        status: "pending",
+      }).session(session);
 
-    if (
-      !match.bloodRequest ||
-      match.bloodRequest.status !== "open" ||
-      match.bloodRequest.expiresAt <= new Date()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "This blood request is no longer active.",
-      });
-    }
+      if (!match) {
+        const error = new Error("Pending matched request not found.");
+        error.statusCode = 404;
+        throw error;
+      }
 
-    match.status = status;
-    match.respondedAt = new Date();
+      const now = new Date();
 
-    await match.save();
+      if (status === "declined") {
+        updatedMatch = await RequestMatch.findOneAndUpdate(
+          {
+            _id: match._id,
+            status: "pending",
+          },
+          {
+            $set: {
+              status: "declined",
+              respondedAt: now,
+            },
+          },
+          {
+            new: true,
+            session,
+          },
+        );
+
+        if (!updatedMatch) {
+          throw new Error("Unable to submit your response.");
+        }
+
+        return;
+      }
+
+      // Reserve one unit only if the request still has capacity.
+      const updatedRequest = await BloodRequest.findOneAndUpdate(
+        {
+          _id: match.bloodRequest,
+          status: "open",
+          expiresAt: { $gt: now },
+          requiredBy: { $gt: now },
+          $expr: {
+            $lt: [
+              {
+                $add: [
+                  { $ifNull: ["$unitsReserved", 0] },
+                  { $ifNull: ["$unitsFulfilled", 0] },
+                ],
+              },
+              "$unitsRequired",
+            ],
+          },
+        },
+        {
+          $inc: { unitsReserved: 1 },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
+
+      if (!updatedRequest) {
+        const error = new Error(
+          "This request is no longer active or all required units have already been reserved.",
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      updatedMatch = await RequestMatch.findOneAndUpdate(
+        {
+          _id: match._id,
+          status: "pending",
+        },
+        {
+          $set: {
+            status: "accepted",
+            respondedAt: now,
+          },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
+
+      if (!updatedMatch) {
+        // Throwing rolls back the unit reservation too.
+        throw new Error("Unable to accept this request.");
+      }
+    });
 
     return res.status(200).json({
       success: true,
       message: `Request ${status} successfully.`,
-      match,
+      match: updatedMatch,
     });
   } catch (error) {
     console.error("Donor response error:", error);
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      message: "Unable to submit your response.",
+      message: error.statusCode
+        ? error.message
+        : "Unable to submit your response.",
     });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -220,20 +301,20 @@ export const getHospitalMatchResponses = async (req, res) => {
   }
 };
 
+//updates the donor, request counters and hospital inventory
 export const confirmDonation = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
     let completedMatch;
     let updatedDonor;
+    let updatedRequest;
 
     await session.withTransaction(async () => {
       const match = await RequestMatch.findOne({
         _id: req.params.matchId,
         status: "accepted",
-      })
-        .populate("bloodRequest")
-        .session(session);
+      }).session(session);
 
       if (!match) {
         const error = new Error("Accepted donor match not found.");
@@ -241,16 +322,22 @@ export const confirmDonation = async (req, res) => {
         throw error;
       }
 
+      const bloodRequest = await BloodRequest.findById(
+        match.bloodRequest,
+      ).session(session);
+
       if (
-        !match.bloodRequest ||
-        match.bloodRequest.hospital.toString() !== req.hospital._id.toString()
+        !bloodRequest ||
+        bloodRequest.hospital.toString() !== req.hospital._id.toString()
       ) {
-        const error = new Error("You are not authorized to confirm this donation.");
+        const error = new Error(
+          "You are not authorized to confirm this donation.",
+        );
         error.statusCode = 403;
         throw error;
       }
 
-      if (["cancelled", "expired"].includes(match.bloodRequest.status)) {
+      if (bloodRequest.status !== "open") {
         const error = new Error("This blood request is no longer active.");
         error.statusCode = 400;
         throw error;
@@ -258,6 +345,30 @@ export const confirmDonation = async (req, res) => {
 
       const donationDate = new Date();
 
+      // Move one unit from reserved to fulfilled.
+      updatedRequest = await BloodRequest.findOneAndUpdate(
+        {
+          _id: bloodRequest._id,
+          status: "open",
+          unitsReserved: { $gte: 1 },
+        },
+        {
+          $inc: {
+            unitsReserved: -1,
+            unitsFulfilled: 1,
+          },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
+
+      if (!updatedRequest) {
+        throw new Error("No reserved unit was found for this donation.");
+      }
+
+      // Update donor donation history counters.
       const eligibleAgainDate = new Date(donationDate);
       eligibleAgainDate.setDate(eligibleAgainDate.getDate() + 90);
 
@@ -282,13 +393,34 @@ export const confirmDonation = async (req, res) => {
         throw new Error("Donor profile not found.");
       }
 
+      // Add the donated unit to this hospital's inventory.
+      await BloodInventory.findOneAndUpdate(
+        {
+          hospital: bloodRequest.hospital,
+          bloodGroup: bloodRequest.bloodGroup,
+        },
+        {
+          $inc: { unitsAvailable: 1 },
+          $set: { lastUpdated: donationDate },
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+          session,
+        },
+      );
+
+      // Complete the accepted donor match.
       completedMatch = await RequestMatch.findOneAndUpdate(
         {
           _id: match._id,
           status: "accepted",
         },
         {
-          $set: { status: "completed" },
+          $set: {
+            status: "completed",
+          },
         },
         {
           new: true,
@@ -299,12 +431,46 @@ export const confirmDonation = async (req, res) => {
       if (!completedMatch) {
         throw new Error("Unable to complete this donation.");
       }
+
+      // Save the individual donation record.
+      const [donation] = await Donation.create(
+        [
+          {
+            match: completedMatch._id,
+            bloodRequest: bloodRequest._id,
+            donor: match.donor,
+            hospital: bloodRequest.hospital,
+            bloodGroup: bloodRequest.bloodGroup,
+            units: 1,
+            donatedOn: donationDate,
+            verifiedBy: req.user?._id || req.hospital.user,
+          },
+        ],
+        { session },
+      );
+
+      // Close the request only when every required unit is fulfilled
+      // and no accepted donor reservations remain.
+      if (
+        updatedRequest.unitsFulfilled >= updatedRequest.unitsRequired &&
+        updatedRequest.unitsReserved === 0
+      ) {
+        updatedRequest.status = "fulfilled";
+        await updatedRequest.save({ session });
+      }
     });
 
     return res.status(200).json({
       success: true,
-      message: "Donation confirmed successfully.",
+      message:
+        "Donation confirmed and hospital inventory updated successfully.",
       match: completedMatch,
+      request: {
+        unitsRequired: updatedRequest.unitsRequired,
+        unitsReserved: updatedRequest.unitsReserved,
+        unitsFulfilled: updatedRequest.unitsFulfilled,
+        status: updatedRequest.status,
+      },
       donor: {
         totalDonations: updatedDonor.totalDonations,
         lastDonationDate: updatedDonor.lastDonationDate,
@@ -317,9 +483,7 @@ export const confirmDonation = async (req, res) => {
 
     return res.status(error.statusCode || 500).json({
       success: false,
-      message: error.statusCode
-        ? error.message
-        : "Unable to confirm donation.",
+      message: error.statusCode ? error.message : "Unable to confirm donation.",
     });
   } finally {
     await session.endSession();

@@ -75,12 +75,16 @@ export default function DonorMatchedRequests() {
     switch (status) {
       case "accepted":
         return "bg-[#FCE7ED] text-[#96334F] ring-rose-200";
+      case "completed":
+        return "bg-rose-100 text-rose-800 ring-rose-200";
       case "declined":
         return "bg-gray-100 text-gray-600 ring-gray-200";
+      case "expired":
+        return "bg-orange-50 text-orange-700 ring-orange-200";
       case "pending":
         return "bg-amber-50 text-amber-700 ring-amber-200";
       default:
-        return "bg-[#FCE7ED] text-[#96334F] ring-rose-200";
+        return "bg-gray-100 text-gray-600 ring-gray-200";
     }
   };
 
@@ -127,9 +131,14 @@ export default function DonorMatchedRequests() {
   };
 
   const statusIcon = (status) => {
-    if (status === "accepted") return <CheckCircle2 size={13} />;
+    if (status === "accepted" || status === "completed") {
+      return <CheckCircle2 size={13} />;
+    }
+
     if (status === "declined") return <XCircle size={13} />;
     if (status === "pending") return <Clock size={13} />;
+    if (status === "expired") return <AlertCircle size={13} />;
+
     return null;
   };
 
@@ -324,6 +333,14 @@ export default function DonorMatchedRequests() {
                       <XCircle size={16} />
                       Decline
                     </button>
+                  </div>
+                )}
+
+                {match.status === "completed" && (
+                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-[#FFF8FA] px-4 py-3 text-sm font-medium text-[#96334F]">
+                    <HeartHandshake size={18} />
+                    Donation completed successfully. Thank you for helping save
+                    a life!
                   </div>
                 )}
               </div>

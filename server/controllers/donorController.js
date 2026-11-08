@@ -1,6 +1,7 @@
 import { getAuth } from "@clerk/express";
 import User from "../models/User.js";
 import Donor from "../models/Donor.js";
+import Donation from "../models/Donation.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 
 export const createDonorProfile = async (req, res) => {
@@ -197,6 +198,50 @@ export const updateDonorAvailability = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to update availability.",
+    });
+  }
+};
+
+// Get donation history of the logged-in donor
+export const getDonorDonationHistory = async (req, res) => {
+  try {
+    const { userId } = getAuth(req);
+
+    const user = await User.findOne({ clerkUserId: userId });
+
+    if (!user || user.role !== "donor" || !user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Donor account not found or inactive.",
+      });
+    }
+
+    const donor = await Donor.findOne({ user: user._id });
+
+    if (!donor) {
+      return res.status(404).json({
+        success: false,
+        message: "Donor profile not found.",
+      });
+    }
+
+    const donations = await Donation.find({
+      donor: donor._id,
+    })
+      .populate("hospital", "hospitalName city")
+      .sort({ donatedOn: -1 });
+
+    return res.status(200).json({
+      success: true,
+      totalDonations: donations.length,
+      donations,
+    });
+  } catch (error) {
+    console.error("Donor donation history error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch donation history.",
     });
   }
 };
