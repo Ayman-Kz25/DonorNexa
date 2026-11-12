@@ -1,11 +1,10 @@
-
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
 
 const hospitalSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       unique: true,
     },
@@ -19,6 +18,28 @@ const hospitalSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+    },
+    licenseDocument: {
+      fileUrl: {
+        type: String,
+        default: "",
+      },
+      fileName: {
+        type: String,
+        default: "",
+      },
+      mimeType: {
+        type: String,
+        default: "",
+      },
+      uploadedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+    licenseExpiryDate: {
+      type: Date,
+      default: null,
     },
     contactPerson: {
       type: String,
@@ -37,21 +58,40 @@ const hospitalSchema = new mongoose.Schema(
     },
     verificationStatus: {
       type: String,
-      enum: ['pending', 'verified', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "verified", "rejected"],
+      default: "pending",
     },
-    rejectionReason: {
-      type: String,
-      default: '',
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
     verifiedAt: {
       type: Date,
       default: null,
     },
+    rejectionReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    deactivatedAt: {
+      type: Date,
+      default: null,
+    },
+    deactivationReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
-  { timestamps: true }
-)
+  { timestamps: true },
+);
 
-const Hospital = mongoose.model('Hospital', hospitalSchema)
+const Hospital = mongoose.model("Hospital", hospitalSchema);
 
-export default Hospital
+export default Hospital;

@@ -29,12 +29,13 @@ const requireVerifiedHospital = async (req, res, next) => {
     const hospital = await Hospital.findOne({
       user: user._id,
       verificationStatus: "verified",
+      isActive: { $ne: false },
     });
 
     if (!hospital) {
       return res.status(403).json({
         success: false,
-        message: "Your hospital registration is not verified yet.",
+        message: "Your hospital is not verified or has been deactivated.",
       });
     }
 

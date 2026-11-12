@@ -12,14 +12,15 @@ import {
   AlertCircle,
   ArrowRight,
   Loader2,
+  Upload,
+  CalendarDays,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
-// Form fields grouped into two friendly sections
 const sections = [
   {
-    title: "About the hospital",
-    description: "Who you are and how you're licensed.",
+    title: "Hospital information",
+    description: "Tell us about your registered hospital.",
     fields: [
       {
         name: "hospitalName",
@@ -33,11 +34,17 @@ const sections = [
         icon: FileText,
         placeholder: "Enter hospital license number",
       },
+      {
+        name: "licenseExpiryDate",
+        label: "License Expiry Date",
+        icon: CalendarDays,
+        type: "date",
+      },
     ],
   },
   {
-    title: "Contact & location",
-    description: "So donors and administrators can reach the right place.",
+    title: "Contact and location",
+    description: "Provide details for communication and verification.",
     fields: [
       {
         name: "contactPerson",
@@ -63,22 +70,34 @@ const sections = [
 ];
 
 const journey = [
-  { icon: FileText, label: "Submit your details", state: "current" },
-  { icon: ShieldCheck, label: "Administrator review", state: "upcoming" },
-  { icon: Droplet, label: "Start requesting blood", state: "upcoming" },
+  { icon: FileText, label: "Submit hospital details" },
+  { icon: ShieldCheck, label: "Administrator verification" },
+  { icon: Droplet, label: "Access blood requests" },
 ];
+
+const initialFormData = {
+  hospitalName: "",
+  licenseNumber: "",
+  licenseExpiryDate: "",
+  contactPerson: "",
+  address: "",
+  city: "",
+};
+
+const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
 
 function HospitalRegistrationForm({ onRegistered }) {
   const { request } = useApi();
 
-  const [formData, setFormData] = useState({
-    hospitalName: "",
-    licenseNumber: "",
-    contactPerson: "",
-    address: "",
-    city: "",
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
+  const [licenseFile, setLicenseFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -92,24 +111,63 @@ function HospitalRegistrationForm({ onRegistered }) {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+
+    setError("");
+    setLicenseFile(null);
+
+    if (!file) return;
+
+    if (
+      file.type !== "application/pdf" ||
+      !file.name.toLowerCase().endsWith(".pdf")
+    ) {
+      setError("Please upload a PDF license document.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("License document must not exceed 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setLicenseFile(file);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!licenseFile) {
+      setError("Please upload your hospital license document.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
+      const submissionData = new FormData();
+
+      Object.entries(formData).forEach(([key, value]) => {
+        submissionData.append(key, value);
+      });
+
+      submissionData.append("licenseDocument", licenseFile);
+
       const response = await request({
         method: "POST",
         url: "/api/hospitals/register",
-        data: formData,
+        data: submissionData,
       });
 
       const registeredHospital = response.data.hospital || response.data;
 
       setSuccess("Hospital registration submitted successfully.");
-
-      onRegistered(registeredHospital);
+      onRegistered?.(registeredHospital);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -120,129 +178,156 @@ function HospitalRegistrationForm({ onRegistered }) {
     }
   };
 
-  // Display-only: how many fields are filled in
   const fieldNames = Object.keys(formData);
-  const filledCount = fieldNames.filter(
-    (name) => formData[name].trim() !== "",
-  ).length;
-  const progress = Math.round((filledCount / fieldNames.length) * 100);
+  const totalFields = fieldNames.length + 1;
+
+  const filledCount =
+    fieldNames.filter((name) => formData[name].trim() !== "").length +
+    (licenseFile ? 1 : 0);
+
+  const progress = Math.round((filledCount / totalFields) * 100);
 
   const inputClass =
-    "peer w-full rounded-2xl border border-rose-100 bg-[#FFF8FA] py-3.5 pl-12 pr-11 text-sm text-[#29232A] outline-none transition duration-200 placeholder:text-gray-400 hover:border-rose-200 focus:border-[#BE4565] focus:bg-white focus:shadow-lg focus:shadow-rose-100/70 focus:ring-4 focus:ring-rose-100";
+    "w-full rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] py-3 pl-12 pr-4 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] hover:border-[#CDA5A5] focus:border-[#963D54] focus:bg-[#FFFDF9] focus:ring-4 focus:ring-[#F2E2DC]";
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-2xl shadow-rose-200/50 ring-1 ring-rose-200/40 lg:grid-cols-5">
-      {/* Left: purpose and progress */}
-      <aside className="relative overflow-hidden bg-gradient-to-br from-[#96334F] to-[#7A2840] p-8 text-white sm:p-10 lg:col-span-2">
-        <div className="pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-rose-300/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#BE4565]/40 blur-3xl" />
+    <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-[#E8DDD4] bg-[#FFFDF9] shadow-sm lg:grid-cols-5">
+      {/* Registration overview */}
+      <aside className="relative overflow-hidden bg-[#782B40] p-7 text-white sm:p-9 lg:col-span-2">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#963D54] opacity-30 blur-3xl" />
 
         <div className="relative flex h-full flex-col">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md">
-            <HeartHandshake size={30} />
-          </span>
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
+            <HeartHandshake size={27} />
+          </div>
 
-          <h2 className="mt-6 text-2xl font-bold sm:text-3xl">
+          <p className="mt-7 text-xs font-semibold uppercase tracking-[0.18em] text-[#E8C7CE]">
+            DonorNexa
+          </p>
+
+          <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight">
             Hospital Registration
           </h2>
 
-          <p className="mt-3 text-sm leading-7 text-rose-100">
-            Register your hospital with DonorNexa. Your information will be
-            reviewed by the administrator.
+          <p className="mt-4 text-sm leading-7 text-[#F1DDE1]">
+            Register your hospital to connect with eligible blood donors and
+            manage blood requests through DonorNexa.
           </p>
 
-          {/* Journey */}
-          <ol className="mt-8 space-y-5">
-            {journey.map((step, index) => {
-              const Icon = step.icon;
-              const current = step.state === "current";
+          <div className="mt-10">
+            <p className="mb-6 text-xs font-semibold uppercase tracking-wider text-[#E8C7CE]">
+              Registration process
+            </p>
 
-              return (
-                <li key={step.label} className="relative flex items-center gap-4">
-                  {index < journey.length - 1 && (
-                    <span className="absolute left-5 top-11 h-5 w-px bg-white/25" />
-                  )}
+            <ol className="space-y-6">
+              {journey.map((step, index) => {
+                const Icon = step.icon;
 
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
-                      current
-                        ? "bg-white text-[#96334F] shadow-lg shadow-black/20"
-                        : "border border-white/25 bg-white/10 text-rose-100"
-                    }`}
+                return (
+                  <li
+                    key={step.label}
+                    className="relative flex items-center gap-4"
                   >
-                    <Icon size={18} />
-                  </span>
+                    {index !== journey.length - 1 && (
+                      <span className="absolute left-5 top-11 h-7 w-px bg-white/20" />
+                    )}
 
-                  <span
-                    className={`text-sm font-semibold ${
-                      current ? "text-white" : "text-rose-200"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+                    <span
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                        index === 0
+                          ? "bg-[#FFFDF9] text-[#782B40]"
+                          : "border border-white/20 bg-white/10 text-[#E8C7CE]"
+                      }`}
+                    >
+                      <Icon size={18} />
+                    </span>
 
-          {/* Live completion */}
-          <div className="mt-auto pt-10">
-            <div className="flex items-end justify-between text-sm">
-              <span className="font-semibold">Form completion</span>
-              <span className="text-rose-100">
-                {filledCount} of {fieldNames.length} fields
+                    <span
+                      className={`text-sm font-medium ${
+                        index === 0 ? "text-white" : "text-[#E8C7CE]"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+
+          <div className="mt-auto pt-12">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-white">Form completion</span>
+              <span className="text-[#E8C7CE]">
+                {filledCount}/{totalFields} fields
               </span>
             </div>
 
-            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/15">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-rose-200 to-white transition-all duration-500 ease-out"
+                className="h-full rounded-full bg-[#F2D7D9] transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
 
-            <p className="mt-4 flex items-center gap-2 text-xs text-rose-100">
-              <ShieldCheck size={14} className="shrink-0" />
+            <p className="mt-6 flex items-start gap-2 text-xs leading-5 text-[#E8C7CE]">
+              <ShieldCheck size={15} className="mt-0.5 shrink-0" />
               Only verified hospitals can create blood requests.
             </p>
           </div>
         </div>
       </aside>
 
-      {/* Right: the form */}
-      <div className="p-6 sm:p-10 lg:col-span-3">
+      {/* Registration form */}
+      <div className="p-6 sm:p-9 lg:col-span-3">
+        <div className="mb-8">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#963D54]">
+            Get started
+          </span>
+
+          <h3 className="mt-2 font-serif text-2xl font-semibold text-[#302923]">
+            Hospital details
+          </h3>
+
+          <p className="mt-2 text-sm leading-6 text-[#81756A]">
+            Complete the information below to submit your registration for
+            administrator review.
+          </p>
+        </div>
+
         {error && (
           <div
             role="alert"
-            className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] px-4 py-3 text-sm text-[#A33E4E]"
           >
-            <AlertCircle size={20} className="mt-0.5 shrink-0" />
-            {error}
+            <AlertCircle size={19} className="mt-0.5 shrink-0" />
+            <p>{error}</p>
           </div>
         )}
 
         {success && (
           <div
             role="status"
-            className="mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-[#FCE7ED] px-4 py-3 text-sm font-medium text-[#96334F]"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-[#E5C8C0] bg-[#F2E2DC] px-4 py-3 text-sm text-[#782B40]"
           >
-            <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[#BE4565]" />
-            {success}
+            <CheckCircle2 size={19} className="mt-0.5 shrink-0" />
+            <p>{success}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-9">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {sections.map((section, sectionIndex) => (
             <fieldset key={section.title} className="space-y-5">
-              <legend className="mb-1 flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FCE7ED] text-sm font-bold text-[#96334F]">
+              <legend className="mb-4 flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2E2DC] text-sm font-semibold text-[#782B40]">
                   {sectionIndex + 1}
                 </span>
+
                 <span>
-                  <span className="block text-lg font-bold text-[#29232A]">
+                  <span className="block text-base font-semibold text-[#302923]">
                     {section.title}
                   </span>
-                  <span className="block text-xs font-normal text-gray-500">
+                  <span className="mt-0.5 block text-xs text-[#81756A]">
                     {section.description}
                   </span>
                 </span>
@@ -250,13 +335,12 @@ function HospitalRegistrationForm({ onRegistered }) {
 
               {section.fields.map((field) => {
                 const Icon = field.icon;
-                const filled = formData[field.name].trim() !== "";
 
                 return (
                   <div key={field.name}>
                     <label
                       htmlFor={`hospital-${field.name}`}
-                      className="mb-2 block text-sm font-semibold text-[#29232A]"
+                      className="mb-2 block text-sm font-semibold text-[#55483F]"
                     >
                       {field.label}
                     </label>
@@ -264,40 +348,19 @@ function HospitalRegistrationForm({ onRegistered }) {
                     <div className="relative">
                       <Icon
                         size={18}
-                        className={`pointer-events-none absolute left-4 transition-colors duration-200 peer-focus:text-[#BE4565] ${
-                          field.multiline ? "top-4" : "top-1/2 -translate-y-1/2"
-                        } ${filled ? "text-[#BE4565]" : "text-rose-300"}`}
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
                       />
 
-                      {field.multiline ? (
-                        <textarea
-                          id={`hospital-${field.name}`}
-                          name={field.name}
-                          value={formData[field.name]}
-                          onChange={handleChange}
-                          placeholder={field.placeholder}
-                          rows={3}
-                          className={`${inputClass} resize-none`}
-                          required
-                        />
-                      ) : (
-                        <input
-                          id={`hospital-${field.name}`}
-                          type="text"
-                          name={field.name}
-                          value={formData[field.name]}
-                          onChange={handleChange}
-                          placeholder={field.placeholder}
-                          className={inputClass}
-                          required
-                        />
-                      )}
-
-                      <CheckCircle2
-                        size={18}
-                        className={`pointer-events-none absolute right-4 text-[#BE4565] transition-all duration-300 ${
-                          field.multiline ? "top-4" : "top-1/2 -translate-y-1/2"
-                        } ${filled ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}
+                      <input
+                        id={`hospital-${field.name}`}
+                        type={field.type || "text"}
+                        name={field.name}
+                        value={formData[field.name]}
+                        onChange={handleChange}
+                        placeholder={field.placeholder}
+                        min={field.type === "date" ? getTodayDate() : undefined}
+                        className={inputClass}
+                        required
                       />
                     </div>
                   </div>
@@ -306,11 +369,55 @@ function HospitalRegistrationForm({ onRegistered }) {
             </fieldset>
           ))}
 
-          <div>
+          {/* License document upload */}
+          <fieldset className="space-y-3">
+            <legend className="mb-3 flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2E2DC] text-sm font-semibold text-[#782B40]">
+                3
+              </span>
+
+              <span>
+                <span className="block text-base font-semibold text-[#302923]">
+                  License document
+                </span>
+                <span className="mt-0.5 block text-xs text-[#81756A]">
+                  Upload your valid hospital license.
+                </span>
+              </span>
+            </legend>
+
+            <label
+              htmlFor="hospital-licenseDocument"
+              className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#DCC7C4] bg-[#F8F5EF] px-5 py-7 text-center transition hover:border-[#963D54] hover:bg-[#F2E2DC]/50"
+            >
+              <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F2E2DC] text-[#782B40]">
+                <Upload size={21} />
+              </span>
+
+              <span className="text-sm font-semibold text-[#55483F]">
+                {licenseFile ? licenseFile.name : "Choose license PDF"}
+              </span>
+
+              <span className="mt-1 text-xs text-[#81756A]">
+                PDF format only · Maximum size 5 MB
+              </span>
+
+              <input
+                id="hospital-licenseDocument"
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={handleFileChange}
+                className="sr-only"
+                required={!licenseFile}
+              />
+            </label>
+          </fieldset>
+
+          <div className="border-t border-[#E8DDD4] pt-6">
             <button
               type="submit"
-              disabled={loading}
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-6 py-4 font-semibold text-white shadow-lg shadow-rose-400/30 ring-1 ring-white/30 transition duration-200 hover:-translate-y-0.5 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              disabled={loading || filledCount !== totalFields}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#782B40] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -320,17 +427,12 @@ function HospitalRegistrationForm({ onRegistered }) {
 
               {loading ? "Submitting..." : "Submit Registration"}
 
-              {!loading && (
-                <ArrowRight
-                  size={18}
-                  className="transition-transform duration-200 group-hover:translate-x-1"
-                />
-              )}
+              {!loading && <ArrowRight size={17} />}
             </button>
 
-            <p className="mt-4 text-center text-xs text-gray-500">
-              You'll be able to create blood requests once an administrator
-              verifies your hospital.
+            <p className="mt-4 text-center text-xs leading-5 text-[#81756A]">
+              Your hospital profile will remain pending until an administrator
+              completes verification.
             </p>
           </div>
         </form>

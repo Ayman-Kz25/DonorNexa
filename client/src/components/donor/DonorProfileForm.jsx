@@ -14,17 +14,9 @@ import {
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
-const TOAST_DURATION = 4000; // ms — toast disappears after 4 seconds
+const TOAST_DURATION = 4000;
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-
-const labelClass = "mb-2 block text-sm font-semibold text-[#29232A]";
-
-const inputClass =
-  "w-full rounded-xl border border-rose-200 bg-[#FFF8FA] py-3 pl-11 pr-4 text-[#29232A] outline-none transition duration-200 placeholder:text-gray-400 hover:border-rose-300 focus:border-[#BE4565] focus:bg-white focus:ring-4 focus:ring-rose-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-500";
-
-const iconClass =
-  "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-rose-300 transition-colors duration-200 group-focus-within:text-[#BE4565]";
 
 const initialFormData = {
   bloodGroup: "",
@@ -34,7 +26,14 @@ const initialFormData = {
   phone: "",
 };
 
-// Normalises form values so we can reliably tell if anything changed
+const labelClass = "mb-2 block text-sm font-semibold text-[#55483F]";
+
+const inputClass =
+  "w-full rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] py-3 pl-11 pr-4 text-[#302923] outline-none transition placeholder:text-[#A99B90] hover:border-[#CDA5A5] focus:border-[#963D54] focus:bg-[#FFFDF9] focus:ring-4 focus:ring-[#F2E2DC] disabled:cursor-not-allowed disabled:bg-[#F1EFEC] disabled:text-[#8F857D]";
+
+const iconClass =
+  "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]";
+
 const toComparable = (data) => ({
   bloodGroup: data.bloodGroup || "",
   dateOfBirth: data.dateOfBirth || "",
@@ -43,7 +42,7 @@ const toComparable = (data) => ({
   phone: (data.phone || "").trim(),
 });
 
-function DonorProfileForm() {
+function DonorProfileForm({ onRegistered }) {
   const { request } = useApi();
 
   const [formData, setFormData] = useState(initialFormData);
@@ -54,22 +53,19 @@ function DonorProfileForm() {
   const [isEditing, setIsEditing] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  // True only when the user has actually changed something
   const isDirty =
     JSON.stringify(toComparable(formData)) !==
     JSON.stringify(toComparable(savedData));
 
-  // Auto-dismiss the toast after a few seconds
   useEffect(() => {
     if (!message) return;
 
     const timer = setTimeout(() => setMessage(""), TOAST_DURATION);
-
     return () => clearTimeout(timer);
   }, [message, messageType]);
 
-  // Load existing donor profile
   const loadProfile = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -118,36 +114,115 @@ function DonorProfileForm() {
     loadProfile();
   }, [loadProfile]);
 
-  // Handle all form fields through one state object
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((previousData) => ({
-      ...previousData,
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
+    }));
+
+    setFieldErrors((previous) => ({
+      ...previous,
+      [name]: "",
     }));
   };
 
-  // Blood group chips update the same state object
   const handleBloodGroupSelect = (group) => {
     if (!isEditing) return;
 
-    setFormData((previousData) => ({
-      ...previousData,
+    setFormData((previous) => ({
+      ...previous,
       bloodGroup: group,
     }));
   };
 
-  // Leave edit mode and discard unsaved changes
   const handleCancelEdit = () => {
     setFormData(savedData);
     setIsEditing(false);
     setMessage("");
+    setFieldErrors({});
   };
 
-  // Save donor profile
+  const calculateAge = (dateOfBirth) => {
+    if (!dateOfBirth) return null;
+
+    const today = new Date();
+    const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    const hasBirthdayPassed =
+      today.getMonth() > birthDate.getMonth() ||
+      (today.getMonth() === birthDate.getMonth() &&
+        today.getDate() >= birthDate.getDate());
+
+    if (!hasBirthdayPassed) age--;
+
+    return age;
+  };
+
+  const validateField = (name, value) => {
+    switch (name) {
+      case "city":
+        if (!value.trim()) return "City is required.";
+
+        if (!/^(?=.*[A-Za-z])[A-Za-z ]{3,20}$/.test(value.trim())) {
+          return "City must contain 3–20 letters only.";
+        }
+        break;
+
+      case "weight":
+        if (value === "" || !Number.isFinite(Number(value))) {
+          return "Please enter a valid weight.";
+        }
+
+        if (Number(value) < 50) {
+          return "Donor weight must be at least 50 kg.";
+        }
+        break;
+
+      case "dateOfBirth": {
+        if (!value) return "Date of birth is required.";
+
+        const age = calculateAge(value);
+
+        if (age < 18 || age > 60) {
+          return "Donor age must be between 18 and 60 years.";
+        }
+        break;
+      }
+
+      case "phone":
+        if (!/^(03[0-9]{9}|\+92[0-9]{10})$/.test(value)) {
+          return "Enter a valid Pakistani number (03XXXXXXXXX or +92XXXXXXXXXX).";
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    return "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errors = {};
+
+    ["city", "weight", "dateOfBirth", "phone"].forEach((field) => {
+      const error = validateField(field, formData[field]);
+      if (error) errors[field] = error;
+    });
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setMessage("Please correct the highlighted fields.");
+      setMessageType("error");
+      return;
+    }
 
     if (!isDirty) return;
 
@@ -186,7 +261,6 @@ function DonorProfileForm() {
       setIsEditing(false);
       setHasProfile(true);
 
-      // Keep the form synchronized with the saved profile
       let synced = formData;
 
       if (response.data.donor) {
@@ -205,37 +279,76 @@ function DonorProfileForm() {
 
       setFormData(synced);
       setSavedData(synced);
+      onRegistered?.(response.data.donor || synced);
     } catch (error) {
-      console.error("Save donor profile error:", error);
+  console.error("Save donor profile error:", error);
 
-      setMessage(
-        error.response?.data?.message || "Unable to save donor profile.",
-      );
-      setMessageType("error");
-    } finally {
-      setIsSaving(false);
-    }
+  const responseErrors = error.response?.data?.errors;
+
+  if (responseErrors) {
+    setFieldErrors(responseErrors);
+
+    setMessage(Object.values(responseErrors).join(" "));
+  } else {
+    setMessage(
+      error.response?.data?.message || "Unable to save donor profile.",
+    );
+  }
+
+  setMessageType("error");
+} finally {
+  setIsSaving(false);
+}
   };
+
+  const getDateLimits = () => {
+    const today = new Date();
+
+    const minDate = new Date(today);
+    minDate.setFullYear(today.getFullYear() - 60);
+
+    const maxDate = new Date(today);
+    maxDate.setFullYear(today.getFullYear() - 18);
+
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+
+    return {
+      min: formatDate(minDate),
+      max: formatDate(maxDate),
+    };
+  };
+
+  const dateLimits = getDateLimits();
 
   if (isLoading) {
     return (
       <div
-        className="flex items-center justify-center gap-3 rounded-2xl border border-rose-100 bg-[#FFF8FA] py-12 text-[#96334F]"
+        className="flex items-center justify-center gap-3 rounded-2xl border border-[#E8DDD4] bg-[#F8F5EF] py-12 text-[#782B40]"
         role="status"
       >
-        <Loader2 size={20} className="animate-spin text-[#BE4565]" />
-        <p className="font-medium">Loading profile...</p>
+        <Loader2 size={20} className="animate-spin" />
+        <p className="text-sm font-medium">Loading profile...</p>
       </div>
     );
   }
 
+  const renderFieldError = (field) =>
+    fieldErrors[field] ? (
+      <p className="mt-1.5 text-xs text-[#A33E4E]">{fieldErrors[field]}</p>
+    ) : null;
+
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      {/* Local keyframes for the toast */}
       <style>{`
         @keyframes donor-toast-in {
-          from { opacity: 0; transform: translateY(-12px) scale(0.96); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         @keyframes donor-toast-bar {
           from { width: 100%; }
@@ -243,35 +356,33 @@ function DonorProfileForm() {
         }
       `}</style>
 
-      {/* Toast notification (auto-dismisses) */}
+      {/* Toast Notification */}
       {message && (
         <div
           role="status"
           style={{ animation: "donor-toast-in 0.3s ease-out" }}
-          className={`fixed right-4 top-24 z-[60] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border bg-white shadow-2xl sm:right-6 ${
-            messageType === "error"
-              ? "border-red-200 shadow-red-200/50"
-              : "border-rose-200 shadow-rose-300/40"
+          className={`fixed right-4 top-24 z-[60] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border bg-[#FFFDF9] shadow-xl sm:right-6 ${
+            messageType === "error" ? "border-[#E8C9C9]" : "border-[#E5C8C0]"
           }`}
         >
           <div className="flex items-start gap-3 p-4">
             <span
-              className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+              className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                 messageType === "error"
-                  ? "bg-red-50 text-red-600"
-                  : "bg-[#FCE7ED] text-[#BE4565]"
+                  ? "bg-[#FBEEEE] text-[#A33E4E]"
+                  : "bg-[#F2E2DC] text-[#782B40]"
               }`}
             >
               {messageType === "error" ? (
-                <AlertCircle size={20} />
+                <AlertCircle size={19} />
               ) : (
-                <CheckCircle2 size={20} />
+                <CheckCircle2 size={19} />
               )}
             </span>
 
             <p
               className={`flex-1 pt-1.5 text-sm font-medium ${
-                messageType === "error" ? "text-red-700" : "text-[#96334F]"
+                messageType === "error" ? "text-[#A33E4E]" : "text-[#782B40]"
               }`}
             >
               {message}
@@ -281,44 +392,49 @@ function DonorProfileForm() {
               type="button"
               onClick={() => setMessage("")}
               aria-label="Dismiss notification"
-              className="rounded-full p-1.5 text-gray-400 transition hover:bg-rose-50 hover:text-[#96334F]"
+              className="rounded-full p-1.5 text-[#9B8D83] transition hover:bg-[#F2E2DC] hover:text-[#782B40]"
             >
               <X size={16} />
             </button>
           </div>
 
-          {/* Countdown bar */}
           <div
             key={message}
             style={{
               animation: `donor-toast-bar ${TOAST_DURATION}ms linear forwards`,
             }}
             className={`h-1 ${
-              messageType === "error"
-                ? "bg-gradient-to-r from-red-400 to-red-500"
-                : "bg-gradient-to-r from-[#BE4565] to-[#96334F]"
+              messageType === "error" ? "bg-[#A33E4E]" : "bg-[#963D54]"
             }`}
           />
         </div>
       )}
 
+      {/* Form Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-bold text-[#96334F]">Donor Profile</h2>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-serif text-xl font-semibold text-[#302923]">
+              Donor Information
+            </h2>
 
-          {isEditing && isDirty && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-              Unsaved changes
-            </span>
-          )}
+            {!isEditing && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#F2E2DC] px-3 py-1 text-xs font-semibold text-[#782B40]">
+                <CheckCircle2 size={13} />
+                Saved
+              </span>
+            )}
 
-          {!isEditing && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FCE7ED] px-3 py-1 text-xs font-semibold text-[#96334F] ring-1 ring-rose-200">
-              <CheckCircle2 size={13} />
-              Saved
-            </span>
-          )}
+            {isEditing && isDirty && (
+              <span className="rounded-xl bg-[#F8F1DF] px-3 py-1 text-xs font-semibold text-[#92702F]">
+                Unsaved changes
+              </span>
+            )}
+          </div>
+
+          <p className="mt-1 text-sm text-[#81756A]">
+            Keep your donor details accurate and up to date.
+          </p>
         </div>
 
         {!isEditing && (
@@ -328,20 +444,17 @@ function DonorProfileForm() {
               setIsEditing(true);
               setMessage("");
             }}
-            className="group inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-[#BE4565] shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#BE4565] hover:bg-[#FCE7ED] hover:text-[#96334F] hover:shadow-md"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#DCCBC3] bg-[#FFFDF9] px-4 py-2 text-sm font-semibold text-[#782B40] transition hover:border-[#A45B6D] hover:bg-[#F2E2DC]"
           >
-            <Pencil
-              size={15}
-              className="transition-transform duration-200 group-hover:-rotate-12"
-            />
+            <Pencil size={15} />
             Edit Profile
           </button>
         )}
       </div>
 
-      {/* Blood Group chips */}
+      {/* Blood Group */}
       <div>
-        <span className={labelClass}>Blood Group</span>
+        <label className={labelClass}>Blood Group</label>
 
         <div
           role="radiogroup"
@@ -359,15 +472,15 @@ function DonorProfileForm() {
                 aria-checked={selected}
                 disabled={!isEditing}
                 onClick={() => handleBloodGroupSelect(group)}
-                className={`flex h-12 items-center justify-center gap-1 rounded-xl border text-sm font-bold transition duration-200 disabled:cursor-not-allowed ${
+                className={`flex h-11 items-center justify-center gap-1 rounded-xl border text-sm font-semibold transition disabled:cursor-not-allowed ${
                   selected
-                    ? "scale-105 border-transparent bg-gradient-to-br from-[#BE4565] to-[#96334F] text-white shadow-lg shadow-rose-300/50"
+                    ? "border-[#782B40] bg-[#782B40] text-white shadow-sm"
                     : isEditing
-                      ? "border-rose-200 bg-[#FFF8FA] text-[#96334F] hover:-translate-y-0.5 hover:border-[#BE4565] hover:bg-[#FCE7ED] hover:shadow-md"
-                      : "border-gray-200 bg-gray-100 text-gray-400"
+                      ? "border-[#E5D8CE] bg-[#F8F5EF] text-[#55483F] hover:border-[#A45B6D] hover:bg-[#F2E2DC]"
+                      : "border-[#E8DDD4] bg-[#F1EFEC] text-[#9B9189]"
                 }`}
               >
-                {selected && <Droplet size={13} className="fill-white" />}
+                {selected && <Droplet size={13} />}
                 {group}
               </button>
             );
@@ -375,14 +488,14 @@ function DonorProfileForm() {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-5 sm:grid-cols-2">
-        {/* City */}
+      {/* Profile Fields */}
+      <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="city" className={labelClass}>
             City
           </label>
 
-          <div className="group relative">
+          <div className="relative">
             <MapPin size={18} className={iconClass} />
             <input
               id="city"
@@ -393,18 +506,22 @@ function DonorProfileForm() {
               placeholder="Enter your city"
               disabled={!isEditing}
               className={inputClass}
+              minLength={3}
+              maxLength={20}
+              pattern="(?=.*[A-Za-z])[A-Za-z ]{3,20}"
+              title="City must contain 3–20 letters."
               required
             />
           </div>
+          {renderFieldError("city")}
         </div>
 
-        {/* Weight */}
         <div>
           <label htmlFor="weight" className={labelClass}>
             Weight (kg)
           </label>
 
-          <div className="group relative">
+          <div className="relative">
             <Scale size={18} className={iconClass} />
             <input
               id="weight"
@@ -414,21 +531,21 @@ function DonorProfileForm() {
               onChange={handleChange}
               placeholder="e.g. 65"
               disabled={!isEditing}
-              min="1"
+              min="50"
               step="0.1"
               required
               className={inputClass}
             />
           </div>
+          {renderFieldError("weight")}
         </div>
 
-        {/* Date of Birth */}
         <div>
           <label htmlFor="dateOfBirth" className={labelClass}>
             Date of Birth
           </label>
 
-          <div className="group relative">
+          <div className="relative">
             <CalendarDays size={18} className={iconClass} />
             <input
               id="dateOfBirth"
@@ -438,45 +555,45 @@ function DonorProfileForm() {
               onChange={handleChange}
               disabled={!isEditing}
               required
-              max={new Date().toISOString().split("T")[0]}
+              min={dateLimits.min}
+              max={dateLimits.max}
               className={inputClass}
             />
           </div>
+          {renderFieldError("dateOfBirth")}
         </div>
 
-        {/* Phone Number */}
-        <div >
+        <div>
           <label htmlFor="phone" className={labelClass}>
             Phone Number
           </label>
 
-          <div className="group relative">
-            <input
-              id="phone"
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="e.g. 03XXXXXXXXX"
-              disabled={!isEditing}
-              required
-              maxLength={20}
-              className={inputClass}
-            />
-          </div>
+          <input
+            id="phone"
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="03XXXXXXXXX or +92XXXXXXXXXX"
+            disabled={!isEditing}
+            required
+            maxLength={13}
+            pattern="(03[0-9]{9}|\+92[0-9]{10})"
+            title="Enter 03XXXXXXXXX or +92XXXXXXXXXX without spaces or symbols."
+            className="w-full rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] px-4 py-3 text-[#302923] outline-none transition placeholder:text-[#A99B90] hover:border-[#CDA5A5] focus:border-[#963D54] focus:bg-[#FFFDF9] focus:ring-4 focus:ring-[#F2E2DC] disabled:cursor-not-allowed disabled:bg-[#F1EFEC] disabled:text-[#8F857D]"
+          />
+          {renderFieldError("phone")}
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Form Actions */}
       {isEditing && (
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Save only appears once something has actually changed */}
+        <div className="mt-8 flex flex-col gap-3 border-t border-[#E8DDD4] pt-6 sm:flex-row sm:items-center">
           {isDirty ? (
             <button
               type="submit"
               disabled={isSaving}
-              style={{ animation: "donor-toast-in 0.25s ease-out" }}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#BE4565] to-[#A83A58] px-6 py-3.5 font-semibold text-white shadow-lg shadow-rose-400/30 transition duration-200 hover:-translate-y-0.5 hover:from-[#A83A58] hover:to-[#96334F] hover:shadow-rose-400/50 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-48"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#782B40] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {isSaving ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -487,23 +604,22 @@ function DonorProfileForm() {
               {isSaving ? "Saving..." : "Save Profile"}
             </button>
           ) : (
-            <p className="flex items-center gap-2 rounded-xl bg-[#FFF8FA] px-4 py-3 text-sm text-gray-500 ring-1 ring-rose-100">
-              <Info size={16} className="shrink-0 text-[#BE4565]" />
+            <p className="flex items-center gap-2 rounded-xl bg-[#F8F5EF] px-4 py-3 text-sm text-[#81756A]">
+              <Info size={16} className="shrink-0 text-[#963D54]" />
               {hasProfile
                 ? "Make a change to enable saving."
                 : "Fill in your details to save your profile."}
             </p>
           )}
 
-          {/* Let the donor leave edit mode without changing anything */}
           {hasProfile && (
             <button
               type="button"
               onClick={handleCancelEdit}
               disabled={isSaving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-6 py-3.5 font-semibold text-gray-600 transition duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#DCCBC3] bg-[#FFFDF9] px-6 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
-              <X size={18} />
+              <X size={17} />
               Cancel
             </button>
           )}

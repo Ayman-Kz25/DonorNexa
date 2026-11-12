@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["donor", "hospital", "admin"],
-      default: "donor",
+      enum: ["unassigned", "donor", "hospital", "admin"],
+      default: "unassigned",
       required: true,
     },
 

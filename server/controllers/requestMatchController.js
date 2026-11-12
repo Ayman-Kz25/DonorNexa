@@ -5,7 +5,110 @@ import RequestMatch from "../models/RequestMatch.js";
 import BloodRequest from "../models/BloodRequest.js";
 import BloodInventory from "../models/BloodInventory.js";
 import Donation from "../models/Donation.js";
+import Hospital from "../models/Hospital.js";
+import logAdminAction from "../utils/logAdminAction.js";
 import mongoose from "mongoose";
+import { generateRequestMatches } from "../services/requestMatchingService.js";
+
+// Calculate the donor response deadline.
+// Supports both new matches and older matches without responseDeadlineAt.
+const getMatchResponseDeadline = (match) => {
+  if (match.responseDeadlineAt) {
+    return new Date(match.responseDeadlineAt);
+  }
+
+  const responseWindowHours = Math.max(
+    1,
+    Number(process.env.DONOR_RESPONSE_WINDOW_HOURS) || 2,
+  );
+
+  const notifiedAt = match.notifiedAt || match.createdAt;
+
+  if (!notifiedAt) return null;
+
+  return new Date(
+    new Date(notifiedAt).getTime() + responseWindowHours * 60 * 60 * 1000,
+  );
+};
+
+// Get the earliest blood request deadline.
+const getRequestEndTime = (bloodRequest) => {
+  if (!bloodRequest) return null;
+
+  const deadlines = [bloodRequest.expiresAt, bloodRequest.requiredBy]
+    .filter(Boolean)
+    .map((date) => new Date(date).getTime())
+    .filter(Number.isFinite);
+
+  return deadlines.length > 0 ? Math.min(...deadlines) : null;
+};
+
+// Expand the donor pool if the blood request is still active.
+const expandDonorPool = async (requestId) => {
+  try {
+    const bloodRequest = await BloodRequest.findById(requestId);
+
+    if (!bloodRequest || bloodRequest.status !== "open") {
+      return 0;
+    }
+
+    const requestEndTime = getRequestEndTime(bloodRequest);
+
+    if (requestEndTime !== null && requestEndTime <= Date.now()) {
+      return 0;
+    }
+
+    const result = await generateRequestMatches(
+      bloodRequest,
+      bloodRequest.city,
+    );
+
+    return result.notifiedCount;
+  } catch (error) {
+    console.error(
+      `Donor pool expansion error for request ${requestId}:`,
+      error,
+    );
+
+    return 0;
+  }
+};
+
+// Determine whether a pending match should become no_response or expired.
+const getPendingMatchStatus = (match, now) => {
+  const request = match.bloodRequest;
+
+  // A missing, cancelled, fulfilled, or otherwise closed request is expired.
+  if (!request || request.status !== "open") {
+    return "expired";
+  }
+
+  const responseDeadline = getMatchResponseDeadline(match);
+  const requestEndTime = getRequestEndTime(request);
+
+  const responseDeadlinePassed =
+    responseDeadline &&
+    !Number.isNaN(responseDeadline.getTime()) &&
+    responseDeadline <= now;
+
+  const requestDeadlinePassed =
+    requestEndTime !== null && requestEndTime <= now.getTime();
+
+  // The donor's deadline passed before the request deadline.
+  if (
+    responseDeadlinePassed &&
+    (requestEndTime === null || responseDeadline.getTime() <= requestEndTime)
+  ) {
+    return "no_response";
+  }
+
+  // The blood request became inactive first.
+  if (requestDeadlinePassed) {
+    return "expired";
+  }
+
+  return null;
+};
 
 // Get requests matched with the logged-in donor
 export const getMyMatches = async (req, res) => {
@@ -30,7 +133,8 @@ export const getMyMatches = async (req, res) => {
       });
     }
 
-    // Fetch matches with their blood request details
+    const now = new Date();
+
     let matches = await RequestMatch.find({
       donor: donor._id,
     }).populate({
@@ -39,37 +143,63 @@ export const getMyMatches = async (req, res) => {
         "bloodGroup unitsRequired urgency city requiredBy expiresAt status",
     });
 
-    const now = new Date();
+    const requestsForExpansion = new Set();
 
-    // Find pending matches whose requests are no longer active
-    const inactiveMatchIds = matches
-      .filter((match) => {
-        const bloodRequest = match.bloodRequest;
+    // Synchronize pending matches with their deadlines.
+    for (const match of matches) {
+      if (match.status !== "pending") continue;
 
-        return (
-          match.status === "pending" &&
-          bloodRequest &&
-          (bloodRequest.status !== "open" ||
-            bloodRequest.expiresAt <= now ||
-            bloodRequest.requiredBy <= now)
-        );
-      })
-      .map((match) => match._id);
+      const newStatus = getPendingMatchStatus(match, now);
 
-    // Synchronize their status in MongoDB
-    if (inactiveMatchIds.length > 0) {
-      await RequestMatch.updateMany(
+      if (!newStatus) continue;
+
+      const updatedMatch = await RequestMatch.findOneAndUpdate(
         {
-          _id: { $in: inactiveMatchIds },
+          _id: match._id,
           status: "pending",
         },
         {
-          $set: { status: "expired" },
+          $set: {
+            status: newStatus,
+            ...(newStatus === "no_response"
+              ? {
+                  responseDeadlineAt: getMatchResponseDeadline(match),
+                }
+              : {}),
+          },
         },
+        { new: true },
       );
+
+      // Log only when the status was actually changed.
+      if (updatedMatch) {
+        await logAdminAction({
+          userId: user._id,
+          action:
+            newStatus === "no_response" ? "MATCH_NO_RESPONSE" : "MATCH_EXPIRED",
+          targetType: "RequestMatch",
+          targetId: match._id,
+          oldValue: { status: "pending" },
+          newValue: { status: newStatus },
+          ipAddress: req.ip,
+          description:
+            newStatus === "no_response"
+              ? "Donor did not respond before the response deadline."
+              : "Pending donor match expired because the blood request became inactive.",
+        });
+
+        if (newStatus === "no_response" && match.bloodRequest?._id) {
+          requestsForExpansion.add(match.bloodRequest._id.toString());
+        }
+      }
     }
 
-    // Fetch updated records
+    // Expand each affected request only once.
+    for (const requestId of requestsForExpansion) {
+      await expandDonorPool(requestId);
+    }
+
+    // Fetch the latest match statuses.
     matches = await RequestMatch.find({
       donor: donor._id,
     })
@@ -82,6 +212,7 @@ export const getMyMatches = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      donorBloodGroup: donor.bloodGroup,
       matches,
     });
   } catch (error) {
@@ -128,6 +259,7 @@ export const respondToMatch = async (req, res) => {
     }
 
     let updatedMatch;
+    let outcome = "responded";
 
     await session.withTransaction(async () => {
       const match = await RequestMatch.findOne({
@@ -144,7 +276,58 @@ export const respondToMatch = async (req, res) => {
 
       const now = new Date();
 
-      if (status === "declined") {
+      const bloodRequest = await BloodRequest.findById(
+        match.bloodRequest,
+      ).session(session);
+
+      // Calculate both deadlines.
+      const responseDeadline = getMatchResponseDeadline(match);
+      const requestEndTime = getRequestEndTime(bloodRequest);
+
+      const responseDeadlinePassed =
+        responseDeadline &&
+        !Number.isNaN(responseDeadline.getTime()) &&
+        responseDeadline <= now;
+
+      const requestClosed = !bloodRequest || bloodRequest.status !== "open";
+
+      const requestDeadlinePassed =
+        requestEndTime !== null && requestEndTime <= now.getTime();
+
+      // A cancelled, fulfilled, or otherwise closed request is expired.
+      if (requestClosed) {
+        outcome = "expired";
+
+        updatedMatch = await RequestMatch.findOneAndUpdate(
+          {
+            _id: match._id,
+            status: "pending",
+          },
+          {
+            $set: { status: "expired" },
+          },
+          {
+            new: true,
+            session,
+          },
+        );
+
+        if (!updatedMatch) {
+          throw new Error("Unable to expire this match.");
+        }
+
+        return;
+      }
+
+      // Check which deadline passed first.
+      const donorDeadlinePassedFirst =
+        responseDeadlinePassed &&
+        (requestEndTime === null ||
+          responseDeadline.getTime() <= requestEndTime);
+
+      if (donorDeadlinePassedFirst) {
+        outcome = "no_response";
+
         updatedMatch = await RequestMatch.findOneAndUpdate(
           {
             _id: match._id,
@@ -152,8 +335,8 @@ export const respondToMatch = async (req, res) => {
           },
           {
             $set: {
-              status: "declined",
-              respondedAt: now,
+              status: "no_response",
+              responseDeadlineAt: responseDeadline,
             },
           },
           {
@@ -163,48 +346,91 @@ export const respondToMatch = async (req, res) => {
         );
 
         if (!updatedMatch) {
-          throw new Error("Unable to submit your response.");
+          throw new Error("Unable to update the timed-out match.");
         }
 
         return;
       }
 
-      // Reserve one unit only if the request still has capacity.
-      const updatedRequest = await BloodRequest.findOneAndUpdate(
-        {
-          _id: match.bloodRequest,
-          status: "open",
-          expiresAt: { $gt: now },
-          requiredBy: { $gt: now },
-          $expr: {
-            $lt: [
-              {
-                $add: [
-                  { $ifNull: ["$unitsReserved", 0] },
-                  { $ifNull: ["$unitsFulfilled", 0] },
-                ],
-              },
-              "$unitsRequired",
-            ],
-          },
-        },
-        {
-          $inc: { unitsReserved: 1 },
-        },
-        {
-          new: true,
-          session,
-        },
-      );
+      // The blood request deadline passed before the donor deadline.
+      if (requestDeadlinePassed) {
+        outcome = "expired";
 
-      if (!updatedRequest) {
-        const error = new Error(
-          "This request is no longer active or all required units have already been reserved.",
+        updatedMatch = await RequestMatch.findOneAndUpdate(
+          {
+            _id: match._id,
+            status: "pending",
+          },
+          {
+            $set: { status: "expired" },
+          },
+          {
+            new: true,
+            session,
+          },
         );
-        error.statusCode = 400;
-        throw error;
+
+        if (!updatedMatch) {
+          throw new Error("Unable to expire this match.");
+        }
+
+        return;
       }
 
+      // Prevent accepting requests from inactive or unverified hospitals.
+      if (status === "accepted") {
+        const hospital = await Hospital.findOne({
+          _id: bloodRequest.hospital,
+          verificationStatus: "verified",
+          isActive: { $ne: false },
+        }).session(session);
+
+        if (!hospital) {
+          const error = new Error(
+            "This hospital is currently inactive. You cannot accept this request.",
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+
+        // Reserve one unit only if the request still has capacity.
+        const updatedRequest = await BloodRequest.findOneAndUpdate(
+          {
+            _id: bloodRequest._id,
+            status: "open",
+            expiresAt: { $gt: now },
+            requiredBy: { $gt: now },
+            $expr: {
+              $lt: [
+                {
+                  $add: [
+                    { $ifNull: ["$unitsReserved", 0] },
+                    { $ifNull: ["$unitsFulfilled", 0] },
+                  ],
+                },
+                "$unitsRequired",
+              ],
+            },
+          },
+          {
+            $inc: { unitsReserved: 1 },
+          },
+          {
+            new: true,
+            session,
+          },
+        );
+
+        if (!updatedRequest) {
+          const error = new Error(
+            "This request is no longer active or all required units have already been reserved.",
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+
+      // Accept or decline the still-active match.
       updatedMatch = await RequestMatch.findOneAndUpdate(
         {
           _id: match._id,
@@ -212,7 +438,7 @@ export const respondToMatch = async (req, res) => {
         },
         {
           $set: {
-            status: "accepted",
+            status,
             respondedAt: now,
           },
         },
@@ -223,10 +449,67 @@ export const respondToMatch = async (req, res) => {
       );
 
       if (!updatedMatch) {
-        // Throwing rolls back the unit reservation too.
-        throw new Error("Unable to accept this request.");
+        throw new Error("Unable to submit your response.");
       }
     });
+
+    // Handle timed-out or inactive matches.
+    if (outcome === "no_response" || outcome === "expired") {
+      await logAdminAction({
+        userId: user._id,
+        action:
+          outcome === "no_response" ? "MATCH_NO_RESPONSE" : "MATCH_EXPIRED",
+        targetType: "RequestMatch",
+        targetId: updatedMatch._id,
+        oldValue: { status: "pending" },
+        newValue: { status: outcome },
+        ipAddress: req.ip,
+        description:
+          outcome === "no_response"
+            ? "Donor attempted to respond after the response deadline."
+            : "Donor attempted to respond after the blood request became inactive.",
+      });
+
+      if (outcome === "no_response") {
+        await expandDonorPool(updatedMatch.bloodRequest);
+      }
+
+      return res.status(410).json({
+        success: false,
+        message:
+          outcome === "no_response"
+            ? "Your response deadline has passed. You can no longer respond to this match."
+            : "This blood request is no longer active.",
+        match: updatedMatch,
+      });
+    }
+
+    // Log accepted or declined response.
+    await logAdminAction({
+      userId: user._id,
+      action: status === "accepted" ? "MATCH_ACCEPTED" : "MATCH_DECLINED",
+      targetType: "RequestMatch",
+      targetId: updatedMatch._id,
+      oldValue: { status: "pending" },
+      newValue: { status: updatedMatch.status },
+      ipAddress: req.ip,
+      description: `Donor ${status} a matched blood request.`,
+    });
+
+    // Expand the donor pool when a donor declines.
+    if (status === "declined") {
+      const bloodRequest = await BloodRequest.findById(
+        updatedMatch.bloodRequest,
+      );
+
+      if (bloodRequest?.status === "open") {
+        try {
+          await generateRequestMatches(bloodRequest, bloodRequest.city);
+        } catch (error) {
+          console.error("Donor pool expansion error:", error);
+        }
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -283,8 +566,10 @@ export const getHospitalMatchResponses = async (req, res) => {
       totalDonations: match.donor?.totalDonations,
       status: match.status,
       respondedAt: match.respondedAt,
-      // Reveal phone number only after donor accepts
-      phone: match.status === "accepted" ? match.donor?.user?.phone : null,
+      // Reveal phone number only after donor accepts.
+      phone: ["accepted", "completed"].includes(match.status)
+        ? match.donor?.user?.phone
+        : null,
     }));
 
     return res.status(200).json({
@@ -301,7 +586,7 @@ export const getHospitalMatchResponses = async (req, res) => {
   }
 };
 
-//updates the donor, request counters and hospital inventory
+// Updates donor, request counters, and hospital inventory.
 export const confirmDonation = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -309,6 +594,8 @@ export const confirmDonation = async (req, res) => {
     let completedMatch;
     let updatedDonor;
     let updatedRequest;
+    let donationRecord;
+    let previousRequestStatus;
 
     await session.withTransaction(async () => {
       const match = await RequestMatch.findOne({
@@ -393,7 +680,7 @@ export const confirmDonation = async (req, res) => {
         throw new Error("Donor profile not found.");
       }
 
-      // Add the donated unit to this hospital's inventory.
+      // Add donated unit to hospital inventory.
       await BloodInventory.findOneAndUpdate(
         {
           hospital: bloodRequest.hospital,
@@ -432,6 +719,8 @@ export const confirmDonation = async (req, res) => {
         throw new Error("Unable to complete this donation.");
       }
 
+      previousRequestStatus = bloodRequest.status;
+
       // Save the individual donation record.
       const [donation] = await Donation.create(
         [
@@ -449,6 +738,8 @@ export const confirmDonation = async (req, res) => {
         { session },
       );
 
+      donationRecord = donation;
+
       // Close the request only when every required unit is fulfilled
       // and no accepted donor reservations remain.
       if (
@@ -459,6 +750,51 @@ export const confirmDonation = async (req, res) => {
         await updatedRequest.save({ session });
       }
     });
+
+    // Log completed donor match.
+    await logAdminAction({
+      userId: req.hospital.user,
+      action: "MATCH_COMPLETED",
+      targetType: "RequestMatch",
+      targetId: completedMatch._id,
+      oldValue: { status: "accepted" },
+      newValue: { status: "completed" },
+      ipAddress: req.ip,
+      description: "Hospital confirmed the donor's blood donation.",
+    });
+
+    // Log donation record creation.
+    await logAdminAction({
+      userId: req.hospital.user,
+      action: "DONATION_CONFIRMED",
+      targetType: "Donation",
+      targetId: donationRecord._id,
+      oldValue: null,
+      newValue: {
+        bloodGroup: donationRecord.bloodGroup,
+        units: donationRecord.units,
+        donatedOn: donationRecord.donatedOn,
+      },
+      ipAddress: req.ip,
+      description: `Confirmed ${donationRecord.units} unit donation of ${donationRecord.bloodGroup}.`,
+    });
+
+    // Log automatic request fulfillment.
+    if (
+      updatedRequest.status === "fulfilled" &&
+      previousRequestStatus !== "fulfilled"
+    ) {
+      await logAdminAction({
+        userId: req.hospital.user,
+        action: "BLOOD_REQUEST_FULFILLED",
+        targetType: "BloodRequest",
+        targetId: updatedRequest._id,
+        oldValue: { status: previousRequestStatus },
+        newValue: { status: updatedRequest.status },
+        ipAddress: req.ip,
+        description: `Blood request for ${updatedRequest.bloodGroup} automatically fulfilled after all required units were donated.`,
+      });
+    }
 
     return res.status(200).json({
       success: true,

@@ -14,10 +14,25 @@ const requestMatchSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "declined", "expired", "completed"],
+      enum: [
+        "pending",
+        "accepted",
+        "declined",
+        "no_response",
+        "expired",
+        "completed",
+      ],
       default: "pending",
     },
     notifiedAt: {
+      type: Date,
+      default: null,
+    },
+    score: {
+      type: Number,
+      default: 0,
+    },
+    responseDeadlineAt: {
       type: Date,
       default: null,
     },
@@ -30,6 +45,8 @@ const requestMatchSchema = new mongoose.Schema(
 );
 
 requestMatchSchema.index({ bloodRequest: 1, donor: 1 }, { unique: true });
+
+requestMatchSchema.index({ donor: 1, status: 1 });
 
 const RequestMatch = mongoose.model("RequestMatch", requestMatchSchema);
 

@@ -1,0 +1,52 @@
+src/
+│
+├── components/
+│   ├── common/
+│   ├── guest/
+│   ├── donor/
+│   ├── hospital/
+│   └── admin/
+│
+├── layouts/
+│   ├── PublicLayout.jsx
+│   ├── DonorLayout.jsx
+│   ├── HospitalLayout.jsx
+│   └── AdminLayout.jsx
+│
+├── pages/
+│   ├── public/
+│   │   ├── Home.jsx
+│   │   ├── FindDonors.jsx
+│   │   ├── EmergencyRequests.jsx
+│   │   ├── About.jsx
+│   │   └── Contact.jsx
+│   │
+│   ├── donor/
+│   │   ├── DonorDashboard.jsx
+│   │   ├── DonorRequests.jsx
+│   │   ├── MyDonations.jsx
+│   │   ├── Hospitals.jsx
+│   │   └── DonorProfile.jsx
+│   │
+│   ├── hospital/
+│   │   ├── HospitalDashboard.jsx
+│   │   ├── BloodRequests.jsx
+│   │   ├── CreateRequest.jsx
+│   │   ├── BloodInventory.jsx
+│   │   ├── FindDonors.jsx
+│   │   └── HospitalProfile.jsx
+│   │
+│   └── admin/
+│       ├── AdminDashboard.jsx
+│       ├── UserManagement.jsx
+│       ├── HospitalManagement.jsx
+│       ├── DonorManagement.jsx
+│       ├── CityManagement.jsx
+│       ├── AuditLogs.jsx
+│       └── BloodRequests.jsx
+│
+├── context/
+├── hooks/
+├── lib/
+├── services/
+└── App.jsx

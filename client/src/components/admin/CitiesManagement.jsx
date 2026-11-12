@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MapPin, Plus, Search, RefreshCw, Power } from "lucide-react";
+import { MapPin, Plus, Search, RefreshCw, Power, Download } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
 function CitiesManagement() {
@@ -13,6 +13,7 @@ function CitiesManagement() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const fetchCities = useCallback(async () => {
     try {
@@ -36,6 +37,42 @@ function CitiesManagement() {
   useEffect(() => {
     fetchCities();
   }, [fetchCities]);
+
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      setError("");
+
+      const response = await request({
+        method: "GET",
+        url: "/api/admin/cities/export",
+        params: {
+          search: search.trim(),
+          status,
+        },
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], {
+        type: "text/csv;charset=utf-8;",
+      });
+
+      const fileUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = fileUrl;
+      link.download = "donornexa-cities.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(fileUrl);
+    } catch (err) {
+      setError("Unable to export city records.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleAddCity = async (e) => {
     e.preventDefault();
@@ -86,30 +123,39 @@ function CitiesManagement() {
   };
 
   return (
-    <section className="mt-8 rounded-2xl border border-rose-100 bg-white p-6 shadow-sm">
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <section className="mt-8 rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-5 shadow-sm sm:p-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[#29232A]">
-            <MapPin size={22} className="text-[#BE4565]" />
+          <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-[#302923]">
+            <MapPin size={21} className="text-[#87364D]" />
             Cities Management
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[#81756A]">
             Add and manage the cities available on DonorNexa.
           </p>
         </div>
 
-        <button
-          onClick={fetchCities}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2 text-sm text-[#96334F] hover:bg-rose-50 disabled:opacity-50"
-        >
-          <RefreshCw size={15} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting || cities.length === 0}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#963D54] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={15} />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
+
+          <button
+            onClick={fetchCities}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl border border-[#E8DDD4] px-4 py-2.5 text-sm font-medium text-[#782B40] transition hover:bg-[#F2E2DC] disabled:opacity-50"
+          >
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Add City */}
       <form
         onSubmit={handleAddCity}
         className="mb-6 flex flex-col gap-3 sm:flex-row"
@@ -119,53 +165,50 @@ function CitiesManagement() {
           value={cityName}
           onChange={(e) => setCityName(e.target.value)}
           placeholder="Enter city name..."
-          className="flex-1 rounded-lg border border-rose-100 px-4 py-2.5 text-sm outline-none focus:border-[#BE4565]"
+          className="min-w-0 flex-1 rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none transition placeholder:text-[#A99D93] focus:border-[#A45B6D] focus:ring-2 focus:ring-[#F2E2DC]"
         />
 
         <button
           type="submit"
           disabled={adding || !cityName.trim()}
-          className="flex items-center justify-center gap-2 rounded-lg bg-[#BE4565] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#96334F] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#963D54] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus size={17} />
           {adding ? "Adding..." : "Add City"}
         </button>
       </form>
 
-      {/* Feedback */}
-      {error && (
-        <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-[#96334F]">
-          {error}
-        </p>
+      {(error || message) && (
+        <div
+          className={`mb-5 rounded-xl border p-3 text-sm ${
+            error
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-[#E8DDD4] bg-[#F2E2DC] text-[#782B40]"
+          }`}
+        >
+          {error || message}
+        </div>
       )}
 
-      {message && (
-        <p className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-[#96334F]">
-          {message}
-        </p>
-      )}
-
-      {/* Search and Filter */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search
             size={17}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A99D93]"
           />
-
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search cities..."
-            className="w-full rounded-lg border border-rose-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[#BE4565]"
+            className="w-full rounded-xl border border-[#E8DDD4] bg-white py-2.5 pl-10 pr-3 text-sm text-[#302923] outline-none transition placeholder:text-[#A99D93] focus:border-[#A45B6D] focus:ring-2 focus:ring-[#F2E2DC]"
           />
         </div>
 
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="rounded-lg border border-rose-100 bg-white px-4 py-2 text-sm outline-none focus:border-[#BE4565]"
+          className="rounded-xl border border-[#E8DDD4] bg-white px-4 py-2.5 text-sm text-[#302923] outline-none focus:border-[#A45B6D]"
         >
           <option value="all">All Cities</option>
           <option value="active">Active</option>
@@ -173,10 +216,9 @@ function CitiesManagement() {
         </select>
       </div>
 
-      {/* Cities Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border border-[#E8DDD4]">
         <table className="w-full min-w-[550px] text-left text-sm">
-          <thead className="border-b border-rose-100 bg-rose-50/60 text-gray-600">
+          <thead className="border-b border-[#E8DDD4] bg-[#F8F5EF] text-[#81756A]">
             <tr>
               <th className="px-4 py-3 font-semibold">City Name</th>
               <th className="px-4 py-3 font-semibold">Added On</th>
@@ -185,36 +227,36 @@ function CitiesManagement() {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-rose-50">
+          <tbody className="divide-y divide-[#F0EAE3]">
             {loading ? (
               <tr>
-                <td colSpan="4" className="py-10 text-center text-gray-500">
+                <td colSpan="4" className="py-10 text-center text-[#81756A]">
                   Loading cities...
                 </td>
               </tr>
             ) : cities.length === 0 ? (
               <tr>
-                <td colSpan="4" className="py-10 text-center text-gray-500">
+                <td colSpan="4" className="py-10 text-center text-[#81756A]">
                   No cities found.
                 </td>
               </tr>
             ) : (
               cities.map((city) => (
-                <tr key={city._id} className="hover:bg-rose-50/40">
-                  <td className="px-4 py-4 font-medium text-[#29232A]">
+                <tr key={city._id} className="transition hover:bg-[#FAF6F1]">
+                  <td className="px-4 py-4 font-medium text-[#302923]">
                     {city.name}
                   </td>
 
-                  <td className="px-4 py-4 text-gray-600">
+                  <td className="px-4 py-4 text-[#81756A]">
                     {new Date(city.createdAt).toLocaleDateString()}
                   </td>
 
                   <td className="px-4 py-4">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
                         city.isActive
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-gray-100 text-gray-600"
+                          ? "bg-[#F2E2DC] text-[#782B40]"
+                          : "bg-[#F0EAE3] text-[#81756A]"
                       }`}
                     >
                       {city.isActive ? "Active" : "Inactive"}
@@ -224,7 +266,7 @@ function CitiesManagement() {
                   <td className="px-4 py-4 text-right">
                     <button
                       onClick={() => handleStatusChange(city)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-[#96334F] hover:bg-rose-100"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#E8DDD4] px-3 py-2 text-xs font-medium text-[#782B40] transition hover:border-[#D8B7BE] hover:bg-[#F2E2DC]"
                     >
                       <Power size={14} />
                       {city.isActive ? "Deactivate" : "Activate"}
@@ -237,7 +279,7 @@ function CitiesManagement() {
         </table>
       </div>
 
-      <p className="mt-4 text-xs text-gray-500">
+      <p className="mt-4 text-xs text-[#81756A]">
         Total cities displayed: {cities.length}
       </p>
     </section>

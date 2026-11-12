@@ -12,7 +12,6 @@ function DonorAvailability() {
   const [reasons, setReasons] = useState([]);
   const [eligibleAgainDate, setEligibleAgainDate] = useState(null);
 
-  // Load donor profile
   const loadDonor = useCallback(async () => {
     try {
       setLoading(true);
@@ -44,7 +43,6 @@ function DonorAvailability() {
   useEffect(() => {
     loadDonor();
 
-    // Reload profile whenever DonorProfileForm saves it
     const handleProfileUpdate = () => {
       loadDonor();
     };
@@ -56,7 +54,6 @@ function DonorAvailability() {
     };
   }, [loadDonor]);
 
-  // Toggle donor availability
   const handleAvailability = async () => {
     if (!donor || updating) return;
 
@@ -88,7 +85,6 @@ function DonorAvailability() {
       );
 
       setReasons(error.response?.data?.reasons || []);
-
       setEligibleAgainDate(error.response?.data?.eligibleAgainDate || null);
     } finally {
       setUpdating(false);
@@ -98,10 +94,10 @@ function DonorAvailability() {
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center gap-3 rounded-2xl border border-rose-100 bg-[#FFF8FA] py-12 text-[#96334F]"
+        className="flex items-center justify-center gap-3 rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] py-12 text-[#782B40]"
         role="status"
       >
-        <Loader2 size={20} className="animate-spin text-[#BE4565]" />
+        <Loader2 size={20} className="animate-spin" />
         <p className="font-medium">Loading availability...</p>
       </div>
     );
@@ -109,15 +105,15 @@ function DonorAvailability() {
 
   if (!donor) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-[#FCE7ED] p-5">
-        <p className="text-sm font-medium text-[#96334F]">
+      <div className="rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-5">
+        <p className="text-sm font-medium text-[#782B40]">
           {message || "Donor profile is not available."}
         </p>
 
         <button
           type="button"
           onClick={loadDonor}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#96334F] transition hover:bg-[#FFF8FA]"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#782B40] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#612033]"
         >
           <RefreshCw size={15} />
           Check Again
@@ -127,44 +123,43 @@ function DonorAvailability() {
   }
 
   return (
-    <div className="w-full">
-      {/* Availability Status + Toggle */}
+    <div className="w-full space-y-4">
       <div
         className={`flex items-center justify-between gap-5 rounded-2xl border p-5 transition-colors duration-300 sm:p-6 ${
           donor.isAvailable
-            ? "border-rose-200 bg-gradient-to-r from-[#FCE7ED] to-[#FFF8FA]"
-            : "border-gray-200 bg-gray-50"
+            ? "border-[#E8C9CE] bg-[#F7E9E7]"
+            : "border-[#E8DDD4] bg-[#F1EDE6]"
         }`}
       >
         <div>
-          <p className="font-semibold text-[#29232A]">Availability Status</p>
+          <p className="font-semibold text-[#302923]">Availability Status</p>
 
           <p
             className={`mt-1 flex items-center gap-2 text-sm font-medium ${
-              donor.isAvailable ? "text-[#BE4565]" : "text-gray-500"
+              donor.isAvailable ? "text-[#782B40]" : "text-[#81756A]"
             }`}
           >
             <span
               className={`h-2 w-2 rounded-full ${
-                donor.isAvailable ? "bg-[#BE4565]" : "bg-gray-400"
+                donor.isAvailable ? "bg-[#963D54]" : "bg-[#A79B91]"
               }`}
             />
             {donor.isAvailable ? "Available" : "Unavailable"}
           </p>
 
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-[#81756A]">
             {updating
               ? "Updating..."
               : donor.isAvailable
-                ? "Tap the switch to turn availability OFF"
-                : "Tap the switch to turn availability ON"}
+                ? "Turn availability OFF when you cannot donate."
+                : "Turn availability ON when you are ready to donate."}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <span
             className={`text-xs font-bold tracking-wider ${
-              donor.isAvailable ? "text-[#96334F]" : "text-gray-400"
+              donor.isAvailable ? "text-[#782B40]" : "text-[#81756A]"
             }`}
           >
             {donor.isAvailable ? "ON" : "OFF"}
@@ -177,10 +172,8 @@ function DonorAvailability() {
             aria-label="Toggle donor availability"
             onClick={handleAvailability}
             disabled={updating}
-            className={`relative inline-flex h-9 w-16 shrink-0 cursor-pointer items-center rounded-full p-1 shadow-inner outline-none transition-colors duration-300 focus-visible:ring-4 focus-visible:ring-rose-200 disabled:cursor-not-allowed disabled:opacity-70 ${
-              donor.isAvailable
-                ? "bg-gradient-to-r from-[#BE4565] to-[#96334F] shadow-rose-900/20"
-                : "bg-gray-300 shadow-gray-400/30"
+            className={`relative inline-flex h-9 w-16 shrink-0 items-center rounded-full p-1 shadow-inner outline-none transition-colors duration-300 focus-visible:ring-4 focus-visible:ring-[#E8C9CE] disabled:cursor-not-allowed disabled:opacity-70 ${
+              donor.isAvailable ? "bg-[#782B40]" : "bg-[#B8AEA5]"
             }`}
           >
             <span
@@ -189,7 +182,7 @@ function DonorAvailability() {
               }`}
             >
               {updating && (
-                <Loader2 size={15} className="animate-spin text-[#BE4565]" />
+                <Loader2 size={15} className="animate-spin text-[#782B40]" />
               )}
             </span>
           </button>
@@ -199,20 +192,20 @@ function DonorAvailability() {
       {message && (
         <div
           role="status"
-          className="mt-5 rounded-xl border border-rose-200 bg-[#FCE7ED] px-4 py-3 text-sm font-medium text-[#96334F]"
+          className="rounded-xl border border-[#E8C9CE] bg-[#F7E9E7] px-4 py-3 text-sm font-medium text-[#782B40]"
         >
           {message}
         </div>
       )}
 
       {reasons.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-5">
-          <p className="mb-3 flex items-center gap-2 font-semibold text-orange-800">
+        <div className="rounded-2xl border border-[#E8D5B9] bg-[#FBF3E8] p-5">
+          <p className="mb-3 flex items-center gap-2 font-semibold text-[#895B2D]">
             <AlertTriangle size={18} />
             Eligibility requirements not met:
           </p>
 
-          <ul className="list-inside list-disc space-y-1.5 text-sm leading-6 text-gray-700">
+          <ul className="list-inside list-disc space-y-1.5 text-sm leading-6 text-[#62564C]">
             {reasons.map((reason, index) => (
               <li key={index}>{reason}</li>
             ))}
@@ -221,12 +214,12 @@ function DonorAvailability() {
       )}
 
       {eligibleAgainDate && (
-        <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
-          <p className="text-sm font-medium text-orange-800">
+        <div className="rounded-xl border border-[#E8D5B9] bg-[#FBF3E8] px-4 py-3">
+          <p className="text-sm font-medium text-[#895B2D]">
             You can try donating again on:
           </p>
 
-          <p className="mt-1 text-sm font-semibold text-orange-900">
+          <p className="mt-1 text-sm font-semibold text-[#624126]">
             {new Date(eligibleAgainDate).toLocaleDateString("en-PK", {
               day: "numeric",
               month: "long",

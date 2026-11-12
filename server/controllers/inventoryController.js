@@ -36,12 +36,14 @@ export const updateHospitalInventory = async (req, res) => {
 
     if (
       unitsAvailable === undefined ||
-      !Number.isInteger(Number(unitsAvailable)) ||
+      unitsAvailable === null ||
+      unitsAvailable === "" ||
+      !Number.isSafeInteger(Number(unitsAvailable)) ||
       Number(unitsAvailable) < 0
     ) {
       return res.status(400).json({
         success: false,
-        message: "Units available must be a non-negative whole number.",
+        message: "Units available must be a valid non-negative whole number.",
       });
     }
 
@@ -64,16 +66,17 @@ export const updateHospitalInventory = async (req, res) => {
       },
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Blood inventory updated successfully.",
       inventory,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Update hospital inventory error:", error);
+
+    return res.status(500).json({
       success: false,
       message: "Unable to update blood inventory.",
-      error: error.message,
     });
   }
 };

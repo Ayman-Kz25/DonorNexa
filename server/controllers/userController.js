@@ -40,7 +40,7 @@ export const syncUser = async (req, res) => {
         },
         $setOnInsert: {
           clerkUserId: userId,
-          role: "donor",
+          role: "unassigned",
         },
       },
       {

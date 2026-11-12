@@ -1,10 +1,10 @@
 import Donor from "../models/Donor.js";
-import User from "../models/User.js";
 import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 import BloodRequest from "../models/BloodRequest.js";
-import rankDonors from "../utils/rankDonors.js";
 import RequestMatch from "../models/RequestMatch.js";
+import logAdminAction from "../utils/logAdminAction.js";
+import { generateRequestMatches } from "../services/requestMatchingService.js";
 
 export const createBloodRequest = async (req, res) => {
   try {
@@ -46,6 +46,26 @@ export const createBloodRequest = async (req, res) => {
       city: req.hospital.city,
       hospitalNotes: hospitalNotes || "",
       expiresAt,
+    });
+
+    // Generate matching records immediately after request creation.
+    await generateRequestMatches(bloodRequest, req.hospital.city);
+
+    await logAdminAction({
+      userId: req.user._id,
+      action: "BLOOD_REQUEST_CREATED",
+      targetType: "BloodRequest",
+      targetId: bloodRequest._id,
+      oldValue: null,
+      newValue: {
+        bloodGroup: bloodRequest.bloodGroup,
+        unitsRequired: bloodRequest.unitsRequired,
+        urgency: bloodRequest.urgency,
+        requiredBy: bloodRequest.requiredBy,
+        status: bloodRequest.status,
+      },
+      ipAddress: req.ip,
+      description: `Created blood request for ${bloodRequest.bloodGroup} (${bloodRequest.unitsRequired} units).`,
     });
 
     return res.status(201).json({
@@ -103,14 +123,22 @@ export const getActiveBloodRequests = async (req, res) => {
       .select(
         "bloodGroup unitsRequired urgency requiredBy city createdAt hospital",
       )
-      .populate("hospital", "hospitalName")
+      .populate({
+        path: "hospital",
+        match: { isActive: { $ne: false } },
+        select: "hospitalName",
+      })
       .sort({ createdAt: -1 })
       .lean();
 
+    const availableRequests = bloodRequests.filter(
+      (request) => request.hospital,
+    );
+
     return res.status(200).json({
       success: true,
-      count: bloodRequests.length,
-      bloodRequests,
+      count: availableRequests.length,
+      bloodRequests: availableRequests,
     });
   } catch (error) {
     console.error("Active blood requests error:", error);
@@ -143,8 +171,25 @@ export const cancelBloodRequest = async (req, res) => {
       });
     }
 
+    const oldValue = {
+      status: bloodRequest.status,
+    };
+
     bloodRequest.status = "cancelled";
     await bloodRequest.save();
+
+    await logAdminAction({
+      userId: req.user._id,
+      action: "BLOOD_REQUEST_CANCELLED",
+      targetType: "BloodRequest",
+      targetId: bloodRequest._id,
+      oldValue,
+      newValue: {
+        status: bloodRequest.status,
+      },
+      ipAddress: req.ip,
+      description: `Cancelled blood request for ${bloodRequest.bloodGroup}.`,
+    });
 
     await RequestMatch.updateMany(
       {
@@ -173,12 +218,14 @@ export const cancelBloodRequest = async (req, res) => {
 
 export const getMatchingDonors = async (req, res) => {
   try {
+    const now = new Date();
+
     const bloodRequest = await BloodRequest.findOne({
       _id: req.params.id,
       hospital: req.hospital._id,
       status: "open",
-      expiresAt: { $gt: new Date() },
-      requiredBy: { $gt: new Date() },
+      expiresAt: { $gt: now },
+      requiredBy: { $gt: now },
     });
 
     if (!bloodRequest) {
@@ -188,60 +235,18 @@ export const getMatchingDonors = async (req, res) => {
       });
     }
 
-    const compatibleGroups = getCompatibleDonorGroups(bloodRequest.bloodGroup);
-
-    const donors = await Donor.find({
-      bloodGroup: { $in: compatibleGroups },
-      city: {
-        $regex: `^${bloodRequest.city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-        $options: "i",
-      },
-      isAvailable: true,
-    }).populate({
-      path: "user",
-      match: {
-        role: "donor",
-        isActive: true,
-      },
-      select: "name",
-    });
-
-    const matchingDonors = donors
-      .filter((donor) => donor.user && checkDonorEligibility(donor).eligible)
-      .map((donor) => ({
-        donorId: donor._id,
-        name: donor.user.name,
-        bloodGroup: donor.bloodGroup,
-        city: donor.city,
-        totalDonations: donor.totalDonations,
-      }));
-
-    const rankedDonors = rankDonors(matchingDonors);
-
-    await RequestMatch.bulkWrite(
-      rankedDonors.map((donor) => ({
-        updateOne: {
-          filter: {
-            bloodRequest: bloodRequest._id,
-            donor: donor.donorId,
-          },
-          update: {
-            $setOnInsert: {
-              bloodRequest: bloodRequest._id,
-              donor: donor.donorId,
-              status: "pending",
-              notifiedAt: new Date(),
-            },
-          },
-          upsert: true,
-        },
-      })),
+    // Rank donors without creating another notification batch.
+    const { compatibleGroups, rankedDonors } = await generateRequestMatches(
+      bloodRequest,
+      req.hospital.city,
+      { notify: false },
     );
 
     return res.status(200).json({
       success: true,
       requestId: bloodRequest._id,
       requestedBloodGroup: bloodRequest.bloodGroup,
+      hospitalCity: req.hospital.city,
       compatibleGroups,
       count: rankedDonors.length,
       donors: rankedDonors,
@@ -273,9 +278,22 @@ export const markBloodRequestFulfilled = async (req, res) => {
     if (bloodRequest.status !== "open") {
       return res.status(400).json({
         success: false,
-        message: "Only open requests can be marked as fulfilled.",
+        message: "Only open requests can be fulfilled.",
       });
     }
+
+    if (
+      bloodRequest.unitsFulfilled < bloodRequest.unitsRequired ||
+      bloodRequest.unitsReserved > 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "All required units must be donated and confirmed before fulfilling this request.",
+      });
+    }
+
+    const oldStatus = bloodRequest.status;
 
     bloodRequest.status = "fulfilled";
     await bloodRequest.save();
@@ -290,9 +308,20 @@ export const markBloodRequestFulfilled = async (req, res) => {
       },
     );
 
+    await logAdminAction({
+      userId: req.user._id,
+      action: "BLOOD_REQUEST_FULFILLED",
+      targetType: "BloodRequest",
+      targetId: bloodRequest._id,
+      oldValue: { status: oldStatus },
+      newValue: { status: bloodRequest.status },
+      ipAddress: req.ip,
+      description: `Blood request for ${bloodRequest.bloodGroup} manually marked as fulfilled.`,
+    });
+
     return res.status(200).json({
       success: true,
-      message: "Blood request marked as fulfilled successfully.",
+      message: "Blood request fulfilled successfully.",
       bloodRequest,
     });
   } catch (error) {
@@ -300,7 +329,7 @@ export const markBloodRequestFulfilled = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Unable to mark blood request as fulfilled.",
+      message: "Unable to fulfill blood request.",
     });
   }
 };

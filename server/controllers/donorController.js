@@ -4,6 +4,75 @@ import Donor from "../models/Donor.js";
 import Donation from "../models/Donation.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 
+const validateDonorDetails = ({ dateOfBirth, weight, city, phone }) => {
+  const errors = {};
+
+  // City: 3–20 letters, spaces allowed
+  const cleanedCity = city?.trim();
+
+  if (
+    !cleanedCity ||
+    !/^[A-Za-z ]{3,20}$/.test(cleanedCity) ||
+    !/[A-Za-z]{3}/.test(cleanedCity)
+  ) {
+    errors.city =
+      "City must contain 3–20 letters. Only letters and spaces are allowed.";
+  }
+
+  // Weight: minimum 50 kg
+  const numericWeight = Number(weight);
+
+  if (
+    weight === "" ||
+    weight === undefined ||
+    !Number.isFinite(numericWeight) ||
+    numericWeight < 50
+  ) {
+    errors.weight = "Donor weight must be at least 50 kg.";
+  }
+
+  // Date of birth: valid date and age 18–60
+  if (!dateOfBirth) {
+    errors.dateOfBirth = "Date of birth is required.";
+  } else {
+    const [year, month, day] = dateOfBirth.split("-").map(Number);
+
+    const birthDate = new Date(year, month - 1, day);
+    const today = new Date();
+
+    const isValidDate =
+      birthDate.getFullYear() === year &&
+      birthDate.getMonth() === month - 1 &&
+      birthDate.getDate() === day;
+
+    if (!isValidDate || birthDate > today) {
+      errors.dateOfBirth = "Please provide a valid date of birth.";
+    } else {
+      let age = today.getFullYear() - year;
+
+      const birthdayNotReached =
+        today.getMonth() < month - 1 ||
+        (today.getMonth() === month - 1 && today.getDate() < day);
+
+      if (birthdayNotReached) age--;
+
+      if (age < 18 || age > 60) {
+        errors.dateOfBirth = "Donor age must be between 18 and 60 years.";
+      }
+    }
+  }
+
+  // Pakistani phone number formats
+  const cleanedPhone = phone?.trim();
+
+  if (!/^(03[0-9]{9}|\+92[0-9]{10})$/.test(cleanedPhone || "")) {
+    errors.phone =
+      "Enter a valid Pakistani number: 03XXXXXXXXX or +92XXXXXXXXXX.";
+  }
+
+  return errors;
+};
+
 export const createDonorProfile = async (req, res) => {
   try {
     const { isAuthenticated, userId } = getAuth(req);
@@ -30,27 +99,39 @@ export const createDonorProfile = async (req, res) => {
       });
     }
 
-    const cleanedPhone = phone.trim();
+    // Server-side validation
+    const errors = validateDonorDetails({
+      dateOfBirth,
+      weight,
+      city,
+      phone,
+    });
 
-    if (cleanedPhone.length < 7 || cleanedPhone.length > 20) {
+    if (Object.keys(errors).length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Please provide a valid phone number.",
+        message: "Please correct the invalid donor details.",
+        errors,
       });
     }
+
+    const cleanedPhone = phone.trim();
 
     const user = await User.findOne({ clerkUserId: userId });
 
-    if (!user || user.role !== "donor" || !user.isActive) {
+    if (!user || !user.isActive) {
       return res.status(403).json({
         success: false,
-        message: "Donor account not found or unauthorized.",
+        message: "User account not found or inactive.",
       });
     }
 
-    // Save phone number in the User collection
-    user.phone = cleanedPhone;
-    await user.save();
+    if (user.role !== "unassigned" && user.role !== "donor") {
+      return res.status(403).json({
+        success: false,
+        message: "This account cannot register as a donor.",
+      });
+    }
 
     const donor = await Donor.findOneAndUpdate(
       { user: user._id },
@@ -58,7 +139,7 @@ export const createDonorProfile = async (req, res) => {
         $set: {
           bloodGroup,
           dateOfBirth,
-          weight,
+          weight: Number(weight),
           city: city.trim(),
         },
         $setOnInsert: {
@@ -66,8 +147,17 @@ export const createDonorProfile = async (req, res) => {
           isAvailable: false,
         },
       },
-      { returnDocument: "after", upsert: true, runValidators: true },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true,
+      },
     );
+
+    // Save phone number in the User collection
+    user.phone = cleanedPhone;
+    user.role = "donor";
+    await user.save();
 
     return res.status(201).json({
       success: true,
