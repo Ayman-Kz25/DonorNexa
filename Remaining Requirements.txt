@@ -8,7 +8,7 @@
 - [x] Add an audit record when a hospital's phone number is revealed to a donor.
 - [x] Check inactive-user handling in syncUser, getDonorProfile, and hospital registration.
 - [x] Correct the Socket.IO disconnect log placement.
-- [ ] Restrict Express CORS to the configured frontend origin.
+- [x] Restrict Express CORS to the configured frontend origin.
 
 
   2. Database and seed data
