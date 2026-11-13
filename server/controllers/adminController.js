@@ -495,13 +495,13 @@ export const updateHospitalStatus = async (req, res) => {
       });
     }
 
-    hospital.isActive = isActive;
-
     const oldValue = {
       isActive: hospital.isActive,
       deactivatedAt: hospital.deactivatedAt,
       deactivationReason: hospital.deactivationReason,
     };
+
+    hospital.isActive = isActive;
 
     hospital.deactivatedAt = isActive ? null : new Date();
     hospital.deactivationReason = isActive ? "" : reason.trim();
@@ -1301,6 +1301,13 @@ export const updateAdminSettings = async (req, res) => {
         message: "Donation cooldown must be between 1 and 365 days.",
       });
     }
+
+    // Get the previous value before updating the setting.
+    const existingSetting = await Setting.findOne({
+      key: "donationCooldownDays",
+    });
+
+    const previousCooldown = existingSetting?.value ?? 90;
 
     const setting = await Setting.findOneAndUpdate(
       { key: "donationCooldownDays" },
