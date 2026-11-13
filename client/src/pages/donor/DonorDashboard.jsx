@@ -13,6 +13,9 @@ import {
   CalendarDays,
   Loader2,
   AlertCircle,
+  Award,
+  Medal,
+  HeartPulse,
 } from "lucide-react";
 
 function DonorDashboard() {
@@ -62,6 +65,27 @@ function DonorDashboard() {
   ).length;
 
   const recentMatches = matches.slice(0, 3);
+
+  const donationBadges = [
+    {
+      title: "First Donation",
+      description: "Completed your first blood donation.",
+      milestone: 1,
+      icon: Award,
+    },
+    {
+      title: "Committed Donor",
+      description: "Completed five blood donations.",
+      milestone: 5,
+      icon: Medal,
+    },
+    {
+      title: "Life Saver",
+      description: "Completed ten blood donations.",
+      milestone: 10,
+      icon: HeartPulse,
+    },
+  ];
 
   const summaryCards = [
     {
@@ -194,6 +218,75 @@ function DonorDashboard() {
 
                 <p className="mt-2 text-xs text-[#A09286]">
                   {card.description}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Donation Badges */}
+      <section>
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A45B6D]">
+            Achievements
+          </p>
+
+          <h2 className="mt-1 font-serif text-2xl font-semibold text-[#302923]">
+            Your Donation Badges
+          </h2>
+
+          <p className="mt-1 text-sm text-[#81756A]">
+            Every donation makes a difference. Keep reaching new milestones.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {donationBadges.map((badge) => {
+            const unlocked = totalDonations >= badge.milestone;
+
+            return (
+              <article
+                key={badge.milestone}
+                className={`rounded-2xl border p-5 transition ${
+                  unlocked
+                    ? "border-[#D7B9B5] bg-[#FFFDF9]"
+                    : "border-[#E8DDD4] bg-[#F8F5EF]"
+                }`}
+              >
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold ${
+                    unlocked
+                      ? "bg-[#F2E2DC] text-[#782B40]"
+                      : "bg-[#EDE9E4] text-[#A09286]"
+                  }`}
+                >
+                  <badge.icon size={23} strokeWidth={1.8} />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <h3 className="font-semibold text-[#302923]">
+                    {badge.title}
+                  </h3>
+
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      unlocked
+                        ? "bg-[#F2E2DC] text-[#782B40]"
+                        : "bg-[#EDE9E4] text-[#81756A]"
+                    }`}
+                  >
+                    {unlocked ? "Unlocked" : "Locked"}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-xs leading-5 text-[#81756A]">
+                  {badge.description}
+                </p>
+
+                <p className="mt-3 text-xs font-semibold text-[#A45B6D]">
+                  {badge.milestone} donation{badge.milestone > 1 ? "s" : ""}{" "}
+                  required
                 </p>
               </article>
             );

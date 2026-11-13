@@ -6,6 +6,7 @@ import BloodRequest from "../models/BloodRequest.js";
 import BloodInventory from "../models/BloodInventory.js";
 import Donation from "../models/Donation.js";
 import Hospital from "../models/Hospital.js";
+import Setting from "../models/Setting.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import mongoose from "mongoose";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
@@ -597,6 +598,12 @@ export const confirmDonation = async (req, res) => {
     let donationRecord;
     let previousRequestStatus;
 
+    const cooldownSetting = await Setting.findOne({
+      key: "donationCooldownDays",
+    });
+
+    const cooldownDays = Number(cooldownSetting?.value) || 90;
+
     await session.withTransaction(async () => {
       const match = await RequestMatch.findOne({
         _id: req.params.matchId,
@@ -657,7 +664,7 @@ export const confirmDonation = async (req, res) => {
 
       // Update donor donation history counters.
       const eligibleAgainDate = new Date(donationDate);
-      eligibleAgainDate.setDate(eligibleAgainDate.getDate() + 90);
+      eligibleAgainDate.setDate(eligibleAgainDate.getDate() + cooldownDays);
 
       updatedDonor = await Donor.findByIdAndUpdate(
         match.donor,

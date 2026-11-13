@@ -63,9 +63,16 @@ export const generateRequestMatches = async (
     select: "name",
   });
 
-  const eligibleDonors = donors.filter(
-    (donor) => donor.user && checkDonorEligibility(donor).eligible,
+  const eligibilityResults = await Promise.all(
+    donors.map(async (donor) => ({
+      donor,
+      eligibility: donor.user ? await checkDonorEligibility(donor) : null,
+    })),
   );
+
+  const eligibleDonors = eligibilityResults
+    .filter(({ eligibility }) => eligibility?.eligible)
+    .map(({ donor }) => donor);
 
   const rankedDonors = await Promise.all(
     eligibleDonors.map(async (donor) => {

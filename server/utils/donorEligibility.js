@@ -1,4 +1,6 @@
-export const checkDonorEligibility = (donor) => {
+import Setting from "../models/Setting.js";
+
+export const checkDonorEligibility = async (donor) => {
   const today = new Date();
   const dob = new Date(donor.dateOfBirth);
 
@@ -23,11 +25,18 @@ export const checkDonorEligibility = (donor) => {
     reasons.push("Weight must be at least 50 kg.");
   }
 
+  const setting = await Setting.findOne({
+    key: "donationCooldownDays",
+  });
+
+  const cooldownDays = Number(setting?.value) || 90;
+
   let eligibleAgainDate = null;
 
   if (donor.lastDonationDate) {
     eligibleAgainDate = new Date(donor.lastDonationDate);
-    eligibleAgainDate.setDate(eligibleAgainDate.getDate() + 90);
+
+    eligibleAgainDate.setDate(eligibleAgainDate.getDate() + cooldownDays);
 
     if (today < eligibleAgainDate) {
       reasons.push(

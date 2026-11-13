@@ -262,7 +262,7 @@ export const updateDonorAvailability = async (req, res) => {
     }
 
     if (isAvailable) {
-      const screening = checkDonorEligibility(donor);
+      const screening = await checkDonorEligibility(donor);
 
       if (!screening.eligible) {
         return res.status(400).json({
