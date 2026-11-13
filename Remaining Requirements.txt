@@ -5,7 +5,7 @@
 - [x] Fix audit logging in updateAdminSettings (admin ID).
 - [x] Fix the old-value capture in updateHospitalStatus.
 - [x] Add audit logging for manual blood inventory updates.
-- [ ] Add an audit record when a hospital's phone number is revealed to a donor.
+- [x] Add an audit record when a hospital's phone number is revealed to a donor.
 - [ ] Check inactive-user handling in syncUser, getDonorProfile, and hospital registration.
 - [ ] Correct the Socket.IO disconnect log placement.
 - [ ] Restrict Express CORS to the configured frontend origin.

@@ -600,19 +600,34 @@ export const getHospitalMatchResponses = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    const responses = matches.map((match) => ({
-      matchId: match._id,
-      donorName: match.donor?.user?.name || "Unknown Donor",
-      bloodGroup: match.donor?.bloodGroup,
-      city: match.donor?.city,
-      totalDonations: match.donor?.totalDonations,
-      status: match.status,
-      respondedAt: match.respondedAt,
-      // Reveal phone number only after donor accepts.
-      phone: ["accepted", "completed"].includes(match.status)
-        ? match.donor?.user?.phone
-        : null,
-    }));
+    const responses = await Promise.all(
+      matches.map(async (match) => {
+        const phoneRevealed = ["accepted", "completed"].includes(match.status);
+
+        if (phoneRevealed && match.donor?.user?.phone) {
+          await logAdminAction({
+            userId: req.user._id,
+            action: "DONOR_PHONE_REVEALED",
+            targetType: "RequestMatch",
+            targetId: match._id,
+            newValue: { phoneRevealed: true },
+            ipAddress: req.ip,
+            description: `Hospital ${req.hospital.hospitalName} accessed the phone number of donor ${match.donor.user.name} for a blood request.`,
+          });
+        }
+
+        return {
+          matchId: match._id,
+          donorName: match.donor?.user?.name || "Unknown Donor",
+          bloodGroup: match.donor?.bloodGroup,
+          city: match.donor?.city,
+          totalDonations: match.donor?.totalDonations,
+          status: match.status,
+          respondedAt: match.respondedAt,
+          phone: phoneRevealed ? match.donor?.user?.phone : null,
+        };
+      }),
+    );
 
     return res.status(200).json({
       success: true,

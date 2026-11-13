@@ -125,6 +125,8 @@ function AuditLogs() {
     DONATION_CONFIRMED: "bg-[#F2E2DC] text-[#782B40]",
 
     HOSPITAL_INVENTORY_UPDATED: "bg-[#F2E2DC] text-[#782B40]",
+
+    DONOR_PHONE_REVEALED: "bg-[#F2E2DC] text-[#782B40]",
   };
 
   return (
@@ -220,6 +222,8 @@ function AuditLogs() {
           <option value="HOSPITAL_INVENTORY_UPDATED">
             Hospital inventory updated
           </option>
+
+          <option value="DONOR_PHONE_REVEALED">Donor phone revealed</option>
         </select>
       </div>
 
