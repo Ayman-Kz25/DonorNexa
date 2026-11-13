@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { HeartHandshake, Menu, X } from "lucide-react";
 import { UserButton } from "@clerk/react";
+import NotificationBell from "../common/NotificationBell";
 
 const navLinks = [
   { label: "Dashboard", to: "/hospital/dashboard" },
@@ -64,7 +65,8 @@ function Navbar() {
         </div>
 
         {/* Profile */}
-        <div className="hidden items-center lg:flex">
+        <div className="hidden items-center gap-3 lg:flex">
+          <NotificationBell />
           <UserButton />
         </div>
 
@@ -96,7 +98,8 @@ function Navbar() {
               </NavLink>
             ))}
 
-            <div className="mt-2 flex items-center border-t border-[#E8DDD4] pt-4">
+            <div className="mt-2 flex items-center gap-3 border-t border-[#E8DDD4] pt-4">
+              <NotificationBell />
               <UserButton />
             </div>
           </div>

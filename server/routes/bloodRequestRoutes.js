@@ -6,10 +6,14 @@ import {
   getHospitalBloodRequests,
   getMatchingDonors,
   markBloodRequestFulfilled,
+  updateBloodRequest,
 } from "../controllers/bloodRequestController.js";
 
 import requireVerifiedHospital from "../middleware/requireVerifiedHospital.js";
-import { confirmDonation, getHospitalMatchResponses } from "../controllers/requestMatchController.js";
+import {
+  confirmDonation,
+  getHospitalMatchResponses,
+} from "../controllers/requestMatchController.js";
 
 const router = express.Router();
 
@@ -18,6 +22,8 @@ router.get("/active", getActiveBloodRequests);
 router.post("/", requireVerifiedHospital, createBloodRequest);
 
 router.get("/my-requests", requireVerifiedHospital, getHospitalBloodRequests);
+
+router.patch("/:id", requireVerifiedHospital, updateBloodRequest);
 
 router.patch(
   "/:id/fulfill",

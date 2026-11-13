@@ -11,6 +11,7 @@ import {
   Download,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDateTime } from "../../utils/dateTime";
 
 const statusStyles = {
   open: "bg-rose-50 text-[#963D54]",
@@ -23,16 +24,6 @@ const urgencyStyles = {
   normal: "bg-gray-100 text-gray-600",
   urgent: "bg-amber-50 text-amber-700",
   critical: "bg-red-50 text-red-700",
-};
-
-const formatDate = (date) => {
-  if (!date) return "—";
-
-  return new Date(date).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 };
 
 const BloodRequestsManagement = () => {
@@ -342,7 +333,7 @@ const BloodRequestsManagement = () => {
                       <td className="px-5 py-4">
                         <span className="flex items-center gap-1.5 text-sm text-[#302923]">
                           <CalendarDays size={14} className="text-[#A45B6D]" />
-                          {formatDate(item.requiredBy)}
+                          {formatDateTime(item.requiredBy)}
                         </span>
                       </td>
 
@@ -358,7 +349,7 @@ const BloodRequestsManagement = () => {
                       </td>
 
                       <td className="px-5 py-4 text-sm text-[#81756A]">
-                        {formatDate(item.createdAt)}
+                        {formatDateTime(item.createdAt)}
                       </td>
                     </tr>
                   ))}

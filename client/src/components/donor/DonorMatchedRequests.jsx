@@ -13,6 +13,7 @@ import {
   Info,
   ArrowRight,
 } from "lucide-react";
+import { formatDateTime } from "../../utils/dateTime";
 
 export default function DonorMatchedRequests() {
   const { request } = useApi();
@@ -134,8 +135,8 @@ export default function DonorMatchedRequests() {
     }
   };
 
-  const getTimeLeft = (requiredBy) => {
-    const diff = new Date(requiredBy).getTime() - Date.now();
+  const getTimeLeft = (date) => {
+    const diff = new Date(date).getTime() - Date.now();
 
     if (Number.isNaN(diff) || diff < 0) return null;
 
@@ -357,9 +358,7 @@ export default function DonorMatchedRequests() {
                       <div>
                         <p className="text-xs text-[#927E70]">Required by</p>
                         <p className="mt-0.5 text-sm font-medium text-[#302923]">
-                          {new Date(
-                            bloodRequest.requiredBy,
-                          ).toLocaleDateString()}
+                          {formatDateTime(bloodRequest.requiredBy)}
                         </p>
                       </div>
                     </div>
@@ -386,19 +385,52 @@ export default function DonorMatchedRequests() {
                     </div>
                   )}
 
-                  {/* Deadline */}
-                  {timeLeft && (
-                    <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[#81756A]">
-                      <Clock size={14} />
-                      <span
-                        className={
-                          timeLeft.soon ? "text-[#98602F]" : "text-[#782B40]"
-                        }
-                      >
-                        {timeLeft.label}
-                      </span>
+                  {/* Response and request deadlines */}
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {/* Donor response deadline */}
+                    <div className="flex items-start gap-3 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] px-3.5 py-3">
+                      <Clock
+                        size={17}
+                        className="mt-0.5 shrink-0 text-[#A33D45]"
+                      />
+
+                      <div>
+                        <p className="text-xs font-semibold text-[#963D54]">
+                          Your response deadline
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-[#842B43]">
+                          {formatDateTime(match.responseDeadlineAt)}
+                        </p>
+
+                        {match.status === "pending" &&
+                          match.responseDeadlineAt && (
+                            <p className="mt-1 text-xs text-[#963D54]">
+                              {getTimeLeft(match.responseDeadlineAt)?.label ||
+                                "Response deadline has passed"}
+                            </p>
+                          )}
+                      </div>
                     </div>
-                  )}
+
+                    {/* Hospital request deadline */}
+                    <div className="flex items-start gap-3 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] px-3.5 py-3">
+                      <CalendarDays
+                        size={17}
+                        className="mt-0.5 shrink-0 text-[#963D54]"
+                      />
+
+                      <div>
+                        <p className="text-xs font-semibold text-[#81756A]">
+                          Hospital request deadline
+                        </p>
+
+                        <p className="mt-1 text-sm font-semibold text-[#302923]">
+                          {formatDateTime(bloodRequest.requiredBy)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Actions */}
                   {match.status === "pending" && active && (

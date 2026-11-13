@@ -2,6 +2,7 @@ import Donor from "../models/Donor.js";
 import RequestMatch from "../models/RequestMatch.js";
 import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
+import { createNotification } from "./notificationService.js";
 
 const NOTIFICATION_LIMITS = {
   normal: 10,
@@ -73,6 +74,10 @@ export const generateRequestMatches = async (
   const eligibleDonors = eligibilityResults
     .filter(({ eligibility }) => eligibility?.eligible)
     .map(({ donor }) => donor);
+
+  const donorUsersByDonorId = new Map(
+    eligibleDonors.map((donor) => [donor._id.toString(), donor.user._id]),
+  );
 
   const rankedDonors = await Promise.all(
     eligibleDonors.map(async (donor) => {
@@ -147,7 +152,7 @@ export const generateRequestMatches = async (
   );
 
   if (notify && selectedDonors.length > 0) {
-    await RequestMatch.bulkWrite(
+    const bulkResult = await RequestMatch.bulkWrite(
       selectedDonors.map((donor) => ({
         updateOne: {
           filter: {
@@ -167,6 +172,28 @@ export const generateRequestMatches = async (
           upsert: true,
         },
       })),
+    );
+
+    // Notify only donors whose match records were newly created.
+    const insertedIndexes = new Set(
+      Object.keys(bulkResult.upsertedIds || {}).map(Number),
+    );
+
+    const newlyMatchedDonors = selectedDonors.filter((_, index) =>
+      insertedIndexes.has(index),
+    );
+
+    await Promise.all(
+      newlyMatchedDonors.map((donor) =>
+        createNotification({
+          recipient: donorUsersByDonorId.get(donor.donorId.toString()),
+          type: "NEW_MATCH",
+          title: "New Blood Request Match",
+          message: `You have been matched with a ${bloodRequest.urgency} blood request for ${bloodRequest.bloodGroup} blood in ${bloodRequest.city}. Please review and respond before the deadline.`,
+          relatedId: bloodRequest._id,
+          relatedModel: "BloodRequest",
+        }),
+      ),
     );
   }
 

@@ -8,6 +8,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { formatDate } from "../../utils/dateTime";
 
 function Hospitals() {
   const { request } = useApi();
@@ -145,8 +146,7 @@ function Hospitals() {
 
                 {hospital.verifiedAt && (
                   <p className="mt-5 border-t border-[#E8DDD4] pt-4 text-xs text-[#927E70]">
-                    Verified on{" "}
-                    {new Date(hospital.verifiedAt).toLocaleDateString()}
+                    Verified on {formatDate(hospital.verifiedAt)}
                   </p>
                 )}
               </article>

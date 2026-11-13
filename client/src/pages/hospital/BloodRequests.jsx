@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import {
   ClipboardList,
@@ -9,6 +8,7 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
+import { formatDateTime } from "../../utils/dateTime";
 
 import { useApi } from "../../hooks/useApi";
 import HospitalMatchResponses from "../../components/hospital/HospitalMatchResponses";
@@ -36,12 +36,11 @@ const BloodRequests = () => {
       setRequests(
         Array.isArray(data)
           ? data
-          : data?.requests || data?.bloodRequests || []
+          : data?.requests || data?.bloodRequests || [],
       );
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "Unable to load your blood requests."
+        err.response?.data?.message || "Unable to load your blood requests.",
       );
     } finally {
       setLoading(false);
@@ -55,7 +54,9 @@ const BloodRequests = () => {
   const handleRequestAction = async (requestId, action) => {
     const actionLabel = action === "cancel" ? "cancel" : "mark as fulfilled";
 
-    if (!window.confirm(`Are you sure you want to ${actionLabel} this request?`)) {
+    if (
+      !window.confirm(`Are you sure you want to ${actionLabel} this request?`)
+    ) {
       return;
     }
 
@@ -70,8 +71,7 @@ const BloodRequests = () => {
       await fetchRequests();
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          `Unable to ${action} this request.`
+        err.response?.data?.message || `Unable to ${action} this request.`,
       );
     } finally {
       setActionLoading("");
@@ -93,22 +93,11 @@ const BloodRequests = () => {
     }
   };
 
-  const formatDate = (date) => {
-    if (!date) return "Not specified";
-
-    return new Date(date).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const getCounts = () => ({
     total: requests.length,
     open: requests.filter((r) => r.status?.toLowerCase() === "open").length,
-    fulfilled: requests.filter(
-      (r) => r.status?.toLowerCase() === "fulfilled"
-    ).length,
+    fulfilled: requests.filter((r) => r.status?.toLowerCase() === "fulfilled")
+      .length,
   });
 
   const counts = getCounts();
@@ -248,7 +237,7 @@ const BloodRequests = () => {
 
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${getStatusStyle(
-                          item.status
+                          item.status,
                         )}`}
                       >
                         {item.status}
@@ -261,9 +250,7 @@ const BloodRequests = () => {
                   </div>
 
                   <div className="text-left sm:text-right">
-                    <p className="text-xs text-[#81756A]">
-                      Units Required
-                    </p>
+                    <p className="text-xs text-[#81756A]">Units Required</p>
                     <p className="mt-1 text-2xl font-semibold text-[#302923]">
                       {item.unitsRequired}
                     </p>
@@ -281,7 +268,7 @@ const BloodRequests = () => {
                   <div>
                     <p className="text-xs text-[#81756A]">Required By</p>
                     <p className="mt-1 text-sm font-medium text-[#302923]">
-                      {formatDate(item.requiredBy)}
+                      {formatDateTime(item.requiredBy)}
                     </p>
                   </div>
 
@@ -308,9 +295,7 @@ const BloodRequests = () => {
                 {isOpen && (
                   <div className="mt-5 flex flex-wrap gap-3 border-t border-[#EFE6DF] pt-5">
                     <button
-                      onClick={() =>
-                        handleRequestAction(item._id, "fulfill")
-                      }
+                      onClick={() => handleRequestAction(item._id, "fulfill")}
                       disabled={actionLoading === item._id}
                       className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#612235] disabled:opacity-50"
                     >
@@ -319,9 +304,7 @@ const BloodRequests = () => {
                     </button>
 
                     <button
-                      onClick={() =>
-                        handleRequestAction(item._id, "cancel")
-                      }
+                      onClick={() => handleRequestAction(item._id, "cancel")}
                       disabled={actionLoading === item._id}
                       className="inline-flex items-center gap-2 rounded-xl border border-[#E8DDD4] px-4 py-2.5 text-sm font-medium text-[#81756A] transition hover:bg-[#F8F5EF] disabled:opacity-50"
                     >

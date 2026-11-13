@@ -19,6 +19,7 @@ import {
   Download,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDate } from "../../utils/dateTime";
 
 const ROLE_FILTERS = [
   { value: "", label: "All", icon: Users },
@@ -516,10 +517,7 @@ function UserManagement() {
 
                     <span className="inline-flex items-center gap-1.5 text-xs text-[#81756A]">
                       <CalendarDays size={13} className="text-[#A45B6D]" />
-                      Joined{" "}
-                      {user.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString()
-                        : "—"}
+                      Joined {formatDate(user.createdAt)}
                     </span>
                   </div>
 

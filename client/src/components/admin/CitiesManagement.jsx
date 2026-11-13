@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MapPin, Plus, Search, RefreshCw, Power, Download } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDate } from "../../utils/dateTime";
 
 function CitiesManagement() {
   const { request } = useApi();
@@ -248,7 +249,7 @@ function CitiesManagement() {
                   </td>
 
                   <td className="px-4 py-4 text-[#81756A]">
-                    {new Date(city.createdAt).toLocaleDateString()}
+                    {formatDate(city.createdAt)}
                   </td>
 
                   <td className="px-4 py-4">

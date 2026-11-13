@@ -10,6 +10,7 @@ import Setting from "../models/Setting.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import mongoose from "mongoose";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
+import { createNotification } from "../services/notificationService.js";
 
 // Calculate the donor response deadline.
 // Supports both new matches and older matches without responseDeadlineAt.
@@ -188,6 +189,18 @@ export const getMyMatches = async (req, res) => {
               ? "Donor did not respond before the response deadline."
               : "Pending donor match expired because the blood request became inactive.",
         });
+
+        // Notify donor when the response deadline is missed.
+        if (newStatus === "no_response") {
+          await createNotification({
+            recipient: user._id,
+            type: "MATCH_EXPIRED",
+            title: "Match Response Deadline Missed",
+            message: `You did not respond to the ${match.bloodRequest?.bloodGroup || ""} blood request in ${match.bloodRequest?.city || "your area"} before the response deadline. This match has expired.`,
+            relatedId: updatedMatch._id,
+            relatedModel: "RequestMatch",
+          });
+        }
 
         if (newStatus === "no_response" && match.bloodRequest?._id) {
           requestsForExpansion.add(match.bloodRequest._id.toString());
@@ -496,6 +509,34 @@ export const respondToMatch = async (req, res) => {
       ipAddress: req.ip,
       description: `Donor ${status} a matched blood request.`,
     });
+
+    // Notify the hospital about the donor's response.
+    const bloodRequest = await BloodRequest.findById(
+      updatedMatch.bloodRequest,
+    ).select("hospital bloodGroup city");
+
+    if (bloodRequest) {
+      const hospital = await Hospital.findById(bloodRequest.hospital).select(
+        "user",
+      );
+
+      if (hospital?.user) {
+        await createNotification({
+          recipient: hospital.user,
+          type: status === "accepted" ? "MATCH_ACCEPTED" : "MATCH_DECLINED",
+          title:
+            status === "accepted"
+              ? "Donor Accepted Your Request"
+              : "Donor Declined Your Request",
+          message:
+            status === "accepted"
+              ? `A donor has accepted your ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city}.`
+              : `A donor has declined your ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city}.`,
+          relatedId: updatedMatch._id,
+          relatedModel: "RequestMatch",
+        });
+      }
+    }
 
     // Expand the donor pool when a donor declines.
     if (status === "declined") {

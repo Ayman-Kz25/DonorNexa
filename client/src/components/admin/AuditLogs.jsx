@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDateTime } from "../../utils/dateTime";
 
 function AuditLogs() {
   const { request } = useApi();
@@ -92,10 +93,6 @@ function AuditLogs() {
   useEffect(() => {
     fetchLogs();
   }, [page, action]);
-
-  const formatDate = (date) => {
-    return date ? new Date(date).toLocaleString() : "Not recorded";
-  };
 
   const isSystemAction = (log) => log.action?.startsWith("AUTO_");
 
@@ -331,7 +328,7 @@ function AuditLogs() {
                       </td>
 
                       <td className="whitespace-nowrap px-4 py-4 text-[#81756A]">
-                        {formatDate(log.createdAt)}
+                        {formatDateTime(log.createdAt)}
                       </td>
                     </tr>
                   );

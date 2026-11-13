@@ -9,6 +9,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
 import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import startExpirationJob from "./jobs/expireBloodRequests.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -45,6 +46,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.send("DonorNexa API is running!");

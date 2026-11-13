@@ -8,6 +8,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import { formatDate } from "../../utils/dateTime";
 
 const DonorDonationHistory = () => {
   const { request } = useApi();
@@ -104,7 +105,7 @@ const DonorDonationHistory = () => {
 
                 <div className="flex items-center gap-2 text-sm text-[#81756A]">
                   <CalendarDays size={16} className="text-[#963D54]" />
-                  {new Date(donation.donatedOn).toLocaleDateString()}
+                  {formatDate(donation.donatedOn)}
                 </div>
               </div>
 

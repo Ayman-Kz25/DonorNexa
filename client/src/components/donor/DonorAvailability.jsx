@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDateTime } from "../../utils/dateTime";
 
 function DonorAvailability() {
   const { request } = useApi();
@@ -220,11 +221,7 @@ function DonorAvailability() {
           </p>
 
           <p className="mt-1 text-sm font-semibold text-[#624126]">
-            {new Date(eligibleAgainDate).toLocaleDateString("en-PK", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {formatDateTime(eligibleAgainDate)}
           </p>
         </div>
       )}

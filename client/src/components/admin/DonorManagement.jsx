@@ -19,6 +19,7 @@ import {
   Download,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDate } from "../../utils/dateTime";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -457,9 +458,7 @@ const DonorManagement = () => {
                       </p>
                       <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-[#51463F]">
                         <CalendarDays size={13} className="text-[#A45B6D]" />
-                        {user.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString()
-                          : "—"}
+                        {formatDate(user.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -515,12 +514,11 @@ const DonorManagement = () => {
 
                 {donor.lastDonationDate && (
                   <p className="mt-4 border-t border-[#EAE2DB] pt-3 text-xs text-[#81756A]">
-                    Last donation:{" "}
-                    {new Date(donor.lastDonationDate).toLocaleDateString()}
+                    Last donation: {formatDate(donor.lastDonationDate)}
                     {donor.eligibleAgainDate && (
                       <>
                         {" · "}Eligible again:{" "}
-                        {new Date(donor.eligibleAgainDate).toLocaleDateString()}
+                        {formatDate(donor.eligibleAgainDate)}
                       </>
                     )}
                   </p>

@@ -1,10 +1,8 @@
-import Donor from "../models/Donor.js";
-import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
-import { checkDonorEligibility } from "../utils/donorEligibility.js";
 import BloodRequest from "../models/BloodRequest.js";
 import RequestMatch from "../models/RequestMatch.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
+import { createNotification } from "../services/notificationService.js";
 
 export const createBloodRequest = async (req, res) => {
   try {
@@ -111,6 +109,149 @@ export const getHospitalBloodRequests = async (req, res) => {
   }
 };
 
+export const updateBloodRequest = async (req, res) => {
+  try {
+    const bloodRequest = await BloodRequest.findOne({
+      _id: req.params.id,
+      hospital: req.hospital._id,
+    });
+
+    if (!bloodRequest) {
+      return res.status(404).json({
+        success: false,
+        message: "Blood request not found.",
+      });
+    }
+
+    if (bloodRequest.status !== "open") {
+      return res.status(400).json({
+        success: false,
+        message: "Only open requests can be updated.",
+      });
+    }
+
+    const { unitsRequired, urgency, requiredBy, hospitalNotes } = req.body;
+
+    if (
+      unitsRequired !== undefined &&
+      (!Number.isInteger(Number(unitsRequired)) ||
+        Number(unitsRequired) < 1 ||
+        Number(unitsRequired) <
+          bloodRequest.unitsFulfilled + bloodRequest.unitsReserved)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Units required must be positive and cannot be less than fulfilled and reserved units.",
+      });
+    }
+
+    if (requiredBy !== undefined) {
+      const deadline = new Date(requiredBy);
+
+      if (Number.isNaN(deadline.getTime()) || deadline <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: "Required-by date must be in the future.",
+        });
+      }
+
+      bloodRequest.requiredBy = deadline;
+      bloodRequest.expiresAt = deadline;
+    }
+
+    const oldValue = {
+      unitsRequired: bloodRequest.unitsRequired,
+      urgency: bloodRequest.urgency,
+      requiredBy: bloodRequest.requiredBy,
+      hospitalNotes: bloodRequest.hospitalNotes,
+    };
+
+    if (unitsRequired !== undefined) {
+      bloodRequest.unitsRequired = Number(unitsRequired);
+    }
+
+    if (urgency !== undefined) {
+      bloodRequest.urgency = urgency;
+    }
+
+    if (hospitalNotes !== undefined) {
+      bloodRequest.hospitalNotes = hospitalNotes;
+    }
+
+    await bloodRequest.save();
+
+    await logAdminAction({
+      userId: req.user._id,
+      action: "BLOOD_REQUEST_UPDATED",
+      targetType: "BloodRequest",
+      targetId: bloodRequest._id,
+      oldValue,
+      newValue: {
+        unitsRequired: bloodRequest.unitsRequired,
+        urgency: bloodRequest.urgency,
+        requiredBy: bloodRequest.requiredBy,
+        hospitalNotes: bloodRequest.hospitalNotes,
+      },
+      ipAddress: req.ip,
+      description: `Updated blood request for ${bloodRequest.bloodGroup}.`,
+    });
+
+    // Notify donors with pending matches.
+    const pendingMatches = await RequestMatch.find({
+      bloodRequest: bloodRequest._id,
+      status: "pending",
+    }).populate({
+      path: "donor",
+      populate: {
+        path: "user",
+        select: "_id",
+      },
+    });
+
+    const notifiedUsers = new Set();
+
+    await Promise.all(
+      pendingMatches.map((match) => {
+        const recipientId = match.donor?.user?._id?.toString();
+
+        if (!recipientId || notifiedUsers.has(recipientId)) return null;
+
+        notifiedUsers.add(recipientId);
+
+        return createNotification({
+          recipient: recipientId,
+          type: "REQUEST_UPDATED",
+          title: "Blood Request Updated",
+          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been updated by the hospital. Please review the latest details.`,
+          relatedId: bloodRequest._id,
+          relatedModel: "BloodRequest",
+        });
+      }),
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Blood request updated successfully.",
+      bloodRequest,
+    });
+  } catch (error) {
+    console.error("Update blood request error:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update blood request.",
+    });
+  }
+};
+
 export const getActiveBloodRequests = async (req, res) => {
   try {
     const now = new Date();
@@ -191,6 +332,21 @@ export const cancelBloodRequest = async (req, res) => {
       description: `Cancelled blood request for ${bloodRequest.bloodGroup}.`,
     });
 
+    // Find donors who currently have pending matches.
+    const pendingMatches = await RequestMatch.find({
+      bloodRequest: bloodRequest._id,
+      status: "pending",
+    })
+      .populate({
+        path: "donor",
+        populate: {
+          path: "user",
+          select: "_id",
+        },
+      })
+      .select("donor");
+
+    // Expire their pending matches.
     await RequestMatch.updateMany(
       {
         bloodRequest: bloodRequest._id,
@@ -199,6 +355,28 @@ export const cancelBloodRequest = async (req, res) => {
       {
         $set: { status: "expired" },
       },
+    );
+
+    // Notify matched donors.
+    const notifiedUsers = new Set();
+
+    await Promise.all(
+      pendingMatches.map((match) => {
+        const recipientId = match.donor?.user?._id?.toString();
+
+        if (!recipientId || notifiedUsers.has(recipientId)) return null;
+
+        notifiedUsers.add(recipientId);
+
+        return createNotification({
+          recipient: recipientId,
+          type: "REQUEST_UPDATED",
+          title: "Blood Request Cancelled",
+          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been cancelled by the hospital.`,
+          relatedId: bloodRequest._id,
+          relatedModel: "BloodRequest",
+        });
+      }),
     );
 
     return res.status(200).json({

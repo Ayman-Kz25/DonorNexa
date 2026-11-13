@@ -17,6 +17,7 @@ import {
   Medal,
   HeartPulse,
 } from "lucide-react";
+import { formatDate } from "../../utils/dateTime";
 
 function DonorDashboard() {
   const { request } = useApi();
@@ -364,9 +365,7 @@ function DonorDashboard() {
 
                         <span className="flex items-center gap-1">
                           <CalendarDays size={13} />
-                          {new Date(
-                            bloodRequest.requiredBy,
-                          ).toLocaleDateString()}
+                          {formatDate(bloodRequest.requiredBy)}
                         </span>
                       </div>
                     </div>

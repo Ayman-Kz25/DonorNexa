@@ -15,6 +15,7 @@ import {
   Download,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDate } from "../../utils/dateTime";
 
 function HospitalManagement() {
   const { request } = useApi();
@@ -450,10 +451,7 @@ function HospitalManagement() {
                       {hospital.licenseExpiryDate && (
                         <span className="inline-flex items-center gap-2 text-xs text-[#81756A]">
                           <CalendarDays size={15} />
-                          Expires:{" "}
-                          {new Date(
-                            hospital.licenseExpiryDate,
-                          ).toLocaleDateString()}
+                          Expires: {formatDate(hospital.licenseExpiryDate)}
                         </span>
                       )}
                     </div>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import HospitalRegistrationForm from "../../components/hospital/HospitalRegistrationForm";
+import { formatDate } from "../../utils/dateTime";
 
 function HospitalDashboard() {
   const { request } = useApi();
@@ -131,16 +132,6 @@ function HospitalDashboard() {
       default:
         return "bg-[#F8F1DF] text-[#92702F]";
     }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "Not specified";
-
-    return new Date(date).toLocaleDateString("en-PK", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
   };
 
   if (loading) {

@@ -3,6 +3,7 @@ import BloodRequest from "../models/BloodRequest.js";
 import RequestMatch from "../models/RequestMatch.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
+import { createNotification } from "../services/notificationService.js";
 
 // Get the earliest deadline of a blood request.
 const getRequestEndTime = (bloodRequest) => {
@@ -120,7 +121,12 @@ const startExpirationJob = () => {
       // STEP 2: Process all pending donor matches.
       const pendingMatches = await RequestMatch.find({
         status: "pending",
-      }).populate("bloodRequest");
+      })
+        .populate("bloodRequest")
+        .populate({
+          path: "donor",
+          select: "user",
+        });
 
       let noResponseCount = 0;
       let expiredMatchCount = 0;
@@ -158,6 +164,21 @@ const startExpirationJob = () => {
 
         if (newStatus === "no_response") {
           noResponseCount++;
+
+          // Notify the donor that their response deadline has passed.
+          const donorUserId = match.donor?.user;
+
+          if (donorUserId) {
+            await createNotification({
+              recipient: donorUserId,
+              type: "MATCH_EXPIRED",
+              title: "Match Response Deadline Missed",
+              message:
+                "Your response deadline for a blood donation request has passed. This match is no longer available for your response.",
+              relatedId: updatedMatch._id,
+              relatedModel: "RequestMatch",
+            });
+          }
 
           if (match.bloodRequest?.status === "open") {
             requestsForExpansion.set(
