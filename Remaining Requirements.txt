@@ -14,7 +14,7 @@
   2. Database and seed data
   
     
-- [ ] Create a database seed script.
+- [x] Create a database seed script.
  - [ ] Generat)e 30 donors, 5 hospitals, and 20 blood requests.
 - [ ] Ensure seeded records have valid relationships and realistic data.
 - [ ] Verify the required MongoDB indexes and data integrity.
