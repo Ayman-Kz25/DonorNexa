@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Building2,
   MapPin,
@@ -178,6 +178,26 @@ function HospitalRegistrationForm({ onRegistered }) {
     }
   };
 
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const response = await request({
+          method: "GET",
+          url: "/api/cities",
+        });
+
+        setCities(response.data.cities || []);
+      } catch (error) {
+        console.error("Load cities error:", error);
+        setError("Unable to load available cities. Please refresh the page.");
+      } finally {
+        setIsCitiesLoading(false);
+      }
+    };
+
+    loadCities();
+  }, [request]);
+
   const fieldNames = Object.keys(formData);
   const totalFields = fieldNames.length + 1;
 
@@ -351,17 +371,43 @@ function HospitalRegistrationForm({ onRegistered }) {
                         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
                       />
 
-                      <input
-                        id={`hospital-${field.name}`}
-                        type={field.type || "text"}
-                        name={field.name}
-                        value={formData[field.name]}
-                        onChange={handleChange}
-                        placeholder={field.placeholder}
-                        min={field.type === "date" ? getTodayDate() : undefined}
-                        className={inputClass}
-                        required
-                      />
+                      {field.name === "city" ? (
+                        <select
+                          id="hospital-city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          disabled={isCitiesLoading || cities.length === 0}
+                          className={inputClass}
+                          required
+                        >
+                          <option value="">
+                            {isCitiesLoading
+                              ? "Loading cities..."
+                              : "Select your city"}
+                          </option>
+
+                          {cities.map((city) => (
+                            <option key={city._id} value={city.name}>
+                              {city.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          id={`hospital-${field.name}`}
+                          type={field.type || "text"}
+                          name={field.name}
+                          value={formData[field.name]}
+                          onChange={handleChange}
+                          placeholder={field.placeholder}
+                          min={
+                            field.type === "date" ? getTodayDate() : undefined
+                          }
+                          className={inputClass}
+                          required
+                        />
+                      )}
                     </div>
                   </div>
                 );

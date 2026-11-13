@@ -54,6 +54,8 @@ function DonorProfileForm({ onRegistered }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [cities, setCities] = useState([]);
+  const [isCitiesLoading, setIsCitiesLoading] = useState(true);
 
   const isDirty =
     JSON.stringify(toComparable(formData)) !==
@@ -113,6 +115,27 @@ function DonorProfileForm({ onRegistered }) {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const response = await request({
+          method: "GET",
+          url: "/api/cities",
+        });
+
+        setCities(response.data.cities || []);
+      } catch (error) {
+        console.error("Load cities error:", error);
+        setMessage("Unable to load available cities.");
+        setMessageType("error");
+      } finally {
+        setIsCitiesLoading(false);
+      }
+    };
+
+    loadCities();
+  }, [request]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -281,24 +304,24 @@ function DonorProfileForm({ onRegistered }) {
       setSavedData(synced);
       onRegistered?.(response.data.donor || synced);
     } catch (error) {
-  console.error("Save donor profile error:", error);
+      console.error("Save donor profile error:", error);
 
-  const responseErrors = error.response?.data?.errors;
+      const responseErrors = error.response?.data?.errors;
 
-  if (responseErrors) {
-    setFieldErrors(responseErrors);
+      if (responseErrors) {
+        setFieldErrors(responseErrors);
 
-    setMessage(Object.values(responseErrors).join(" "));
-  } else {
-    setMessage(
-      error.response?.data?.message || "Unable to save donor profile.",
-    );
-  }
+        setMessage(Object.values(responseErrors).join(" "));
+      } else {
+        setMessage(
+          error.response?.data?.message || "Unable to save donor profile.",
+        );
+      }
 
-  setMessageType("error");
-} finally {
-  setIsSaving(false);
-}
+      setMessageType("error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getDateLimits = () => {
@@ -497,21 +520,25 @@ function DonorProfileForm({ onRegistered }) {
 
           <div className="relative">
             <MapPin size={18} className={iconClass} />
-            <input
+            <select
               id="city"
-              type="text"
               name="city"
               value={formData.city}
               onChange={handleChange}
-              placeholder="Enter your city"
-              disabled={!isEditing}
-              className={inputClass}
-              minLength={3}
-              maxLength={20}
-              pattern="(?=.*[A-Za-z])[A-Za-z ]{3,20}"
-              title="City must contain 3–20 letters."
+              disabled={!isEditing || isCitiesLoading}
               required
-            />
+              className={inputClass}
+            >
+              <option value="">
+                {isCitiesLoading ? "Loading cities..." : "Select your city"}
+              </option>
+
+              {cities.map((city) => (
+                <option key={city._id} value={city.name}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
           </div>
           {renderFieldError("city")}
         </div>

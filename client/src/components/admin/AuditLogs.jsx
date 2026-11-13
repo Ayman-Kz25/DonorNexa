@@ -82,7 +82,9 @@ function AuditLogs() {
       link.click();
       link.remove();
 
-      window.URL.revokeObjectURL(downloadUrl);
+      setTimeout(() => {
+        window.URL.revokeObjectURL(downloadUrl);
+      }, 1000);
     } catch (err) {
       setError("Unable to export audit logs. Please try again.");
     } finally {

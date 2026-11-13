@@ -10,9 +10,13 @@ import hospitalRoutes from "./routes/hospitalRoutes.js";
 import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import cityRoutes from "./routes/cityRoutes.js";
 import startExpirationJob from "./jobs/expireBloodRequests.js";
+import { setNotificationIO } from "./services/notificationService.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { verifyToken } from "@clerk/backend";
+import User from "./models/User.js";
 
 dotenv.config();
 
@@ -28,9 +32,43 @@ const io = new Server(server, {
 });
 
 app.set("io", io);
+setNotificationIO(io);
+
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+
+    if (!token) {
+      return next(new Error("Authentication required."));
+    }
+
+    const verifiedToken = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+
+    const user = await User.findOne({
+      clerkUserId: verifiedToken.sub,
+      isActive: true,
+    });
+
+    if (!user) {
+      return next(new Error("Active user account not found."));
+    }
+
+    socket.userId = user._id.toString();
+
+    next();
+  } catch (error) {
+    console.error("Socket authentication error:", error.message);
+    next(new Error("Invalid or expired authentication token."));
+  }
+});
 
 io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  // Join only the authenticated user's private room.
+  socket.join(`user:${socket.userId}`);
+
+  console.log(`Socket connected for user: ${socket.userId}`);
 
   socket.on("disconnect", () => {
     console.log(`Socket disconnected: ${socket.id}`);
@@ -53,6 +91,7 @@ app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/blood-requests", bloodRequestRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/cities", cityRoutes);
 
 app.get("/", (req, res) => {
   res.send("DonorNexa API is running!");

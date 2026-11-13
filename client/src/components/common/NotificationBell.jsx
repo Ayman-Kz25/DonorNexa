@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Check, CheckCheck, LoaderCircle, X } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { formatDateTime } from "../../utils/dateTime";
+import socket from "../../lib/socket";
 
 function NotificationBell() {
   const { request } = useApi();
@@ -12,6 +13,9 @@ function NotificationBell() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const notificationIds = useRef(new Set());
+  const realtimeNotifications = useRef([]);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const response = await request({
@@ -19,8 +23,33 @@ function NotificationBell() {
         url: "/api/notifications",
       });
 
-      setNotifications(response.data.notifications || []);
-      setUnreadCount(response.data.unreadCount || 0);
+      const fetchedNotifications = response.data.notifications || [];
+      const fetchedIds = new Set(
+        fetchedNotifications.map((notification) => notification._id),
+      );
+
+      // Preserve notifications received while the API request was running.
+      const newRealtimeNotifications = realtimeNotifications.current.filter(
+        (notification) => !fetchedIds.has(notification._id),
+      );
+
+      const mergedNotifications = [
+        ...newRealtimeNotifications,
+        ...fetchedNotifications,
+      ].slice(0, 30);
+
+      notificationIds.current = new Set(
+        mergedNotifications.map((notification) => notification._id),
+      );
+
+      setNotifications(mergedNotifications);
+
+      const additionalUnread = newRealtimeNotifications.filter(
+        (notification) => !notification.isRead,
+      ).length;
+
+      setUnreadCount((response.data.unreadCount || 0) + additionalUnread);
+
       setError("");
     } catch (err) {
       console.error("Fetch notifications error:", err);
@@ -30,14 +59,34 @@ function NotificationBell() {
     }
   }, [request]);
 
+  // Fetch existing notifications when the component mounts.
   useEffect(() => {
     fetchNotifications();
-
-    // Refresh notifications every 30 seconds.
-    const interval = setInterval(fetchNotifications, 30000);
-
-    return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // Listen for new notifications through Socket.IO.
+  useEffect(() => {
+    const handleNewNotification = (notification) => {
+      if (notificationIds.current.has(notification._id)) {
+        return;
+      }
+
+      notificationIds.current.add(notification._id);
+      realtimeNotifications.current.unshift(notification);
+
+      setNotifications((previous) => [notification, ...previous].slice(0, 30));
+
+      if (!notification.isRead) {
+        setUnreadCount((previous) => previous + 1);
+      }
+    };
+
+    socket.on("notification:new", handleNewNotification);
+
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+    };
+  }, []);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -52,6 +101,13 @@ function NotificationBell() {
             ? { ...notification, isRead: true }
             : notification,
         ),
+      );
+
+      realtimeNotifications.current = realtimeNotifications.current.map(
+        (notification) =>
+          notification._id === notificationId
+            ? { ...notification, isRead: true }
+            : notification,
       );
 
       setUnreadCount((previous) => Math.max(0, previous - 1));
@@ -72,6 +128,13 @@ function NotificationBell() {
           ...notification,
           isRead: true,
         })),
+      );
+
+      realtimeNotifications.current = realtimeNotifications.current.map(
+        (notification) => ({
+          ...notification,
+          isRead: true,
+        }),
       );
 
       setUnreadCount(0);
