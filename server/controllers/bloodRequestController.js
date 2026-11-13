@@ -3,6 +3,7 @@ import RequestMatch from "../models/RequestMatch.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
+import mongoose from "mongoose";
 
 export const createBloodRequest = async (req, res) => {
   try {
@@ -31,6 +32,22 @@ export const createBloodRequest = async (req, res) => {
         success: false,
         message: "Required-by date must be in the future.",
       });
+    }
+
+    if (urgency === "critical") {
+      const criticalRequestCount = await BloodRequest.countDocuments({
+        hospital: req.hospital._id,
+        urgency: "critical",
+        status: "open",
+      });
+
+      if (criticalRequestCount >= 3) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "You can only have 3 open Critical blood requests at a time.",
+        });
+      }
     }
 
     const expiresAt = new Date(deadline);
@@ -167,6 +184,23 @@ export const updateBloodRequest = async (req, res) => {
       hospitalNotes: bloodRequest.hospitalNotes,
     };
 
+    if (urgency === "critical" && bloodRequest.urgency !== "critical") {
+      const criticalRequestCount = await BloodRequest.countDocuments({
+        hospital: req.hospital._id,
+        urgency: "critical",
+        status: "open",
+        _id: { $ne: bloodRequest._id },
+      });
+
+      if (criticalRequestCount >= 3) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "You can only have 3 open Critical blood requests at a time.",
+        });
+      }
+    }
+
     if (unitsRequired !== undefined) {
       bloodRequest.unitsRequired = Number(unitsRequired);
     }
@@ -292,32 +326,96 @@ export const getActiveBloodRequests = async (req, res) => {
 };
 
 export const cancelBloodRequest = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    const bloodRequest = await BloodRequest.findOne({
-      _id: req.params.id,
-      hospital: req.hospital._id,
+    let cancellationResult = null;
+
+    await session.withTransaction(async () => {
+      const bloodRequest = await BloodRequest.findOne({
+        _id: req.params.id,
+        hospital: req.hospital._id,
+      }).session(session);
+
+      if (!bloodRequest) {
+        cancellationResult = { error: "not_found" };
+        return;
+      }
+
+      if (bloodRequest.status !== "open") {
+        cancellationResult = { error: "not_open" };
+        return;
+      }
+
+      // Find pending and accepted matches.
+      const affectedMatches = await RequestMatch.find({
+        bloodRequest: bloodRequest._id,
+        status: { $in: ["pending", "accepted"] },
+      })
+        .populate({
+          path: "donor",
+          populate: {
+            path: "user",
+            select: "_id",
+          },
+        })
+        .session(session);
+
+      // Each accepted match has reserved one unit.
+      const acceptedCount = affectedMatches.filter(
+        (match) => match.status === "accepted",
+      ).length;
+
+      const oldValue = {
+        status: bloodRequest.status,
+        unitsReserved: bloodRequest.unitsReserved,
+      };
+
+      // Cancel the request and release reserved units.
+      bloodRequest.status = "cancelled";
+      bloodRequest.unitsReserved = Math.max(
+        0,
+        bloodRequest.unitsReserved - acceptedCount,
+      );
+
+      await bloodRequest.save({ session });
+
+      // Expire all pending and accepted matches.
+      await RequestMatch.updateMany(
+        {
+          bloodRequest: bloodRequest._id,
+          status: { $in: ["pending", "accepted"] },
+        },
+        {
+          $set: {
+            status: "expired",
+          },
+        },
+        { session },
+      );
+
+      cancellationResult = {
+        bloodRequest,
+        affectedMatches,
+        oldValue,
+      };
     });
 
-    if (!bloodRequest) {
+    if (cancellationResult.error === "not_found") {
       return res.status(404).json({
         success: false,
         message: "Blood request not found.",
       });
     }
 
-    if (bloodRequest.status !== "open") {
+    if (cancellationResult.error === "not_open") {
       return res.status(400).json({
         success: false,
         message: "Only open requests can be cancelled.",
       });
     }
 
-    const oldValue = {
-      status: bloodRequest.status,
-    };
-
-    bloodRequest.status = "cancelled";
-    await bloodRequest.save();
+    const { bloodRequest, affectedMatches, oldValue } = cancellationResult;
 
     await logAdminAction({
       userId: req.user._id,
@@ -327,44 +425,22 @@ export const cancelBloodRequest = async (req, res) => {
       oldValue,
       newValue: {
         status: bloodRequest.status,
+        unitsReserved: bloodRequest.unitsReserved,
       },
       ipAddress: req.ip,
       description: `Cancelled blood request for ${bloodRequest.bloodGroup}.`,
     });
 
-    // Find donors who currently have pending matches.
-    const pendingMatches = await RequestMatch.find({
-      bloodRequest: bloodRequest._id,
-      status: "pending",
-    })
-      .populate({
-        path: "donor",
-        populate: {
-          path: "user",
-          select: "_id",
-        },
-      })
-      .select("donor");
-
-    // Expire their pending matches.
-    await RequestMatch.updateMany(
-      {
-        bloodRequest: bloodRequest._id,
-        status: "pending",
-      },
-      {
-        $set: { status: "expired" },
-      },
-    );
-
-    // Notify matched donors.
+    // Notify all affected donors.
     const notifiedUsers = new Set();
 
     await Promise.all(
-      pendingMatches.map((match) => {
+      affectedMatches.map((match) => {
         const recipientId = match.donor?.user?._id?.toString();
 
-        if (!recipientId || notifiedUsers.has(recipientId)) return null;
+        if (!recipientId || notifiedUsers.has(recipientId)) {
+          return null;
+        }
 
         notifiedUsers.add(recipientId);
 
@@ -391,6 +467,8 @@ export const cancelBloodRequest = async (req, res) => {
       success: false,
       message: "Unable to cancel blood request.",
     });
+  } finally {
+    await session.endSession();
   }
 };
 

@@ -78,7 +78,10 @@ export const registerHospital = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ clerkUserId: userId });
+    const user = await User.findOne({
+      clerkUserId: userId,
+      isActive: true,
+    });
 
     if (!user) {
       await removeUploadedLicense(req);

@@ -1,0 +1,44 @@
+1. Backend fixes
+Still pending
+- [x] Enforce the maximum of 3 open Critical requests per hospital.
+- [x] Release reserved units and handle accepted matches when a request is cancelled or expires.
+- [ ] Fix audit logging in updateAdminSettings (admin ID).
+- [ ] Fix the old-value capture in updateHospitalStatus.
+- [ ] Add audit logging for manual blood inventory updates.
+- [ ] Add an audit record when a hospital's phone number is revealed to a donor.
+- [ ] Check inactive-user handling in syncUser, getDonorProfile, and hospital registration.
+- [ ] Correct the Socket.IO disconnect log placement.
+- [ ] Restrict Express CORS to the configured frontend origin.
+
+
+2. Database and seed data
+Still pending
+- [ ] Create a database seed script.
+- [ ] Generate 30 donors, 5 hospitals, and 20 blood requests.
+- [ ] Ensure seeded records have valid relationships and realistic data.
+- [ ] Verify the required MongoDB indexes and data integrity.
+3. Frontend and functionality verification
+- [ ] Complete the CEP requirement-by-requirement frontend audit.
+- [ ] Test responsive layouts on mobile and desktop.
+- [ ] Test all user roles: guest, donor, hospital, and admin.
+- [ ] Test complete donation workflows, including concurrent requests.
+- [ ] Verify search, filters, pagination, charts, CSV exports, and notifications.
+- [ ] Test validation and error handling.
+4. Testing and security
+- [ ] Test authentication and role-based access.
+- [ ] Test hospital license PDF upload and protected document access.
+- [ ] Test invalid inputs, unauthorized access, and blocked accounts.
+- [ ] Test automatic request expiry and donor response deadlines.
+- [ ] Verify that no patient or donor private information is exposed publicly.
+- [ ] Check performance, especially on slower networks.
+5. CEP documentation and submission
+- [ ] README with installation and setup instructions.
+- [ ] Database schema and ER diagram.
+- [ ] Use cases and system requirements.
+- [ ] Explanation of matching, compatibility, eligibility, and ranking algorithms.
+- [ ] Test cases and results.
+- [ ] Screenshots of the completed system.
+- [ ] 10–15 page project report.
+- [ ] Role-based demo credentials.
+- [ ] Database dump or seed script.
+- [ ] AI tools declaration, if required.

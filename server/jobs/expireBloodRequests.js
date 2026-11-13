@@ -4,6 +4,7 @@ import RequestMatch from "../models/RequestMatch.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
+import mongoose from "mongoose";
 
 // Get the earliest deadline of a blood request.
 const getRequestEndTime = (bloodRequest) => {
@@ -83,39 +84,141 @@ const startExpirationJob = () => {
     try {
       const now = new Date();
 
-      // STEP 1: Automatically expire blood requests.
+      // STEP 1: Automatically expire requests and release accepted reservations.
       const requestsToExpire = await BloodRequest.find({
         status: "open",
         $or: [{ expiresAt: { $lte: now } }, { requiredBy: { $lte: now } }],
-      }).select("_id status expiresAt requiredBy");
+      }).select("_id");
 
       let expiredRequestCount = 0;
+      let releasedReservationCount = 0;
 
       for (const request of requestsToExpire) {
-        const updatedRequest = await BloodRequest.findOneAndUpdate(
-          {
-            _id: request._id,
-            status: "open",
-          },
-          {
-            $set: { status: "expired" },
-          },
-          { new: true },
-        );
+        const session = await mongoose.startSession();
 
-        if (!updatedRequest) continue;
+        let expiryData = null;
+
+        try {
+          await session.withTransaction(async () => {
+            // Only expire requests that are still open and past deadline.
+            const updatedRequest = await BloodRequest.findOneAndUpdate(
+              {
+                _id: request._id,
+                status: "open",
+                $or: [
+                  { expiresAt: { $lte: now } },
+                  { requiredBy: { $lte: now } },
+                ],
+              },
+              {
+                $set: { status: "expired" },
+              },
+              {
+                new: true,
+                session,
+              },
+            );
+
+            if (!updatedRequest) return;
+
+            // Find accepted matches before releasing reservations.
+            const acceptedMatches = await RequestMatch.find({
+              bloodRequest: updatedRequest._id,
+              status: "accepted",
+            })
+              .populate({
+                path: "donor",
+                populate: {
+                  path: "user",
+                  select: "_id",
+                },
+              })
+              .session(session);
+
+            const acceptedCount = acceptedMatches.length;
+
+            const oldValue = {
+              status: "open",
+              unitsReserved: updatedRequest.unitsReserved,
+            };
+
+            if (updatedRequest.unitsReserved < acceptedCount) {
+              throw new Error(
+                `Reservation mismatch for blood request ${updatedRequest._id}.`,
+              );
+            }
+
+            if (acceptedCount > 0) {
+              // Expire all accepted matches.
+              await RequestMatch.updateMany(
+                {
+                  bloodRequest: updatedRequest._id,
+                  status: "accepted",
+                },
+                {
+                  $set: { status: "expired" },
+                },
+                { session },
+              );
+
+              // Release their reserved units.
+              updatedRequest.unitsReserved -= acceptedCount;
+              await updatedRequest.save({ session });
+            }
+
+            expiryData = {
+              updatedRequest,
+              acceptedMatches,
+              oldValue,
+            };
+          });
+        } finally {
+          await session.endSession();
+        }
+
+        if (!expiryData) continue;
 
         expiredRequestCount++;
+        releasedReservationCount += expiryData.acceptedMatches.length;
+
+        const { updatedRequest, acceptedMatches, oldValue } = expiryData;
 
         await logAdminAction({
           action: "AUTO_EXPIRE_BLOOD_REQUEST",
           entity: "BloodRequest",
-          targetId: request._id,
-          oldValue: { status: "open" },
-          newValue: { status: "expired" },
+          targetId: updatedRequest._id,
+          oldValue,
+          newValue: {
+            status: "expired",
+            unitsReserved: updatedRequest.unitsReserved,
+          },
           description:
-            "Blood request automatically expired after its deadline.",
+            "Blood request automatically expired after its deadline. Accepted matches were expired and their reservations released.",
         });
+
+        // Notify donors whose accepted matches were expired.
+        const notifiedUsers = new Set();
+
+        await Promise.all(
+          acceptedMatches.map((match) => {
+            const recipientId = match.donor?.user?._id?.toString();
+
+            if (!recipientId || notifiedUsers.has(recipientId)) {
+              return null;
+            }
+
+            notifiedUsers.add(recipientId);
+
+            return createNotification({
+              recipient: recipientId,
+              type: "MATCH_EXPIRED",
+              title: "Blood Request Expired",
+              message: `The ${updatedRequest.bloodGroup} blood request in ${updatedRequest.city} has expired. Your accepted match is no longer active.`,
+              relatedId: match._id,
+              relatedModel: "RequestMatch",
+            });
+          }),
+        );
       }
 
       // STEP 2: Process all pending donor matches.
@@ -254,7 +357,8 @@ const startExpirationJob = () => {
         expiredRequestCount > 0 ||
         noResponseCount > 0 ||
         expiredMatchCount > 0 ||
-        expandedRequestCount > 0
+        expandedRequestCount > 0 ||
+        releasedReservationCount > 0
       ) {
         console.log("DonorNexa automatic expiry job completed:", {
           expiredRequests: expiredRequestCount,
@@ -262,6 +366,7 @@ const startExpirationJob = () => {
           expiredMatches: expiredMatchCount,
           expandedRequests: expandedRequestCount,
           newlyNotifiedDonors: newlyNotifiedCount,
+          releasedReservations: releasedReservationCount,
         });
       }
     } catch (error) {

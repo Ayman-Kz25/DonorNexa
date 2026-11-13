@@ -50,6 +50,13 @@ export const syncUser = async (req, res) => {
       },
     );
 
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been deactivated.",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "User synchronized successfully.",

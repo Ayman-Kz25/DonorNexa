@@ -355,6 +355,13 @@ export const updateCityStatus = async (req, res) => {
       });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid city ID.",
+      });
+    }
+
     const existingCity = await City.findById(id);
 
     if (!existingCity) {
@@ -1306,12 +1313,42 @@ export const updateAdminSettings = async (req, res) => {
       { new: true, upsert: true, runValidators: true },
     );
 
+    // Recalculate eligibility dates for all donors.
+    const donors = await Donor.find({
+      lastDonationDate: { $ne: null },
+    }).select("_id lastDonationDate");
+
+    const bulkOperations = donors.map((donor) => {
+      const eligibleAgainDate = new Date(donor.lastDonationDate);
+
+      eligibleAgainDate.setDate(
+        eligibleAgainDate.getDate() + donationCooldownDays,
+      );
+
+      return {
+        updateOne: {
+          filter: { _id: donor._id },
+          update: {
+            $set: { eligibleAgainDate },
+          },
+        },
+      };
+    });
+
+    if (bulkOperations.length > 0) {
+      await Donor.bulkWrite(bulkOperations);
+    }
+
     await logAdminAction({
-      admin: req.user._id,
+      userId: req.user._id,
+      adminId: req.user._id,
       action: "SETTINGS_UPDATED",
-      description: `Donation cooldown changed to ${donationCooldownDays} days.`,
+      oldValue: { donationCooldownDays: previousCooldown },
+      newValue: { donationCooldownDays },
+      ipAddress: req.ip,
       targetType: "Setting",
       targetId: setting._id,
+      description: `Donation cooldown changed to ${donationCooldownDays} days.`,
     });
 
     return res.status(200).json({
@@ -1319,6 +1356,7 @@ export const updateAdminSettings = async (req, res) => {
       settings: {
         donationCooldownDays: setting.value,
       },
+      donorsUpdated: bulkOperations.length,
     });
   } catch (error) {
     console.error("Update admin settings error:", error);

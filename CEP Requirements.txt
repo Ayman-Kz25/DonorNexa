@@ -1,0 +1,187 @@
+DonorNexa – Complete CEP Requirements Checklist
+
+
+1. Guest / Public Module
+Required feature	Status
+Landing page	Implemented
+Live platform statistics using AJAX	Verify
+Public active emergencies board	Verify
+Display blood group, city and urgency	Verify
+Emergency countdown timer	Verify
+Hide patient names and phone numbers publicly	Verify
+Donor registration	Implemented
+Hospital registration	Implemented
+Client-side and server-side validation	Verify
+
+2. Donor Module
+Required feature	Status
+Donor registration and login	Implemented
+Logout	Verify
+Donor profile editing	Implemented
+Profile photo upload (JPG/PNG, max 2 MB, MIME validation)	Verify
+Availability ON/OFF toggle	Implemented
+Last donation date	Implemented
+Automatic eligible-again date	Implemented
+Configurable donation cooldown	Implemented
+Receive matched requests	Implemented
+Accept matched requests	Implemented
+Decline matched requests	Verify
+Optional decline reason	Verify
+Donation history	Implemented
+Donation badges (1st, 5th, 10th)	Verify
+
+3. Hospital Module
+Required feature	Status
+Hospital registration	Implemented
+Licence document upload (PDF)	Verify
+Pending verification after registration	Implemented
+Admin hospital verification/rejection	Implemented
+Create blood requests	Implemented
+Blood group and required units	Implemented
+Critical / Urgent / Normal priority	Verify
+Required-by date and time	Implemented
+Ward and additional notes	Verify
+View ranked matched donors	Implemented
+Mask donor phone number before acceptance	Verify
+Reveal phone number after acceptance	Verify
+Mark donation as completed	Implemented
+Update hospital blood inventory	Implemented
+Automatically close fulfilled requests	Implemented
+Cancel blood requests	Implemented
+
+4. Administrator Module
+Required feature	Status
+Admin dashboard	Implemented
+Requests per week chart	Implemented
+Blood-group demand vs. supply chart	Implemented
+Fulfilment rate chart	Implemented
+Verify/reject hospitals	Implemented
+Block/unblock users	Implemented
+Manage cities	Implemented
+Manage system settings	Implemented
+Configurable cooldown with existing donor date recalculation	Implemented
+Search records	Verify
+Filter records	Verify
+Sort records	Verify
+Pagination	Verify
+Export reports to CSV	Implemented
+Complete audit log	Implemented
+
+5. Mandatory Business Rules and Core Engine
+These are particularly important because the instructor can ask you to explain the logic behind them.
+Required rule	Status
+Full ABO/Rh blood compatibility	Implemented
+Data-driven compatibility map	Implemented
+Donor age 18–60	Implemented
+Donor weight at least 50 kg	Implemented
+Donor availability ON	Implemented
+Donor account must be active	Verify
+Configurable donation cooldown	Implemented
+Exact blood-group match ranking bonus	Implemented
+Same-city ranking bonus	Implemented
+Days since last donation score	Implemented
+Response-rate ranking factor	Implemented
+Top-N donor notifications	Verify
+Critical requests automatically widen donor pool	Verify
+Concurrency-safe donor acceptance	Verify
+No over-allocation of requested units	Verify
+Automatic request expiry	Verify
+Unanswered notifications marked No Response	Verify
+Donor contact privacy	Verify
+Contact reveal event recorded in audit log	Verify
+Maximum 3 open Critical requests per hospital	Verify
+Repeated cancellations lower hospital trust score	Verify
+Every important status change recorded in audit log	Verify
+
+6. Mandatory Database Requirements
+Your CEP specifically requires a normalized database with particular database-level features.
+Required feature	Status
+Users entity	Implemented
+Donors entity	Implemented
+Hospitals entity	Implemented
+Cities entity	Implemented
+Blood requests entity	Implemented
+Request matches entity	Implemented
+Donations entity	Implemented
+Blood inventory entity	Implemented
+Notifications entity	Implemented
+Audit logs entity	Implemented
+Primary and foreign keys / relationships	Verify
+3NF normalization	Verify
+ON DELETE rules	Verify
+UNIQUE constraints	Verify
+CHECK / ENUM constraints	Verify
+Search indexes with justification	Verify
+At least one database view	Verify
+At least one database trigger	Verify
+Explicit database transaction	Implemented
+Five meaningful JOIN / aggregate queries	Verify
+At least 30 donors in seed data	Verify
+At least 5 hospitals in seed data	Verify
+At least 20 blood requests in seed data	Verify
+
+Important: Your MongoDB implementation uses Mongoose relationships and transactions rather than relational SQL constraints. We should demonstrate equivalent data-integrity controls where appropriate and document the database design accurately. A MongoDB index or validation rule should not be described as a MySQL foreign key or SQL trigger.
+7. Security Requirements
+Required feature	Status
+Secure password hashing	Verify
+Authentication	Implemented
+Role-based authorization	Implemented
+Protected API routes	Implemented
+Input validation	Verify
+SQL injection prevention / safe database queries	Implemented
+XSS prevention	Verify
+CSRF protection / equivalent token security	Verify
+Session/token security	Verify
+Secure file upload validation	Verify
+Protection against unauthorized access	Implemented
+Friendly 401 / 403 / 404 error handling	Verify
+Audit logging	Implemented
+
+8. Frontend and JavaScript Requirements
+Required feature	Status
+Responsive layout	Implemented
+HTML semantic structure	Verify
+Accessible form labels	Verify
+Keyboard accessibility	Verify
+CSS Flexbox / Grid	Implemented
+CSS variables / consistent design system	Verify
+At least 30% hand-written CSS	Verify
+JavaScript DOM events	Implemented
+Fetch/AJAX API communication	Implemented
+Client-side form validation	Verify
+Debounced donor search	Verify
+Countdown timers	Verify
+Dynamic dashboard charts	Implemented
+12-hour AM/PM date/time formatting	Implemented
+
+9. Non-Functional Requirements
+Required feature	Status
+Mobile-first usability	Verify
+Readable contrast	Verify
+Low-end device compatibility	Verify
+Performance under 2 seconds locally	Verify
+Compressed images	Verify
+Graceful database failure handling	Verify
+Maintainable folder structure	Implemented
+Separation of routes, controllers, models and services	Implemented
+Error logging	Verify
+Timezone Asia/Karachi	Verify
+
+10. Final Submission Requirements
+Deliverable	Status
+Complete source code	Implemented
+Database dump / export	Verify
+Realistic seed data	Verify
+README setup instructions	Verify
+Test credentials for each role	Verify
+Requirements analysis	Verify
+Use-case diagram	Verify
+ERD	Verify
+Database schema documentation	Verify
+Algorithm explanation	Verify
+Project report (10–15 pages)	Verify
+Test-case table	Verify
+Security measures documentation	Verify
+Screenshots	Verify
+Demo video (optional, recommended)	Not started / unknown
+AI-generated code declaration	Verify
