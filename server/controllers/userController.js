@@ -31,30 +31,26 @@ export const syncUser = async (req, res) => {
       "DonorNexa User";
 
     // Create the profile if it doesn't exist. else update basic details
-    const user = await User.findOneAndUpdate(
-      { clerkUserId: userId },
-      {
-        $set: {
-          name,
-          email: primaryEmail,
-        },
-        $setOnInsert: {
-          clerkUserId: userId,
-          role: "unassigned",
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: true,
-      },
-    );
+    let user = await User.findOne({ clerkUserId: userId });
 
-    if (!user.isActive) {
+    if (user && !user.isActive) {
       return res.status(403).json({
         success: false,
         message: "Your account has been deactivated.",
       });
+    }
+
+    if (!user) {
+      user = await User.create({
+        clerkUserId: userId,
+        name,
+        email: primaryEmail,
+        role: "unassigned",
+      });
+    } else {
+      user.name = name;
+      user.email = primaryEmail;
+      await user.save();
     }
 
     return res.status(200).json({

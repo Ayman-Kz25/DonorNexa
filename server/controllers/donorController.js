@@ -188,7 +188,10 @@ export const getDonorProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ clerkUserId: userId });
+    const user = await User.findOne({
+      clerkUserId: userId,
+      isActive: true,
+    });
 
     if (!user || user.role !== "donor") {
       return res.status(403).json({
