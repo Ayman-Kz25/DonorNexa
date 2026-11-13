@@ -22,6 +22,7 @@ const auditLogSchema = new mongoose.Schema(
         "BloodRequest",
         "RequestMatch",
         "Donation",
+        "BloodInventory",
       ],
     },
     targetId: {

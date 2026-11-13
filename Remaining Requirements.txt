@@ -4,7 +4,7 @@
 - [x] Release reserved units and handle accepted matches when a request is cancelled or expires.
 - [x] Fix audit logging in updateAdminSettings (admin ID).
 - [x] Fix the old-value capture in updateHospitalStatus.
-- [ ] Add audit logging for manual blood inventory updates.
+- [x] Add audit logging for manual blood inventory updates.
 - [ ] Add an audit record when a hospital's phone number is revealed to a donor.
 - [ ] Check inactive-user handling in syncUser, getDonorProfile, and hospital registration.
 - [ ] Correct the Socket.IO disconnect log placement.

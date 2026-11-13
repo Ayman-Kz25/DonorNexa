@@ -1,4 +1,5 @@
 import BloodInventory from "../models/BloodInventory.js";
+import logAdminAction from "../utils/logAdminAction.js";
 
 // Get hospital blood inventory
 export const getHospitalInventory = async (req, res) => {
@@ -47,6 +48,13 @@ export const updateHospitalInventory = async (req, res) => {
       });
     }
 
+    const existingInventory = await BloodInventory.findOne({
+      hospital: req.hospital._id,
+      bloodGroup,
+    });
+
+    const previousUnits = existingInventory?.unitsAvailable ?? 0;
+
     const inventory = await BloodInventory.findOneAndUpdate(
       {
         hospital: req.hospital._id,
@@ -65,6 +73,23 @@ export const updateHospitalInventory = async (req, res) => {
         setDefaultsOnInsert: true,
       },
     );
+
+    await logAdminAction({
+      userId: req.user._id,
+      action: "HOSPITAL_INVENTORY_UPDATED",
+      targetType: "BloodInventory",
+      targetId: inventory._id,
+      oldValue: {
+        bloodGroup,
+        unitsAvailable: previousUnits,
+      },
+      newValue: {
+        bloodGroup,
+        unitsAvailable: inventory.unitsAvailable,
+      },
+      ipAddress: req.ip,
+      description: `Hospital ${req.hospital.hospitalName} updated ${bloodGroup} inventory from ${previousUnits} to ${inventory.unitsAvailable} units.`,
+    });
 
     return res.status(200).json({
       success: true,

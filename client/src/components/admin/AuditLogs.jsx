@@ -123,6 +123,8 @@ function AuditLogs() {
     AUTO_MARK_MATCH_NO_RESPONSE: "bg-amber-50 text-amber-700",
 
     DONATION_CONFIRMED: "bg-[#F2E2DC] text-[#782B40]",
+
+    HOSPITAL_INVENTORY_UPDATED: "bg-[#F2E2DC] text-[#782B40]",
   };
 
   return (
@@ -214,6 +216,10 @@ function AuditLogs() {
           </option>
 
           <option value="DONATION_CONFIRMED">Donation confirmed</option>
+
+          <option value="HOSPITAL_INVENTORY_UPDATED">
+            Hospital inventory updated
+          </option>
         </select>
       </div>
 
