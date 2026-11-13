@@ -5,7 +5,6 @@ const citySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     isActive: {
@@ -14,6 +13,14 @@ const citySchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
+);
+
+citySchema.index(
+  { name: 1 },
+  {
+    unique: true,
+    collation: { locale: "en", strength: 2 },
+  },
 );
 
 const City = mongoose.model("City", citySchema);

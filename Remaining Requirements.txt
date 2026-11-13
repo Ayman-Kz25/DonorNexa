@@ -17,7 +17,7 @@
 - [x] Create a database seed script.
  - [x] Generate 30 donors, 5 hospitals, and 20 blood requests.
 - [x] Ensure seeded records have valid relationships and realistic data.
-- [ ] Verify the required MongoDB indexes and data integrity.
+- [x] Verify the required MongoDB indexes and data integrity.
 
 3. Frontend and functionality verification
 

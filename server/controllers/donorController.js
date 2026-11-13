@@ -2,6 +2,7 @@ import { getAuth } from "@clerk/express";
 import User from "../models/User.js";
 import Donor from "../models/Donor.js";
 import Donation from "../models/Donation.js";
+import City from "../models/City.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 
 const validateDonorDetails = ({ dateOfBirth, weight, city, phone }) => {
@@ -106,6 +107,24 @@ export const createDonorProfile = async (req, res) => {
       city,
       phone,
     });
+
+    const activeCity = await City.findOne({
+      name: {
+        $regex: `^${city.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+        $options: "i",
+      },
+      isActive: true,
+    });
+
+    if (!activeCity) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid and active city.",
+        errors: {
+          city: "This city does not exist or is currently unavailable.",
+        },
+      });
+    }
 
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({

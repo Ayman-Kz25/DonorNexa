@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import User from "../models/User.js";
 import Hospital from "../models/Hospital.js";
+import City from "../models/City.js";
 import logAdminAction from "../utils/logAdminAction.js";
 
 const licenseDirectory = path.resolve("private_uploads", "hospital-licenses");
@@ -75,6 +76,26 @@ export const registerHospital = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide a valid future license expiry date.",
+      });
+    }
+
+    const activeCity = await City.findOne({
+      name: {
+        $regex: `^${city.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+        $options: "i",
+      },
+      isActive: true,
+    });
+
+    if (!activeCity) {
+      await removeUploadedLicense(req);
+
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid and active city.",
+        errors: {
+          city: "This city does not exist or is currently unavailable.",
+        },
       });
     }
 

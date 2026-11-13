@@ -371,12 +371,46 @@ export const updateCityStatus = async (req, res) => {
       });
     }
 
+    if (existingCity.isActive === isActive) {
+      return res.status(400).json({
+        success: false,
+        message: `City is already ${isActive ? "active" : "inactive"}.`,
+      });
+    }
+
+    // Prevent deactivation if active donors or hospitals use this city.
+    if (!isActive) {
+      const escapedCityName = existingCity.name.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&",
+      );
+
+      const cityRegex = new RegExp(`^${escapedCityName}$`, "i");
+
+      const [donorUsingCity, hospitalUsingCity] = await Promise.all([
+        Donor.exists({ city: cityRegex }),
+        Hospital.exists({
+          city: cityRegex,
+          isActive: true,
+          verificationStatus: "verified",
+        }),
+      ]);
+
+      if (donorUsingCity || hospitalUsingCity) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This city cannot be deactivated because donors or active verified hospitals are registered in it.",
+        });
+      }
+    }
+
     const oldValue = { isActive: existingCity.isActive };
 
     const city = await City.findByIdAndUpdate(
       id,
       { isActive },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
 
     await logAdminAction({
@@ -391,18 +425,21 @@ export const updateCityStatus = async (req, res) => {
       description: `${isActive ? "Activated" : "Deactivated"} city: ${city.name}`,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: `City ${isActive ? "activated" : "deactivated"} successfully.`,
       city,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Update city status error:", error);
+
+    return res.status(500).json({
       success: false,
       message: "Unable to update city status.",
     });
   }
 };
+
 // Get Admin Audit Logs
 export const getAdminAuditLogs = async (req, res) => {
   try {
