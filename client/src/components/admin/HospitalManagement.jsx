@@ -28,13 +28,15 @@ function HospitalManagement() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [exporting, setExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const fetchHospitals = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await request({
+      const firstResponse = await request({
         method: "GET",
         url: "/api/admin/users",
         params: {
@@ -44,9 +46,33 @@ function HospitalManagement() {
         },
       });
 
-      console.log("Hospital API response:", response.data.users);
+      const firstPageUsers = firstResponse.data.users || [];
+      const totalPages = firstResponse.data.pagination?.totalPages || 1;
 
-      setHospitals((response.data.users || []).filter((user) => user.hospital));
+      let allUsers = [...firstPageUsers];
+
+      if (totalPages > 1) {
+        const remainingPages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) =>
+            request({
+              method: "GET",
+              url: "/api/admin/users",
+              params: {
+                role: "hospital",
+                page: index + 2,
+                limit: 50,
+              },
+            }),
+          ),
+        );
+
+        remainingPages.forEach((response) => {
+          allUsers.push(...(response.data.users || []));
+        });
+      }
+
+      setHospitals(allUsers.filter((user) => user.hospital));
+      setCurrentPage(1);
     } catch (err) {
       setError(err.response?.data?.message || "Unable to load hospitals.");
     } finally {
@@ -61,24 +87,47 @@ function HospitalManagement() {
   const filteredHospitals = useMemo(() => {
     return hospitals.filter((user) => {
       const hospital = user.hospital;
+      const searchTerm = search.trim().toLowerCase();
 
       const matchesSearch = [
         hospital.hospitalName,
         hospital.licenseNumber,
+        hospital.contactPerson,
+        hospital.city,
         user.name,
         user.email,
       ]
         .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(search.toLowerCase()));
+        .some((value) => value.toLowerCase().includes(searchTerm));
 
       const matchesFilter =
         filter === "all" ||
         hospital.verificationStatus === filter ||
-        (filter === "inactive" && !hospital.isActive);
+        (filter === "inactive" &&
+          hospital.verificationStatus === "verified" &&
+          !hospital.isActive);
 
       return matchesSearch && matchesFilter;
     });
   }, [hospitals, search, filter]);
+
+  const totalPages = Math.ceil(filteredHospitals.length / pageSize);
+
+  const paginatedHospitals = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+
+    return filteredHospitals.slice(startIndex, startIndex + pageSize);
+  }, [filteredHospitals, currentPage]);
+
+  const pageNumbers = useMemo(() => {
+    const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+    const end = Math.min(totalPages, start + 4);
+
+    return Array.from(
+      { length: Math.max(0, end - start + 1) },
+      (_, index) => start + index,
+    );
+  }, [currentPage, totalPages]);
 
   const handleExportCSV = async () => {
     try {
@@ -334,7 +383,10 @@ function HospitalManagement() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Search hospital, contact person, or email..."
             className="w-full rounded-xl border border-[#E8DDD4] bg-white py-2.5 pl-10 pr-3 text-sm text-[#302923] outline-none focus:border-[#A45B6D]"
           />
@@ -342,7 +394,10 @@ function HospitalManagement() {
 
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => {
+            setFilter(e.target.value);
+            setCurrentPage(1);
+          }}
           className="rounded-xl border border-[#E8DDD4] bg-white px-4 py-2.5 text-sm text-[#302923] outline-none focus:border-[#A45B6D]"
         >
           <option value="all">All Hospitals</option>
@@ -369,7 +424,7 @@ function HospitalManagement() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredHospitals.map((user) => {
+          {paginatedHospitals.map((user) => {
             const hospital = user.hospital;
             const isProcessing = processingId === hospital._id;
 
@@ -517,9 +572,57 @@ function HospitalManagement() {
         </div>
       )}
 
-      <p className="mt-5 text-xs text-[#81756A]">
-        Hospitals displayed: {filteredHospitals.length}
-      </p>
+      <div className="mt-6 flex flex-col gap-4 border-t border-[#E8DDD4] pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-[#81756A]">
+          Showing{" "}
+          {filteredHospitals.length === 0
+            ? 0
+            : (currentPage - 1) * pageSize + 1}
+          {" - "}
+          {Math.min(currentPage * pageSize, filteredHospitals.length)}
+          {" of "}
+          {filteredHospitals.length} hospitals
+        </p>
+
+        {totalPages > 1 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+              className="rounded-lg border border-[#E8DDD4] px-3 py-2 text-xs font-medium text-[#782B40] transition hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+
+            {pageNumbers.map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`h-9 min-w-9 rounded-lg px-3 text-xs font-medium transition ${
+                  currentPage === page
+                    ? "bg-[#782B40] text-white"
+                    : "border border-[#E8DDD4] text-[#782B40] hover:bg-[#F2E2DC]"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+              className="rounded-lg border border-[#E8DDD4] px-3 py-2 text-xs font-medium text-[#782B40] transition hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

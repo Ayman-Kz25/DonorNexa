@@ -193,7 +193,10 @@ export const getHospitalProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ clerkUserId: userId });
+    const user = await User.findOne({
+      clerkUserId: userId,
+      isActive: true,
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -420,6 +423,13 @@ export const getVerifiedHospitals = async (req, res) => {
 // Securely view/download a hospital license (admin only)
 export const getHospitalLicenseDocument = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid hospital ID.",
+      });
+    }
+
     const hospital = await Hospital.findById(req.params.id).select(
       "licenseDocument",
     );
