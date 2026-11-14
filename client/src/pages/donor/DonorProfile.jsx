@@ -38,7 +38,7 @@ function DonorProfile() {
         <DonorProfileForm />
       </section>
 
-      <section className="mt-6 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6 shadow-sm">
+      <section className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6 shadow-sm">
         <div className="mb-5">
           <h2 className="font-serif text-xl font-semibold text-[#302923]">
             Donation Availability

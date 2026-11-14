@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
+  UserRound,
   Pencil,
   Save,
   Loader2,
@@ -57,6 +58,11 @@ function DonorProfileForm({ onRegistered }) {
   const [cities, setCities] = useState([]);
   const [isCitiesLoading, setIsCitiesLoading] = useState(true);
 
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
   const isDirty =
     JSON.stringify(toComparable(formData)) !==
     JSON.stringify(toComparable(savedData));
@@ -96,6 +102,7 @@ function DonorProfileForm({ onRegistered }) {
 
       setFormData(loaded);
       setSavedData(loaded);
+      setProfilePhoto(donor.profilePhoto?.url || "");
       setHasProfile(true);
       setIsEditing(false);
       setMessage("");
@@ -137,6 +144,66 @@ function DonorProfileForm({ onRegistered }) {
     loadCities();
   }, [request]);
 
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png"];
+
+    if (!validTypes.includes(file.type)) {
+      setMessage("Only JPG and PNG images are allowed.");
+      setMessageType("error");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage("Profile photo must not exceed 2 MB.");
+      setMessageType("error");
+      e.target.value = "";
+      return;
+    }
+
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setMessage("");
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!photoFile || !hasProfile) return;
+
+    const formData = new FormData();
+    formData.append("profilePhoto", photoFile);
+
+    try {
+      setIsUploadingPhoto(true);
+      setMessage("");
+
+      const response = await request({
+        method: "POST",
+        url: "/api/donors/profile/photo",
+        data: formData,
+      });
+
+      setProfilePhoto(response.data.profilePhoto.url);
+      setPhotoFile(null);
+      setPhotoPreview("");
+
+      setMessage(
+        response.data.message || "Profile photo uploaded successfully.",
+      );
+      setMessageType("success");
+    } catch (error) {
+      setMessage(
+        error.response?.data?.message || "Unable to upload profile photo.",
+      );
+      setMessageType("error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -157,6 +224,11 @@ function DonorProfileForm({ onRegistered }) {
     setFormData((previous) => ({
       ...previous,
       bloodGroup: group,
+    }));
+
+    setFieldErrors((previous) => ({
+      ...previous,
+      bloodGroup: "",
     }));
   };
 
@@ -208,11 +280,22 @@ function DonorProfileForm({ onRegistered }) {
       case "dateOfBirth": {
         if (!value) return "Date of birth is required.";
 
+        const birthDate = new Date(`${value}T00:00:00`);
+
+        if (Number.isNaN(birthDate.getTime())) {
+          return "Please enter a valid date of birth.";
+        }
+
+        if (birthDate.getTime() > new Date().setHours(0, 0, 0, 0)) {
+          return "Date of birth cannot be in the future.";
+        }
+
         const age = calculateAge(value);
 
         if (age < 18 || age > 60) {
           return "Donor age must be between 18 and 60 years.";
         }
+
         break;
       }
 
@@ -481,6 +564,81 @@ function DonorProfileForm({ onRegistered }) {
             Edit Profile
           </button>
         )}
+      </div>
+
+      {/* Profile Photo */}
+      <div className="mb-7 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#E5D8CE] bg-[#F2E2DC] text-[#782B40]">
+            {photoPreview || profilePhoto ? (
+              <img
+                src={photoPreview || profilePhoto}
+                alt="Donor profile"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <UserRound size={38} />
+            )}
+          </div>
+
+          <div className="flex-1">
+            <h3 className="font-semibold text-[#302923]">Profile Photo</h3>
+
+            <p className="mt-1 text-sm text-[#81756A]">
+              Upload a JPG or PNG image. Maximum file size: 2 MB.
+            </p>
+
+            <input
+              id="donorProfilePhoto"
+              type="file"
+              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              onChange={handlePhotoSelect}
+              disabled={!hasProfile || isUploadingPhoto}
+              className="mt-3 block w-full text-sm text-[#655A51] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F2E2DC] file:px-4 file:py-2 file:font-semibold file:text-[#782B40] hover:file:bg-[#EAD5D1] disabled:opacity-50"
+            />
+
+            {!hasProfile && (
+              <p className="mt-2 text-xs text-[#98602F]">
+                Save your donor information before uploading a profile photo.
+              </p>
+            )}
+
+            {photoFile && (
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handlePhotoUpload}
+                  disabled={isUploadingPhoto}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#782B40] px-4 py-2 text-sm font-semibold text-white hover:bg-[#602032] disabled:opacity-50"
+                >
+                  {isUploadingPhoto ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Save size={15} />
+                  )}
+
+                  {isUploadingPhoto ? "Uploading..." : "Upload Photo"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={() => {
+                    setPhotoFile(null);
+                    setPhotoPreview("");
+
+                    const input = document.getElementById("donorProfilePhoto");
+
+                    if (input) input.value = "";
+                  }}
+                  className="rounded-lg border border-[#DCCBC3] px-4 py-2 text-sm font-semibold text-[#655A51] hover:bg-white disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Blood Group */}

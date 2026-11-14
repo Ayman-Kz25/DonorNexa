@@ -4,7 +4,9 @@ import {
   getDonorProfile,
   updateDonorAvailability,
   getDonorDonationHistory,
+  uploadDonorProfilePhoto,
 } from "../controllers/donorController.js";
+import uploadDonorPhoto from "../middleware/uploadDonorPhoto.js";
 
 import {
   getMyMatches,
@@ -16,6 +18,7 @@ const router = express.Router();
 router.post("/profile", createDonorProfile);
 router.get("/profile", getDonorProfile);
 router.patch("/availability", updateDonorAvailability);
+router.post("/profile/photo", uploadDonorPhoto, uploadDonorProfilePhoto);
 
 // Donor donation history
 router.get("/donation-history", getDonorDonationHistory);

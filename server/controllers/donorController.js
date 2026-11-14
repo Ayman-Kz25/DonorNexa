@@ -4,6 +4,8 @@ import Donor from "../models/Donor.js";
 import Donation from "../models/Donation.js";
 import City from "../models/City.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
+import crypto from "crypto";
+import { getCloudinary } from "../config/cloudinary.js";
 
 const validateDonorDetails = ({ dateOfBirth, weight, city, phone }) => {
   const errors = {};
@@ -370,6 +372,145 @@ export const getDonorDonationHistory = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to fetch donation history.",
+    });
+  }
+};
+
+export const uploadDonorProfilePhoto = async (req, res) => {
+  let uploadedPublicId = null;
+
+  try {
+    const { isAuthenticated, userId } = getAuth(req);
+
+    if (!isAuthenticated) {
+      return res.status(401).json({
+        success: false,
+        message: "Please sign in first.",
+      });
+    }
+
+    const user = await User.findOne({
+      clerkUserId: userId,
+      role: "donor",
+      isActive: true,
+    });
+
+    if (!user) {
+      return res.status(403).json({
+        success: false,
+        message: "Active donor account not found.",
+      });
+    }
+
+    const donor = await Donor.findOne({ user: user._id });
+
+    if (!donor) {
+      return res.status(404).json({
+        success: false,
+        message: "Donor profile not found.",
+      });
+    }
+
+    const publicId = `donor_${crypto.randomUUID()}`;
+
+    const cloudinary = getCloudinary();
+
+    const pingResult = await cloudinary.api.ping();
+    console.log("Cloudinary authentication test:", pingResult);
+
+    const formData = new FormData();
+
+    formData.append(
+      "file",
+      new Blob([req.file.buffer], { type: req.file.mimetype }),
+      req.file.originalname,
+    );
+
+    const credentials = Buffer.from(
+      `${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`,
+    ).toString("base64");
+
+    const uploadResponse = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${credentials}`,
+        },
+        body: formData,
+      },
+    );
+
+    const responseBody = await uploadResponse.text();
+
+    if (!uploadResponse.ok) {
+      console.error("Cloudinary direct upload diagnostic:", {
+        status: uploadResponse.status,
+        cloudinaryError: uploadResponse.headers.get("x-cld-error"),
+        responseBody,
+      });
+
+      throw new Error(
+        `Cloudinary upload failed (${uploadResponse.status}): ${
+          uploadResponse.headers.get("x-cld-error") || responseBody
+        }`,
+      );
+    }
+
+    const result = JSON.parse(responseBody);
+
+    uploadedPublicId = result.public_id;
+
+    const previousPublicId = donor.profilePhoto?.publicId;
+
+    donor.profilePhoto = {
+      url: result.secure_url,
+      publicId: result.public_id,
+      uploadedAt: new Date(),
+    };
+
+    await donor.save();
+
+    // Delete the previous photo only after the new photo is saved.
+    if (previousPublicId) {
+      try {
+        await cloudinary.uploader.destroy(previousPublicId, {
+          resource_type: "image",
+        });
+      } catch (deleteError) {
+        console.error("Previous donor photo deletion error:", deleteError);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile photo uploaded successfully.",
+      profilePhoto: donor.profilePhoto,
+    });
+  } catch (error) {
+    console.dir(error, { depth: null });
+
+    console.log(
+      "Cloudinary error properties:",
+      Object.getOwnPropertyNames(error),
+    );
+
+    console.log("Cloudinary response:", error.response);
+
+    // Clean up the newly uploaded image if saving the donor failed.
+    if (uploadedPublicId) {
+      try {
+        await cloudinary.uploader.destroy(uploadedPublicId, {
+          resource_type: "image",
+        });
+      } catch (cleanupError) {
+        console.error("Cloudinary cleanup error:", cleanupError);
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to upload profile photo.",
     });
   }
 };

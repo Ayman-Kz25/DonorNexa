@@ -24,6 +24,9 @@ export default function DonorMatchedRequests() {
   const [error, setError] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
+  const [declineTarget, setDeclineTarget] = useState(null);
+  const [declineReason, setDeclineReason] = useState("");
+
   const fetchMatches = useCallback(async () => {
     try {
       setLoading(true);
@@ -49,7 +52,7 @@ export default function DonorMatchedRequests() {
     fetchMatches();
   }, [fetchMatches]);
 
-  const handleResponse = async (matchId, status) => {
+  const handleResponse = async (matchId, status, reason = "") => {
     try {
       setProcessingId(matchId);
       setError("");
@@ -57,14 +60,30 @@ export default function DonorMatchedRequests() {
       await request({
         method: "PATCH",
         url: `/api/donors/matches/${matchId}/respond`,
-        data: { status },
+        data: {
+          status,
+          ...(status === "declined" && {
+            declineReason: reason.trim(),
+          }),
+        },
       });
 
       setMatches((prev) =>
         prev.map((match) =>
-          match._id === matchId ? { ...match, status } : match,
+          match._id === matchId
+            ? {
+                ...match,
+                status,
+                ...(status === "declined" && {
+                  declineReason: reason.trim(),
+                }),
+              }
+            : match,
         ),
       );
+
+      setDeclineTarget(null);
+      setDeclineReason("");
     } catch (err) {
       setError(
         err.response?.data?.message || "Unable to submit your response.",
@@ -253,8 +272,28 @@ export default function DonorMatchedRequests() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Requests content */}
       {error ? (
+        <div className="rounded-2xl border border-dashed border-[#DDCEC3] bg-[#FFFDF9] px-5 py-12 text-center">
+          <AlertCircle size={28} className="mx-auto text-[#A45B6D]" />
+
+          <h3 className="mt-3 text-lg font-semibold text-[#302923]">
+            Unable to Load Requests
+          </h3>
+
+          <p className="mt-2 text-sm text-[#81756A]">
+            Your matched requests could not be retrieved. Please try again.
+          </p>
+
+          <button
+            onClick={fetchMatches}
+            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#782B40] hover:text-[#602032]"
+          >
+            <RefreshCw size={15} />
+            Try Again
+          </button>
+        </div>
+      ) : matches.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#DDCEC3] bg-[#FFFDF9] px-5 py-16 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F2E2DC] text-[#782B40]">
             <Droplet size={25} />
@@ -285,15 +324,21 @@ export default function DonorMatchedRequests() {
 
             const now = Date.now();
 
+            const responseDeadline = match.responseDeadlineAt
+              ? new Date(match.responseDeadlineAt).getTime()
+              : NaN;
+
+            const requiredBy = new Date(bloodRequest.requiredBy).getTime();
+            const expiresAt = new Date(bloodRequest.expiresAt).getTime();
+
             const active =
               bloodRequest.status === "open" &&
-              new Date(bloodRequest.requiredBy).getTime() > now &&
-              new Date(bloodRequest.expiresAt).getTime() > now &&
-              new Date(match.responseDeadlineAt).getTime() > now;
-
-            const timeLeft = active
-              ? getTimeLeft(bloodRequest.requiredBy)
-              : null;
+              Number.isFinite(requiredBy) &&
+              Number.isFinite(expiresAt) &&
+              Number.isFinite(responseDeadline) &&
+              requiredBy > now &&
+              expiresAt > now &&
+              responseDeadline > now;
 
             return (
               <article
@@ -437,30 +482,103 @@ export default function DonorMatchedRequests() {
 
                   {/* Actions */}
                   {match.status === "pending" && active && (
-                    <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-[#E8DDD4] pt-5">
-                      <button
-                        disabled={processingId === match._id}
-                        onClick={() => handleResponse(match._id, "accepted")}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {processingId === match._id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <CheckCircle2 size={16} />
-                        )}
-                        {processingId === match._id
-                          ? "Please wait..."
-                          : "Accept Request"}
-                      </button>
+                    <div className="mt-5 border-t border-[#E8DDD4] pt-5">
+                      {declineTarget === match._id ? (
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-[#302923]">
+                            Reason for declining
+                            <span className="ml-1 font-normal text-[#81756A]">
+                              (Optional)
+                            </span>
+                          </label>
 
-                      <button
-                        disabled={processingId === match._id}
-                        onClick={() => handleResponse(match._id, "declined")}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCCBC3] px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <XCircle size={16} />
-                        Decline
-                      </button>
+                          <textarea
+                            value={declineReason}
+                            onChange={(e) => setDeclineReason(e.target.value)}
+                            maxLength={500}
+                            rows={3}
+                            placeholder="You may briefly explain why you cannot accept this request..."
+                            className="w-full resize-none rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54] focus:ring-2 focus:ring-[#F2E2DC]"
+                          />
+
+                          <p className="text-right text-xs text-[#81756A]">
+                            {declineReason.length}/500
+                          </p>
+
+                          <div className="flex flex-wrap gap-3">
+                            <button
+                              disabled={processingId === match._id}
+                              onClick={() =>
+                                handleResponse(
+                                  match._id,
+                                  "declined",
+                                  declineReason,
+                                )
+                              }
+                              className="inline-flex items-center gap-2 rounded-lg bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#602032] disabled:opacity-50"
+                            >
+                              {processingId === match._id ? (
+                                <Loader2 size={16} className="animate-spin" />
+                              ) : (
+                                <XCircle size={16} />
+                              )}
+                              Confirm Decline
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={processingId === match._id}
+                              onClick={() => {
+                                setDeclineTarget(null);
+                                setDeclineReason("");
+                              }}
+                              className="rounded-lg border border-[#DCCBC3] px-5 py-2.5 text-sm font-semibold text-[#782B40] hover:bg-[#F8F1ED] disabled:opacity-50"
+                            >
+                              Go Back
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            disabled={processingId === match._id}
+                            onClick={() =>
+                              handleResponse(match._id, "accepted")
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {processingId === match._id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <CheckCircle2 size={16} />
+                            )}
+                            {processingId === match._id
+                              ? "Please wait..."
+                              : "Accept Request"}
+                          </button>
+
+                          <button
+                            disabled={processingId === match._id}
+                            onClick={() => {
+                              setDeclineTarget(match._id);
+                              setDeclineReason("");
+                            }}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCCBC3] px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <XCircle size={16} />
+                            Decline
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {match.status === "declined" && match.declineReason && (
+                    <div className="mt-4 rounded-xl bg-[#F8F5EF] px-4 py-3 text-sm text-[#655A51]">
+                      <span className="font-semibold">
+                        Your decline reason:
+                      </span>{" "}
+                      {match.declineReason}
                     </div>
                   )}
 

@@ -32,6 +32,21 @@ const donorSchema = new mongoose.Schema(
       trim: true,
     },
 
+    profilePhoto: {
+      url: {
+        type: String,
+        default: "",
+      },
+      publicId: {
+        type: String,
+        default: "",
+      },
+      uploadedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
     isAvailable: {
       type: Boolean,
       default: false,
