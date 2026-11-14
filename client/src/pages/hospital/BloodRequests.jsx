@@ -319,7 +319,10 @@ const BloodRequests = () => {
                   <h3 className="mb-4 text-sm font-semibold text-[#302923]">
                     Donor Responses
                   </h3>
-                  <HospitalMatchResponses requestId={item._id} />
+                  <HospitalMatchResponses
+                    requestId={item._id}
+                    onDonationConfirmed={fetchRequests}
+                  />
                 </div>
               </article>
             );

@@ -11,6 +11,7 @@ import logAdminAction from "../utils/logAdminAction.js";
 import mongoose from "mongoose";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
+import { checkDonorEligibility } from "../utils/donorEligibility.js";
 
 // Calculate the donor response deadline.
 // Supports both new matches and older matches without responseDeadlineAt.
@@ -688,7 +689,14 @@ export const confirmDonation = async (req, res) => {
       });
     }
 
-    const cooldownDays = Number(cooldownSetting?.value) || 90;
+    const configuredCooldown = Number(cooldownSetting?.value);
+
+    const cooldownDays =
+      Number.isInteger(configuredCooldown) &&
+      configuredCooldown >= 1 &&
+      configuredCooldown <= 365
+        ? configuredCooldown
+        : 90;
 
     await session.withTransaction(async () => {
       const match = await RequestMatch.findOne({
@@ -719,6 +727,14 @@ export const confirmDonation = async (req, res) => {
 
       if (bloodRequest.status !== "open") {
         const error = new Error("This blood request is no longer active.");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const requestEndTime = getRequestEndTime(bloodRequest);
+
+      if (requestEndTime !== null && requestEndTime <= Date.now()) {
+        const error = new Error("The blood request deadline has passed.");
         error.statusCode = 400;
         throw error;
       }

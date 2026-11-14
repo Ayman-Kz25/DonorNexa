@@ -178,6 +178,13 @@ export const registerHospital = async (req, res) => {
 
     await removeUploadedLicense(req);
 
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This hospital or license number is already registered.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Unable to register hospital.",
@@ -211,7 +218,7 @@ export const getHospitalProfile = async (req, res) => {
 
     const hospital = await Hospital.findOne({
       user: user._id,
-    });
+    }).select("-licenseDocument");
 
     if (!hospital) {
       return res.status(404).json({
@@ -219,8 +226,6 @@ export const getHospitalProfile = async (req, res) => {
         message: "Hospital profile not found.",
       });
     }
-
-    hospital.set("licenseDocument", undefined, { strict: false });
 
     return res.status(200).json({
       success: true,

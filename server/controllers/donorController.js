@@ -8,16 +8,9 @@ import { checkDonorEligibility } from "../utils/donorEligibility.js";
 const validateDonorDetails = ({ dateOfBirth, weight, city, phone }) => {
   const errors = {};
 
-  // City: 3–20 letters, spaces allowed
-  const cleanedCity = city?.trim();
-
-  if (
-    !cleanedCity ||
-    !/^[A-Za-z ]{3,20}$/.test(cleanedCity) ||
-    !/[A-Za-z]{3}/.test(cleanedCity)
-  ) {
-    errors.city =
-      "City must contain 3–20 letters. Only letters and spaces are allowed.";
+  // City: required; existence is checked against active cities below
+  if (typeof city !== "string" || !city.trim()) {
+    errors.city = "City is required.";
   }
 
   // Weight: minimum 50 kg
@@ -221,10 +214,24 @@ export const getDonorProfile = async (req, res) => {
       isActive: true,
     });
 
-    if (!user || user.role !== "donor") {
+    if (!user) {
       return res.status(403).json({
         success: false,
         message: "Donor account not found.",
+      });
+    }
+
+    if (user.role === "unassigned") {
+      return res.status(404).json({
+        success: false,
+        message: "Donor profile not found.",
+      });
+    }
+
+    if (user.role !== "donor") {
+      return res.status(403).json({
+        success: false,
+        message: "This account is not registered as a donor.",
       });
     }
 

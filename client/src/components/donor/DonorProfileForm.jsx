@@ -190,8 +190,8 @@ function DonorProfileForm({ onRegistered }) {
       case "city":
         if (!value.trim()) return "City is required.";
 
-        if (!/^(?=.*[A-Za-z])[A-Za-z ]{3,20}$/.test(value.trim())) {
-          return "City must contain 3–20 letters only.";
+        if (!cities.some((city) => city.name === value.trim())) {
+          return "Please select a valid city.";
         }
         break;
 
@@ -222,6 +222,12 @@ function DonorProfileForm({ onRegistered }) {
         }
         break;
 
+      case "bloodGroup":
+        if (!BLOOD_GROUPS.includes(value)) {
+          return "Please select your blood group.";
+        }
+        break;
+
       default:
         break;
     }
@@ -234,10 +240,12 @@ function DonorProfileForm({ onRegistered }) {
 
     const errors = {};
 
-    ["city", "weight", "dateOfBirth", "phone"].forEach((field) => {
-      const error = validateField(field, formData[field]);
-      if (error) errors[field] = error;
-    });
+    ["bloodGroup", "city", "weight", "dateOfBirth", "phone"].forEach(
+      (field) => {
+        const error = validateField(field, formData[field]);
+        if (error) errors[field] = error;
+      },
+    );
 
     setFieldErrors(errors);
 
@@ -509,6 +517,8 @@ function DonorProfileForm({ onRegistered }) {
             );
           })}
         </div>
+
+        {renderFieldError("bloodGroup")}
       </div>
 
       {/* Profile Fields */}

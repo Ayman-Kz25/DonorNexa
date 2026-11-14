@@ -2,7 +2,10 @@ import Setting from "../models/Setting.js";
 
 export const checkDonorEligibility = async (donor) => {
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const dob = new Date(donor.dateOfBirth);
+  dob.setHours(0, 0, 0, 0);
 
   let age = today.getFullYear() - dob.getFullYear();
 
@@ -29,7 +32,12 @@ export const checkDonorEligibility = async (donor) => {
     key: "donationCooldownDays",
   });
 
-  const cooldownDays = Number(setting?.value) || 90;
+  const configuredDays = Number(setting?.value);
+
+  const cooldownDays =
+    Number.isInteger(configuredDays) && configuredDays >= 0
+      ? configuredDays
+      : 90;
 
   let eligibleAgainDate = null;
 

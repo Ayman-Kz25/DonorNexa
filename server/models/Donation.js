@@ -33,6 +33,10 @@ const donationSchema = new mongoose.Schema(
       required: true,
       min: 1,
       default: 1,
+      validate: {
+        validator: Number.isInteger,
+        message: "Donation units must be a whole number.",
+      },
     },
     donatedOn: {
       type: Date,
@@ -45,7 +49,7 @@ const donationSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Quickly retrieve a donor's donation history.

@@ -13,7 +13,10 @@ import {
   Award,
 } from "lucide-react";
 
-export default function HospitalMatchResponses({ requestId }) {
+export default function HospitalMatchResponses({
+  requestId,
+  onDonationConfirmed,
+}) {
   const { request } = useApi();
 
   const [open, setOpen] = useState(false);
@@ -75,11 +78,14 @@ export default function HospitalMatchResponses({ requestId }) {
         url: `/api/blood-requests/matches/${matchId}/confirm-donation`,
       });
 
-      setDonors((prev) =>
-        prev.map((donor) =>
-          donor.matchId === matchId ? { ...donor, status: "completed" } : donor,
-        ),
-      );
+      const response = await request({
+        method: "GET",
+        url: `/api/blood-requests/${requestId}/matches/responses`,
+      });
+
+      setDonors(response.data.responses || []);
+
+      await onDonationConfirmed?.();
     } catch (err) {
       setError(err.response?.data?.message || "Unable to confirm donation.");
     } finally {
@@ -223,7 +229,7 @@ export default function HospitalMatchResponses({ requestId }) {
                         <button
                           type="button"
                           onClick={() => handleConfirmDonation(donor.matchId)}
-                          disabled={confirmingMatchId === donor.matchId}
+                          disabled={confirmingMatchId !== null}
                           className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#642235] disabled:opacity-50"
                         >
                           {confirmingMatchId === donor.matchId ? (

@@ -9,9 +9,14 @@ function getCountdown(date, now) {
     return "Expired";
   }
 
-  const hours = Math.floor(difference / 3600000);
+  const days = Math.floor(difference / 86400000);
+  const hours = Math.floor((difference % 86400000) / 3600000);
   const minutes = Math.floor((difference % 3600000) / 60000);
   const seconds = Math.floor((difference % 60000) / 1000);
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  }
 
   return `${hours}h ${minutes}m ${seconds}s`;
 }

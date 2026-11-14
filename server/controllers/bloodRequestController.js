@@ -299,25 +299,29 @@ export const getActiveBloodRequests = async (req, res) => {
       requiredBy: { $gt: now },
       expiresAt: { $gt: now },
     })
-      .select(
-        "bloodGroup unitsRequired urgency requiredBy city createdAt hospital",
-      )
+      .select("_id bloodGroup urgency city requiredBy hospital")
       .populate({
         path: "hospital",
         match: { isActive: { $ne: false } },
-        select: "hospitalName",
+        select: "_id",
       })
       .sort({ createdAt: -1 })
       .lean();
 
-    const availableRequests = bloodRequests.filter(
-      (request) => request.hospital,
-    );
+    const publicRequests = bloodRequests
+      .filter((request) => request.hospital)
+      .map((request) => ({
+        _id: request._id,
+        bloodGroup: request.bloodGroup,
+        city: request.city,
+        urgency: request.urgency,
+        requiredBy: request.requiredBy,
+      }));
 
     return res.status(200).json({
       success: true,
-      count: availableRequests.length,
-      bloodRequests: availableRequests,
+      count: publicRequests.length,
+      bloodRequests: publicRequests,
     });
   } catch (error) {
     console.error("Active blood requests error:", error);
@@ -328,6 +332,7 @@ export const getActiveBloodRequests = async (req, res) => {
     });
   }
 };
+
 
 export const getPublicStats = async (req, res) => {
   try {
@@ -486,6 +491,13 @@ export const cancelBloodRequest = async (req, res) => {
       };
     });
 
+    if (!cancellationResult) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to cancel blood request.",
+      });
+    }
+
     if (cancellationResult.error === "not_found") {
       return res.status(404).json({
         success: false,
@@ -603,51 +615,81 @@ export const getMatchingDonors = async (req, res) => {
 };
 
 export const markBloodRequestFulfilled = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
-    const bloodRequest = await BloodRequest.findOne({
-      _id: req.params.id,
-      hospital: req.hospital._id,
-    });
+    let bloodRequest;
+    let oldStatus;
 
-    if (!bloodRequest) {
-      return res.status(404).json({
-        success: false,
-        message: "Blood request not found.",
-      });
-    }
+    await session.withTransaction(async () => {
+      bloodRequest = await BloodRequest.findOne({
+        _id: req.params.id,
+        hospital: req.hospital._id,
+      }).session(session);
 
-    if (bloodRequest.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        message: "Only open requests can be fulfilled.",
-      });
-    }
+      if (!bloodRequest) {
+        const error = new Error("Blood request not found.");
+        error.statusCode = 404;
+        throw error;
+      }
 
-    if (
-      bloodRequest.unitsFulfilled < bloodRequest.unitsRequired ||
-      bloodRequest.unitsReserved > 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
+      if (bloodRequest.status !== "open") {
+        const error = new Error("Only open requests can be fulfilled.");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (
+        bloodRequest.unitsFulfilled < bloodRequest.unitsRequired ||
+        bloodRequest.unitsReserved > 0
+      ) {
+        const error = new Error(
           "All required units must be donated and confirmed before fulfilling this request.",
-      });
-    }
+        );
+        error.statusCode = 400;
+        throw error;
+      }
 
-    const oldStatus = bloodRequest.status;
+      oldStatus = bloodRequest.status;
 
-    bloodRequest.status = "fulfilled";
-    await bloodRequest.save();
+      const updatedRequest = await BloodRequest.findOneAndUpdate(
+        {
+          _id: bloodRequest._id,
+          hospital: req.hospital._id,
+          status: "open",
+          unitsFulfilled: { $gte: bloodRequest.unitsRequired },
+          unitsReserved: 0,
+        },
+        {
+          $set: { status: "fulfilled" },
+        },
+        {
+          new: true,
+          session,
+        },
+      );
 
-    await RequestMatch.updateMany(
-      {
-        bloodRequest: bloodRequest._id,
-        status: "pending",
-      },
-      {
-        $set: { status: "expired" },
-      },
-    );
+      if (!updatedRequest) {
+        const error = new Error(
+          "Request status or unit counts changed. Please refresh and try again.",
+        );
+        error.statusCode = 409;
+        throw error;
+      }
+
+      bloodRequest = updatedRequest;
+
+      await RequestMatch.updateMany(
+        {
+          bloodRequest: bloodRequest._id,
+          status: "pending",
+        },
+        {
+          $set: { status: "expired" },
+        },
+        { session },
+      );
+    });
 
     await logAdminAction({
       userId: req.user._id,
@@ -668,9 +710,13 @@ export const markBloodRequestFulfilled = async (req, res) => {
   } catch (error) {
     console.error("Fulfill blood request error:", error);
 
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       success: false,
-      message: "Unable to fulfill blood request.",
+      message: error.statusCode
+        ? error.message
+        : "Unable to fulfill blood request.",
     });
+  } finally {
+    await session.endSession();
   }
 };

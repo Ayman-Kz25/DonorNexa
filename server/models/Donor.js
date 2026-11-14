@@ -23,7 +23,7 @@ const donorSchema = new mongoose.Schema(
     weight: {
       type: Number,
       required: true,
-      min: 1,
+      min: [50, "Donor weight must be at least 50 kg."],
     },
 
     city: {
@@ -51,6 +51,10 @@ const donorSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "Total donations must be a whole number.",
+      },
     },
   },
   {
