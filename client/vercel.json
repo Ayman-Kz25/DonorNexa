@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/__clerk/:path*",
-      "destination": "https://https://donornexa-server.vercel.app/__clerk/:path*"
-    }
-  ]
-}
