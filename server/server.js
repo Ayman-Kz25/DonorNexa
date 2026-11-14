@@ -81,7 +81,7 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+
 app.use(
   clerkMiddleware({
     frontendApiProxy: {
@@ -89,6 +89,8 @@ app.use(
     },
   }),
 );
+
+app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/donors", donorRoutes);
