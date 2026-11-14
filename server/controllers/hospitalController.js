@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Hospital from "../models/Hospital.js";
 import City from "../models/City.js";
 import logAdminAction from "../utils/logAdminAction.js";
+import mongoose from "mongoose";
 
 const licenseDirectory = path.resolve("private_uploads", "hospital-licenses");
 
@@ -63,6 +64,7 @@ export const registerHospital = async (req, res) => {
     }
 
     if (!req.licenseDocument) {
+      await removeUploadedLicense(req);
       return res.status(400).json({
         success: false,
         message: "Hospital license PDF is required.",
@@ -132,8 +134,10 @@ export const registerHospital = async (req, res) => {
       });
     }
 
+    const normalizedLicenseNumber = licenseNumber.trim().toUpperCase();
+
     const existingLicense = await Hospital.findOne({
-      licenseNumber: licenseNumber.trim(),
+      licenseNumber: normalizedLicenseNumber,
     });
 
     if (existingLicense) {
@@ -147,7 +151,7 @@ export const registerHospital = async (req, res) => {
     createdHospital = await Hospital.create({
       user: user._id,
       hospitalName: hospitalName.trim(),
-      licenseNumber: licenseNumber.trim(),
+      licenseNumber: normalizedLicenseNumber,
       licenseDocument: req.licenseDocument,
       licenseExpiryDate: expiryDate,
       contactPerson: contactPerson.trim(),
@@ -215,6 +219,8 @@ export const getHospitalProfile = async (req, res) => {
         message: "Hospital profile not found.",
       });
     }
+
+    hospital.set("licenseDocument", undefined, { strict: false });
 
     return res.status(200).json({
       success: true,

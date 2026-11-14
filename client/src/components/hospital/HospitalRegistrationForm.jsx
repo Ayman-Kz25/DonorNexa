@@ -101,6 +101,8 @@ function HospitalRegistrationForm({ onRegistered }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [cities, setCities] = useState([]);
+  const [isCitiesLoading, setIsCitiesLoading] = useState(true);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,7 +117,6 @@ function HospitalRegistrationForm({ onRegistered }) {
     const file = e.target.files?.[0];
 
     setError("");
-    setLicenseFile(null);
 
     if (!file) return;
 
@@ -139,6 +140,22 @@ function HospitalRegistrationForm({ onRegistered }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (loading) return;
+
+    const trimmedFields = [
+      ["hospitalName", "Hospital name"],
+      ["licenseNumber", "License number"],
+      ["contactPerson", "Contact person"],
+      ["address", "Hospital address"],
+    ];
+
+    for (const [field, label] of trimmedFields) {
+      if (!formData[field].trim()) {
+        setError(`${label} cannot be empty.`);
+        return;
+      }
+    }
 
     if (!licenseFile) {
       setError("Please upload your hospital license document.");
@@ -189,7 +206,7 @@ function HospitalRegistrationForm({ onRegistered }) {
         setCities(response.data.cities || []);
       } catch (error) {
         console.error("Load cities error:", error);
-        setError("Unable to load available cities. Please refresh the page.");
+        setError("Unable to load available cities. Please try again.");
       } finally {
         setIsCitiesLoading(false);
       }
@@ -377,7 +394,7 @@ function HospitalRegistrationForm({ onRegistered }) {
                           name="city"
                           value={formData.city}
                           onChange={handleChange}
-                          disabled={isCitiesLoading || cities.length === 0}
+                          disabled={isCitiesLoading}
                           className={inputClass}
                           required
                         >

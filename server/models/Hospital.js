@@ -18,6 +18,7 @@ const hospitalSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      uppercase: true,
     },
     licenseDocument: {
       fileUrl: {

@@ -59,16 +59,19 @@ const uploadHospitalLicense = (req, res, next) => {
       const generatedName = `${crypto.randomUUID()}.pdf`;
       const filePath = path.join(uploadDirectory, generatedName);
 
-      await fs.promises.writeFile(filePath, req.file.buffer, {
-        flag: "wx",
-      });
-
       req.licenseDocument = {
         fileUrl: generatedName,
-        fileName: path.basename(req.file.originalname),
+        fileName: path
+          .basename(req.file.originalname)
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(0, 100),
         mimeType: "application/pdf",
         uploadedAt: new Date(),
       };
+
+      await fs.promises.writeFile(filePath, req.file.buffer, {
+        flag: "wx",
+      });
 
       next();
     } catch (saveError) {
