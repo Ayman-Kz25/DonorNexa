@@ -95,6 +95,7 @@ node_modules/
 .stylelintcache
 .turbo/
 
+```gitignore
 # Python (Virtual Environments)
 .venv/
 venv/
@@ -102,7 +103,7 @@ ENV/
 env/
 .env/
 bin/
-lib/
+# lib/ removed because it also ignores JavaScript src/lib folders
 lib64/
 include/
 share/
@@ -114,6 +115,7 @@ pyvenv.cfg
 htmlcov/
 .coverage
 .coverage.*
+```
 
 # PHP
 vendor/
