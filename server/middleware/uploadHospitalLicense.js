@@ -1,9 +1,14 @@
+
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
-const uploadDirectory = path.resolve("private_uploads", "hospital-licenses");
+const uploadDirectory = path.join(
+  "/tmp",
+  "private_uploads",
+  "hospital-licenses",
+);
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
@@ -12,7 +17,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5 MB
+    fileSize: 5 * 1024 * 1024,
     files: 1,
   },
   fileFilter: (req, file, cb) => {
@@ -47,7 +52,6 @@ const uploadHospitalLicense = (req, res, next) => {
       });
     }
 
-    // Verify the actual PDF file signature.
     if (req.file.buffer.subarray(0, 5).toString() !== "%PDF-") {
       return res.status(400).json({
         success: false,
