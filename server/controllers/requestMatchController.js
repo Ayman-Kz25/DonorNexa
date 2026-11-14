@@ -246,7 +246,19 @@ export const respondToMatch = async (req, res) => {
 
   try {
     const { userId } = getAuth(req);
-    const { status } = req.body;
+    const { status, reason } = req.body;
+
+    const declineReason =
+      status === "declined" && typeof reason === "string"
+        ? reason.trim()
+        : null;
+
+    if (declineReason && declineReason.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: "Decline reason cannot exceed 500 characters.",
+      });
+    }
 
     if (!mongoose.isValidObjectId(req.params.matchId)) {
       return res.status(400).json({
@@ -326,7 +338,9 @@ export const respondToMatch = async (req, res) => {
             status: "pending",
           },
           {
-            $set: { status: "expired" },
+            $set: {
+              status: "expired",
+            },
           },
           {
             new: true,
@@ -478,6 +492,7 @@ export const respondToMatch = async (req, res) => {
           $set: {
             status,
             respondedAt: now,
+            declineReason: status === "declined" ? declineReason : null,
           },
         },
         {
@@ -629,15 +644,33 @@ export const getHospitalMatchResponses = async (req, res) => {
         const phoneRevealed = ["accepted", "completed"].includes(match.status);
 
         if (phoneRevealed && match.donor?.user?.phone) {
-          await logAdminAction({
-            userId: req.user._id,
-            action: "DONOR_PHONE_REVEALED",
-            targetType: "RequestMatch",
-            targetId: match._id,
-            newValue: { phoneRevealed: true },
-            ipAddress: req.ip,
-            description: `Hospital ${req.hospital.hospitalName} accessed the phone number of donor ${match.donor.user.name} for a blood request.`,
-          });
+          const revealUpdate = await RequestMatch.findOneAndUpdate(
+            {
+              _id: match._id,
+              phoneRevealedAt: null,
+            },
+            {
+              $set: {
+                phoneRevealedAt: new Date(),
+              },
+            },
+            {
+              new: true,
+            },
+          );
+
+          if (revealUpdate) {
+            await logAdminAction({
+              userId: req.user._id,
+              action: "DONOR_PHONE_REVEALED",
+              targetType: "RequestMatch",
+              targetId: match._id,
+              oldValue: { phoneRevealedAt: null },
+              newValue: { phoneRevealedAt: revealUpdate.phoneRevealedAt },
+              ipAddress: req.ip,
+              description: `Hospital ${req.hospital.hospitalName} accessed the phone number of donor ${match.donor.user.name} for a blood request.`,
+            });
+          }
         }
 
         return {

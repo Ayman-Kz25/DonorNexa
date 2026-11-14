@@ -32,7 +32,7 @@ function DonorDashboard() {
       setLoading(true);
       setError("");
 
-      const [matchesResponse, donationsResponse] = await Promise.all([
+      const results = await Promise.allSettled([
         request({
           method: "GET",
           url: "/api/donors/my-matches",
@@ -43,8 +43,28 @@ function DonorDashboard() {
         }),
       ]);
 
-      setMatches(matchesResponse.data.matches || []);
-      setTotalDonations(donationsResponse.data.totalDonations || 0);
+      const [matchesResult, donationsResult] = results;
+
+      if (matchesResult.status === "fulfilled") {
+        const fetchedMatches = matchesResult.value.data.matches;
+
+        setMatches(Array.isArray(fetchedMatches) ? fetchedMatches : []);
+      }
+
+      if (donationsResult.status === "fulfilled") {
+        const donations = donationsResult.value.data.totalDonations;
+
+        setTotalDonations(Number(donations) || 0);
+      }
+
+      if (
+        matchesResult.status === "rejected" ||
+        donationsResult.status === "rejected"
+      ) {
+        setError(
+          "Some dashboard information could not be loaded. Please retry.",
+        );
+      }
     } catch (err) {
       console.error("Donor dashboard error:", err);
       setError("Unable to load your dashboard information.");

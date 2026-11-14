@@ -46,6 +46,19 @@ export const generateRequestMatches = async (
 
   const now = new Date();
 
+  const deadlines = [bloodRequest.expiresAt, bloodRequest.requiredBy]
+    .filter(Boolean)
+    .map((date) => new Date(date).getTime())
+    .filter(Number.isFinite);
+
+  if (deadlines.length > 0 && Math.min(...deadlines) <= now.getTime()) {
+    return {
+      compatibleGroups: [],
+      rankedDonors: [],
+      notifiedCount: 0,
+    };
+  }
+
   const compatibleGroups = getCompatibleDonorGroups(bloodRequest.bloodGroup);
 
   const priorityCity = String(hospitalCity || bloodRequest.city || "")
@@ -187,18 +200,22 @@ export const generateRequestMatches = async (
 
     notifiedCount = newlyMatchedDonors.length;
 
-    await Promise.all(
-      newlyMatchedDonors.map((donor) =>
-        createNotification({
+    const notificationResults = await Promise.all(
+      newlyMatchedDonors.map(async (donor) => {
+        const notification = await createNotification({
           recipient: donorUsersByDonorId.get(donor.donorId.toString()),
           type: "NEW_MATCH",
           title: "New Blood Request Match",
           message: `You have been matched with a ${bloodRequest.urgency} blood request for ${bloodRequest.bloodGroup} blood in ${bloodRequest.city}. Please review and respond before the deadline.`,
           relatedId: bloodRequest._id,
           relatedModel: "BloodRequest",
-        }),
-      ),
+        });
+
+        return Boolean(notification);
+      }),
     );
+
+    notifiedCount = notificationResults.filter(Boolean).length;
   }
 
   return {

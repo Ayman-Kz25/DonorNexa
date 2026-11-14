@@ -254,7 +254,7 @@ export default function DonorMatchedRequests() {
       )}
 
       {/* Empty state */}
-      {matches.length === 0 ? (
+      {error ? (
         <div className="rounded-2xl border border-dashed border-[#DDCEC3] bg-[#FFFDF9] px-5 py-16 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F2E2DC] text-[#782B40]">
             <Droplet size={25} />
@@ -283,10 +283,13 @@ export default function DonorMatchedRequests() {
 
             if (!bloodRequest) return null;
 
+            const now = Date.now();
+
             const active =
               bloodRequest.status === "open" &&
-              new Date(bloodRequest.requiredBy) > new Date() &&
-              new Date(bloodRequest.expiresAt) > new Date();
+              new Date(bloodRequest.requiredBy).getTime() > now &&
+              new Date(bloodRequest.expiresAt).getTime() > now &&
+              new Date(match.responseDeadlineAt).getTime() > now;
 
             const timeLeft = active
               ? getTimeLeft(bloodRequest.requiredBy)

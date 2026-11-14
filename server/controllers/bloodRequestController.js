@@ -29,9 +29,23 @@ export const createBloodRequest = async (req, res) => {
       });
     }
 
-    const deadline = new Date(requiredBy);
+    // Require an ISO date containing an explicit timezone (Z or ±HH:MM).
+    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(requiredBy);
 
-    if (Number.isNaN(deadline.getTime()) || deadline <= new Date()) {
+    if (typeof requiredBy !== "string" || !hasTimezone) {
+      return res.status(400).json({
+        success: false,
+        message: "Required-by date must include a valid timezone.",
+      });
+    }
+
+    const deadline = new Date(requiredBy);
+    const now = new Date();
+
+    if (
+      Number.isNaN(deadline.getTime()) ||
+      deadline.getTime() <= now.getTime()
+    ) {
       return res.status(400).json({
         success: false,
         message: "Required-by date must be in the future.",
@@ -332,7 +346,6 @@ export const getActiveBloodRequests = async (req, res) => {
     });
   }
 };
-
 
 export const getPublicStats = async (req, res) => {
   try {

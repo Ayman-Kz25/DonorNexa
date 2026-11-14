@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Droplet, Send, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { getMinDateTimeLocal } from "../../utils/dateTime";
 
 const CreateRequest = () => {
   const { request } = useApi();
@@ -42,8 +43,32 @@ const CreateRequest = () => {
       return;
     }
 
-    if (Number(formData.unitsRequired) <= 0) {
-      setError("Units required must be greater than zero.");
+    if (
+      !Number.isInteger(Number(formData.unitsRequired)) ||
+      Number(formData.unitsRequired) < 1
+    ) {
+      setError("Units required must be a positive whole number.");
+      return;
+    }
+
+    const requiredByDate = new Date(formData.requiredBy);
+    const now = new Date();
+
+    console.log("Selected local date:", formData.requiredBy);
+    console.log("Parsed selected date:", requiredByDate.toString());
+    console.log("Current browser date:", now.toString());
+    console.log("Selected timestamp:", requiredByDate.getTime());
+    console.log("Current timestamp:", now.getTime());
+    console.log(
+      "Is selected date in the past:",
+      requiredByDate.getTime() <= now.getTime(),
+    );
+
+    if (
+      Number.isNaN(requiredByDate.getTime()) ||
+      requiredByDate.getTime() <= now.getTime()
+    ) {
+      setError("Required By must be a future date and time.");
       return;
     }
 
@@ -56,6 +81,7 @@ const CreateRequest = () => {
         data: {
           ...formData,
           unitsRequired: Number(formData.unitsRequired),
+          requiredBy: requiredByDate.toISOString(),
         },
       });
 
@@ -198,10 +224,14 @@ const CreateRequest = () => {
                 name="requiredBy"
                 value={formData.requiredBy}
                 onChange={handleChange}
-                min={new Date().toISOString().slice(0, 16)}
+                min={getMinDateTimeLocal()}
                 required
                 className="w-full rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:ring-2 focus:ring-[#F2E2DC]"
               />
+
+              <p className="mt-1.5 text-xs text-[#81756A]">
+                Select a future date and time for this blood request.
+              </p>
             </div>
           </div>
 

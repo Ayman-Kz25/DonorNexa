@@ -40,6 +40,16 @@ const requestMatchSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    declineReason: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: null,
+    },
+    phoneRevealedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
