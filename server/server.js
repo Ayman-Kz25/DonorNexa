@@ -82,15 +82,8 @@ app.use(
   }),
 );
 
-app.use(
-  clerkMiddleware({
-    frontendApiProxy: {
-      enabled: true,
-    },
-  }),
-);
-
 app.use(express.json());
+app.use(clerkMiddleware());
 
 app.use("/api/users", userRoutes);
 app.use("/api/donors", donorRoutes);
