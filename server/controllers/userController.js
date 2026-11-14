@@ -5,33 +5,37 @@ export const syncUser = async (req, res) => {
   try {
     const { isAuthenticated, userId } = getAuth(req);
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !userId) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized. Please sign in.",
       });
     }
 
-    // Get verified user info directly from Clerk
     const clerkUser = await clerkClient.users.getUser(userId);
 
     const primaryEmail = clerkUser.emailAddresses.find(
       (email) => email.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress;
+    );
 
-    if (!primaryEmail) {
-      return res.status(400).json({
+    if (!primaryEmail || primaryEmail.verification?.status !== "verified") {
+      return res.status(403).json({
         success: false,
-        message: "No primary email found in Clerk.",
+        message: "A verified email address is required.",
       });
     }
+
+    const email = primaryEmail.emailAddress.toLowerCase();
 
     const name =
       [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
       "DonorNexa User";
 
-    // Create the profile if it doesn't exist. else update basic details
     let user = await User.findOne({ clerkUserId: userId });
+
+    if (!user) {
+      user = await User.findOne({ email });
+    }
 
     if (user && !user.isActive) {
       return res.status(403).json({
@@ -44,12 +48,14 @@ export const syncUser = async (req, res) => {
       user = await User.create({
         clerkUserId: userId,
         name,
-        email: primaryEmail,
+        email,
         role: "unassigned",
       });
     } else {
+      user.clerkUserId = userId;
       user.name = name;
-      user.email = primaryEmail;
+      user.email = email;
+
       await user.save();
     }
 
