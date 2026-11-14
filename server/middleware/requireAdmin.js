@@ -1,4 +1,5 @@
-import { clerkClient, getAuth } from "@clerk/express";
+
+import { getAuth } from "@clerk/express";
 import User from "../models/User.js";
 
 const requireAdmin = async (req, res, next) => {
@@ -12,21 +13,8 @@ const requireAdmin = async (req, res, next) => {
       });
     }
 
-    const clerkUser = await clerkClient.users.getUser(userId);
-
-    const primaryEmail = clerkUser.emailAddresses.find(
-      (email) => email.id === clerkUser.primaryEmailAddressId,
-    );
-
-    if (!primaryEmail || primaryEmail.verification?.status !== "verified") {
-      return res.status(403).json({
-        success: false,
-        message: "Verified email required.",
-      });
-    }
-
     const user = await User.findOne({
-      email: primaryEmail.emailAddress.toLowerCase(),
+      clerkUserId: userId,
       role: "admin",
       isActive: true,
     });

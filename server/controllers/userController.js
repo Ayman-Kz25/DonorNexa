@@ -33,10 +33,6 @@ export const syncUser = async (req, res) => {
 
     let user = await User.findOne({ clerkUserId: userId });
 
-    if (!user) {
-      user = await User.findOne({ email });
-    }
-
     if (user && !user.isActive) {
       return res.status(403).json({
         success: false,
@@ -52,10 +48,8 @@ export const syncUser = async (req, res) => {
         role: "unassigned",
       });
     } else {
-      user.clerkUserId = userId;
       user.name = name;
       user.email = email;
-
       await user.save();
     }
 
