@@ -12,11 +12,11 @@ import {
 import { useCurrentUser } from "../../context/UserContext";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Blood Groups", href: "#blood-groups" },
-  { label: "Emergency Requests", href: "#requests" },
-  { label: "About", href: "#roles" },
+  { label: "Home", to: "/#home" },
+  { label: "How It Works", to: "/#how-it-works" },
+  { label: "Blood Groups", to: "/#blood-groups" },
+  { label: "Emergency Requests", to: "/emergencies" },
+  { label: "About", to: "/#roles" },
 ];
 
 function Navbar() {
@@ -46,13 +46,13 @@ function Navbar() {
 
         <div className="hidden items-center gap-7 lg:flex">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
-              href={link.href}
+              to={link.to}
               className="text-[13px] font-medium text-[#6F6258] transition hover:text-[#963D54]"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -69,7 +69,7 @@ function Navbar() {
 
               <SignUpButton
                 mode="modal"
-                signUpForceRedirectUrl="/"
+                signupforceredirecturl="/"
               >
                 <button className="inline-flex items-center gap-2 rounded-full bg-[#963D54] px-5 py-3 text-xs font-semibold text-white transition hover:bg-[#7D3045]">
                   Get Started
@@ -95,14 +95,14 @@ function Navbar() {
         <div className="border-t border-[#E6DCD0] bg-[#F8F5EF] px-6 py-6 lg:hidden">
           <div className="flex flex-col gap-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.to}
                 onClick={closeMenu}
                 className="rounded-lg px-3 py-3 text-sm font-medium text-[#6F6258] transition hover:bg-[#F0EAE0] hover:text-[#963D54]"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -122,7 +122,7 @@ function Navbar() {
 
                 <SignUpButton
                   mode="modal"
-                  signUpForceRedirectUrl="/"
+                  signupforceredirecturl="/"
                 >
                   <button
                     onClick={closeMenu}

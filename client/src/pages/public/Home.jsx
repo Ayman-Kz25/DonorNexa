@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { SignUpButton, SignInButton, useAuth } from "@clerk/react";
 import { useCurrentUser } from "../../context/UserContext";
 
@@ -10,14 +10,12 @@ import {
   HeartHandshake,
   ShieldCheck,
   MapPin,
-  Clock3,
   Users,
   Droplet,
   LockKeyhole,
   Plus,
   Sparkles,
   Building2,
-  RefreshCw,
 } from "lucide-react";
 
 import { useApi } from "../../hooks/useApi";
@@ -86,25 +84,10 @@ function SectionLabel({ children }) {
   );
 }
 
-function formatRequiredDate(date) {
-  if (!date) return "Not specified";
-
-  const parsedDate = new Date(date);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "Not specified";
-  }
-
-  return parsedDate.toLocaleString("en-PK", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
-
 function Home() {
   const { request } = useApi();
-
   const navigate = useNavigate();
+
   const { isLoaded, isSignedIn } = useAuth();
   const { user, userLoading } = useCurrentUser();
 
@@ -127,83 +110,86 @@ function Home() {
     }
   };
 
-  const [requests, setRequests] = useState([]);
-  const [requestsLoading, setRequestsLoading] = useState(true);
-  const [requestsError, setRequestsError] = useState(false);
+  const [stats, setStats] = useState({
+    activeRequests: 0,
+    registeredDonors: 0,
+    unitsFulfilled: 0,
+  });
+
+  const [animatedStats, setAnimatedStats] = useState({
+    activeRequests: 0,
+    registeredDonors: 0,
+    unitsFulfilled: 0,
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await request({
+          method: "GET",
+          url: "/api/blood-requests/stats",
+        });
+
+        setStats(response.data.stats);
+      } catch (error) {
+        console.error("Unable to fetch public statistics:", error);
+      }
+    };
+
+    fetchStats();
+  }, [request]);
+
+  useEffect(() => {
+    const duration = 1500;
+    const startTime = Date.now();
+
+    let animationFrame;
+
+    const animate = () => {
+      const progress = Math.min((Date.now() - startTime) / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedStats({
+        activeRequests: Math.floor(stats.activeRequests * easeOut),
+        registeredDonors: Math.floor(stats.registeredDonors * easeOut),
+        unitsFulfilled: Math.floor(stats.unitsFulfilled * easeOut),
+      });
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [stats]);
 
   const [selectedRole, setSelectedRole] = useState("donor");
 
   const activeRole = roles.find((role) => role.id === selectedRole) || roles[0];
-
   const RoleIcon = activeRole.icon;
-
-  // Fetch actual active emergency requests
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchRequests = async () => {
-      try {
-        setRequestsLoading(true);
-        setRequestsError(false);
-
-        const response = await request({
-          method: "GET",
-          url: "/api/blood-requests/active",
-        });
-
-        const data = response.data;
-
-        const activeRequests = Array.isArray(data)
-          ? data
-          : data?.bloodRequests || [];
-
-        if (isMounted) {
-          setRequests(activeRequests.slice(0, 3));
-        }
-      } catch (error) {
-        console.error("Unable to fetch public requests:", error);
-
-        if (isMounted) {
-          setRequestsError(true);
-          setRequests([]);
-        }
-      } finally {
-        if (isMounted) {
-          setRequestsLoading(false);
-        }
-      }
-    };
-
-    fetchRequests();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [request]);
-
-  console.log("Home user:", user);
-  console.log("Home user role:", user?.role);
 
   return (
     <div className="overflow-hidden bg-[#F8F5EF] text-[#302923]">
       {/* Hero */}
       <section
         id="home"
-        className="relative px-6 pb-20 pt-24 sm:pt-28 lg:pb-24"
+        className="relative px-4 pb-14 pt-16 sm:px-6 sm:pb-20 sm:pt-28 lg:pb-24"
       >
-        <div className="mx-auto grid max-w-[1450px] items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-14">
+        <div className="mx-auto grid w-full min-w-0 max-w-[1450px] grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-14">
           {/* Left Content */}
-          <div>
-            <div className="mb-8 inline-flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="mb-8 inline-flex max-w-full flex-wrap items-center gap-2">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0E2DA] text-[#963D54]">
                 <Heart size={16} fill="currentColor" />
               </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#963D54]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#963D54] sm:text-xs sm:tracking-[0.16em]">
                 A platform for blood donation
               </span>
             </div>
 
-            <h1 className="max-w-2xl font-serif text-5xl leading-[1.02] tracking-[-0.055em] sm:text-6xl lg:text-[88px]">
+            <h1 className="max-w-2xl font-serif text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] tracking-[-0.055em]">
               Someone out there
               <br />
               is your <span className="italic text-[#A94452]">match.</span>
@@ -215,13 +201,13 @@ function Home() {
               together, right when it matters.
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-9 flex flex-col items-stretch gap-3 min-[420px]:flex-row min-[420px]:flex-wrap min-[420px]:items-center">
               {isLoaded && isSignedIn ? (
                 <button
                   type="button"
                   onClick={() => handleRoleAction("donor")}
                   disabled={userLoading}
-                  className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-7 py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-60"
+                  className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-60"
                 >
                   I want to donate
                   <ArrowRight size={18} />
@@ -229,40 +215,40 @@ function Home() {
               ) : (
                 <SignUpButton
                   mode="modal"
-                  signUpForceRedirectUrl="/onboarding/donor"
+                  signupforceredirecturl="/onboarding/donor"
                 >
-                  <button className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-7 py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045]">
+                  <button className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045]">
                     I want to donate
                     <ArrowRight size={18} />
                   </button>
                 </SignUpButton>
               )}
 
-              <a
-                href="#requests"
+              <Link
+                to="/emergencies"
                 className="inline-flex items-center gap-3 rounded-md border border-[#CDBCAF] px-6 py-4 text-sm font-semibold text-[#493D34] transition hover:border-[#963D54] hover:text-[#963D54]"
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#CDBCAF]">
                   <ArrowDown size={13} />
                 </span>
                 Explore requests
-              </a>
+              </Link>
             </div>
 
-            <div className="mt-11 flex items-center gap-4">
+            <div className="mt-11 flex min-w-0 items-center gap-3 sm:gap-4">
               <div className="flex -space-x-2">
-                {["F", "A", "M", "+"].map((item, index) => (
+                {["F", "A", "M"].map((item) => (
                   <div
                     key={item}
-                    className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8F5EF] text-xs font-medium ${
-                      index === 3
-                        ? "bg-[#EDE1D4] text-[#963D54]"
-                        : "bg-[#E8D0C0] text-[#694B40]"
-                    }`}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8F5EF] bg-[#E8D0C0] text-xs font-medium text-[#694B40]"
                   >
                     {item}
                   </div>
                 ))}
+
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8F5EF] bg-[#EDE1D4] text-xs font-medium text-[#963D54]">
+                  <Plus size={23} strokeWidth={2} />
+                </div>
               </div>
 
               <div>
@@ -277,113 +263,188 @@ function Home() {
           </div>
 
           {/* Right Visual */}
-          <div className="relative w-full">
-            <div className="relative flex aspect-[1.42/1] min-h-[360px] items-center justify-center overflow-hidden border border-[#E3D5C8] bg-[#F0E3D8] sm:min-h-[430px]">
-              {/* Subtle dotted background */}
-              <div
-                className="pointer-events-none absolute inset-0 opacity-40"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(#D9BFAF 0.8px, transparent 0.8px)",
-                  backgroundSize: "11px 11px",
-                }}
-              />
+          <div className="w-full min-w-0">
+            <div className="relative mx-auto w-full max-w-[650px] overflow-hidden">
+              <div className="relative flex h-auto min-h-[340px] w-full aspect-[1.15/1] items-center justify-center overflow-hidden border border-[#E3D5C8] bg-[#F0E3D8] sm:aspect-[1.42/1] sm:min-h-[430px]">
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-40"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(#D9BFAF 0.8px, transparent 0.8px)",
+                    backgroundSize: "11px 11px",
+                  }}
+                />
 
-              {/* Header */}
-              <div className="absolute left-7 right-7 top-7 z-10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#C66D5B]" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#765D4E]">
-                    DonorNexa platform
+                <div className="absolute left-4 right-4 top-5 z-10 flex items-center justify-between gap-2 sm:left-7 sm:right-7 sm:top-7">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-[#C66D5B]" />
+                    <span className="truncate text-[9px] font-semibold uppercase tracking-[0.1em] text-[#765D4E] sm:text-[10px] sm:tracking-[0.15em]">
+                      DonorNexa platform
+                    </span>
+                  </div>
+
+                  <span className="flex shrink-0 items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#765D4E] sm:gap-2 sm:text-[10px] sm:tracking-[0.15em]">
+                    Pakistan
+                    <MapPin size={13} />
                   </span>
                 </div>
 
-                <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#765D4E]">
-                  Pakistan
-                  <MapPin size={13} />
+                <div className="absolute h-[260px] w-[260px] rounded-full border border-[#CDAF9E]/80 sm:h-[340px] sm:w-[340px]" />
+                <div className="absolute h-[190px] w-[280px] rotate-[-28deg] rounded-[50%] border border-[#CDAF9E]/70 sm:h-[270px] sm:w-[470px]" />
+                <div className="absolute h-[190px] w-[280px] rotate-[28deg] rounded-[50%] border border-[#CDAF9E]/70 sm:h-[270px] sm:w-[470px]" />
+
+                <div
+                  className="relative z-10 flex h-32 w-32 items-center justify-center rounded-full border border-white/70 shadow-[0_8px_30px_rgba(116,65,65,0.10)] sm:h-40 sm:w-40"
+                  style={{
+                    background:
+                      "radial-gradient(circle, #FFF9F5 0%, #E7CFC3 72%)",
+                  }}
+                >
+                  <HeartHandshake
+                    size={65}
+                    strokeWidth={1.4}
+                    className="text-[#963D54] sm:h-[76px] sm:w-[76px]"
+                  />
+                </div>
+
+                <span className="absolute left-[16%] top-[28%] text-2xl font-light text-[#B04452]">
+                  <Plus size={23} strokeWidth={1} />
                 </span>
-              </div>
 
-              {/* Orbit circles */}
-              <div className="absolute h-[260px] w-[260px] rounded-full border border-[#CDAF9E]/80 sm:h-[340px] sm:w-[340px]" />
-              <div className="absolute h-[210px] w-[370px] rotate-[-28deg] rounded-[50%] border border-[#CDAF9E]/70 sm:h-[270px] sm:w-[470px]" />
-              <div className="absolute h-[210px] w-[370px] rotate-[28deg] rounded-[50%] border border-[#CDAF9E]/70 sm:h-[270px] sm:w-[470px]" />
-
-              {/* Center icon */}
-              <div
-                className="relative z-10 flex h-32 w-32 items-center justify-center rounded-full border border-white/70 shadow-[0_8px_30px_rgba(116,65,65,0.10)] sm:h-40 sm:w-40"
-                style={{
-                  background:
-                    "radial-gradient(circle, #FFF9F5 0%, #E7CFC3 72%)",
-                }}
-              >
-                <HeartHandshake
-                  size={65}
-                  strokeWidth={1.4}
-                  className="text-[#963D54] sm:h-[76px] sm:w-[76px]"
+                <Sparkles
+                  size={23}
+                  strokeWidth={1}
+                  className="absolute right-[20%] bottom-[28%] text-[#C58C79]"
                 />
-              </div>
 
-              {/* Decorative plus */}
-              <span className="absolute left-[16%] top-[28%] text-2xl font-light text-[#B04452]">
-                +
-              </span>
-              <Sparkles
-                size={23}
-                strokeWidth={1}
-                className="absolute right-[20%] bottom-[28%] text-[#C58C79]"
-              />
-
-              {/* Blood group information */}
-              <div className="absolute right-5 top-[31%] z-20 flex items-center gap-3 bg-[#FBF8F3] px-4 py-3 shadow-sm sm:right-8 sm:px-5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E3DC] text-[#A94452]">
-                  <Droplet size={21} fill="currentColor" />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold text-[#302923]">
-                    Every type matters
-                  </p>
-                  <p className="mt-1 text-[9px] text-[#8B7E72]">
-                    8 blood groups. One platform.
-                  </p>
+                <div className="absolute right-2 top-[25%] z-20 flex max-w-[85%] min-w-0 items-center gap-2 bg-[#FBF8F3] px-2 py-2 shadow-sm sm:right-8 sm:gap-3 sm:px-5 sm:py-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F1E3DC] text-[#A94452]">
+                    <Droplet size={21} fill="currentColor" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#302923]">
+                      Every type matters
+                    </p>
+                    <p className="mt-1 text-[9px] text-[#8B7E72]">
+                      8 blood groups. One platform.
+                    </p>
+                  </div>
+                  <ArrowRight size={16} className="ml-1 text-[#963D54]" />
                 </div>
-                <ArrowRight size={16} className="ml-1 text-[#963D54]" />
-              </div>
 
-              {/* Verification information */}
-              <div className="absolute bottom-[25%] left-5 z-20 flex items-center gap-3 bg-[#FBF8F3] px-4 py-3 shadow-sm sm:left-8 sm:px-5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E4E9DD] text-[#657A5D]">
-                  <ShieldCheck size={19} />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold text-[#302923]">
-                    Verified hospital requests
-                  </p>
-                  <p className="mt-1 text-[9px] text-[#8B7E72]">
-                    Coordinated with care
-                  </p>
+                <div className="absolute bottom-[25%] left-2 z-20 flex max-w-[90%] min-w-0 items-center gap-2 bg-[#FBF8F3] px-2 py-2 shadow-sm sm:left-8 sm:gap-3 sm:px-5 sm:py-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F1E3DC] text-[#963D54]">
+                    <ShieldCheck size={19} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#302923]">
+                      Verified hospital requests
+                    </p>
+                    <p className="mt-1 text-[9px] text-[#8B7E72]">
+                      Coordinated with care
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Bottom process labels */}
-              <div className="absolute bottom-6 left-7 right-7 z-10 flex items-center justify-between gap-2">
-                <span className="text-[8px] font-medium uppercase tracking-[0.13em] text-[#806858] sm:text-[9px]">
-                  01 — Connect
-                </span>
-                <span className="text-[8px] font-medium uppercase tracking-[0.13em] text-[#806858] sm:text-[9px]">
-                  02 — Respond
-                </span>
-                <span className="text-[8px] font-medium uppercase tracking-[0.13em] text-[#806858] sm:text-[9px]">
-                  03 — Make an impact
-                </span>
+                <div className="absolute bottom-5 left-3 right-3 z-10 flex items-center justify-between gap-1 sm:bottom-6 sm:left-7 sm:right-7 sm:gap-2">
+                  <span className="min-w-0 text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                    01 — Connect
+                  </span>
+
+                  <span className="min-w-0 text-center text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                    02 — Respond
+                  </span>
+
+                  <span className="min-w-0 text-right text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                    03 — Make an impact
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Interactive Live Statistics */}
+        <div className="mx-auto mt-16 max-w-[1450px] border-y border-[#E3D5C8] py-8">
+          <div className="mb-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+                DonorNexa in numbers
+              </p>
+              <h2 className="mt-2 font-serif text-2xl text-[#302923]">
+                Every number represents a connection.
+              </h2>
+            </div>
+
+            <p className="text-xs text-[#81756A]">
+              Explore what our community is making possible.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3">
+            {[
+              {
+                value: animatedStats.activeRequests,
+                label: "Active Requests",
+                description: "Explore current blood needs",
+                href: "/emergencies",
+              },
+              {
+                value: animatedStats.registeredDonors,
+                label: "Registered Donors",
+                description: "Find your place in the community",
+                href: "#roles",
+              },
+              {
+                value: animatedStats.unitsFulfilled,
+                label: "Units Fulfilled",
+                description: "Discover our shared impact",
+                href: "#impact",
+              },
+            ].map((stat, index) => {
+              const content = (
+                <>
+                  <div>
+                    <p className="font-serif text-4xl text-[#963D54] transition-transform duration-300 group-hover:-translate-y-1 sm:text-5xl">
+                      {stat.value.toLocaleString()}
+                    </p>
+
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.13em] text-[#493D34]">
+                      {stat.label}
+                    </p>
+
+                    <p className="mt-2 text-xs text-[#81756A]">
+                      {stat.description}
+                    </p>
+                  </div>
+
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#D9C5B8] text-[#963D54] transition-all duration-300 group-hover:border-[#963D54] group-hover:bg-[#963D54] group-hover:text-white">
+                    <ArrowRight
+                      size={16}
+                      className="transition-transform duration-300 group-hover:translate-x-1"
+                    />
+                  </span>
+                </>
+              );
+
+              const className = `group relative flex items-center justify-between gap-3 px-5 py-5 transition-all duration-300 hover:bg-[#F0E7DF] sm:px-7 ${
+                index !== 0
+                  ? "border-t border-[#E3D5C8] sm:border-l sm:border-t-0"
+                  : ""
+              }`;
+
+              return (
+                <Link key={stat.label} to={stat.href} className={className}>
+                  {content}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Blood Groups */}
-      <section id="blood-groups" className="px-6 py-20">
+      <section id="blood-groups" className="px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl border-y border-[#E6DCD0] py-12">
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -396,11 +457,11 @@ function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid w-full grid-cols-4 gap-2 sm:gap-4 lg:max-w-[420px]">
               {bloodGroups.map((group) => (
                 <div
                   key={group}
-                  className="flex h-14 w-16 items-center justify-center rounded-xl border border-[#E2D5C8] bg-[#F2ECE3] font-serif text-xl text-[#963D54] transition hover:border-[#963D54] hover:bg-[#963D54] hover:text-white sm:h-16 sm:w-20"
+                  className="flex h-14 w-full min-w-0 items-center justify-center rounded-xl border border-[#E2D5C8] bg-[#F2ECE3] font-serif text-xl text-[#963D54] transition hover:border-[#963D54] hover:bg-[#963D54] hover:text-white sm:h-16"
                 >
                   {group}
                 </div>
@@ -411,7 +472,10 @@ function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="bg-[#F0EAE0] px-6 py-24">
+      <section
+        id="how-it-works"
+        className="bg-[#F0EAE0] px-4 py-16 sm:px-6 sm:py-24"
+      >
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
@@ -489,7 +553,7 @@ function Home() {
       </section>
 
       {/* Trust and Platform Features */}
-      <section id="impact" className="px-6 py-24">
+      <section id="impact" className="px-4 py-16 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
             <div>
@@ -539,10 +603,10 @@ function Home() {
                 return (
                   <div
                     key={item.title}
-                    className="min-h-48 rounded-2xl border border-[#E6DCD0] bg-[#F2ECE3] p-6"
+                    className="min-h-0 rounded-2xl border border-[#E6DCD0] bg-[#F2ECE3] p-3 sm:min-h-48 sm:p-6"
                   >
                     <Icon size={22} className="text-[#963D54]" />
-                    <h3 className="mt-6 font-serif text-xl text-[#302923]">
+                    <h3 className="mt-4 font-serif text-base leading-snug text-[#302923] sm:mt-6 sm:text-xl">
                       {item.title}
                     </h3>
                     <p className="mt-3 text-xs leading-6 text-[#81756A]">
@@ -556,114 +620,34 @@ function Home() {
         </div>
       </section>
 
-      {/* Live Emergency Requests */}
-      <section id="requests" className="bg-[#302923] px-6 py-24 text-[#F8F5EF]">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-            <div>
-              <SectionLabel>Emergency blood requests</SectionLabel>
-              <h2 className="mt-4 font-serif text-4xl sm:text-5xl">
-                Help that can’t wait.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-[#C2B5A8]">
-                Active requests shared by hospitals on DonorNexa.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#E7B9BD] transition hover:text-white"
-            >
-              Refresh requests
-              <RefreshCw size={15} />
-            </button>
+      {/* Public Emergencies Board Link */}
+      <section className="bg-[#302923] px-4 py-16 text-[#F8F5EF] sm:px-6 sm:py-24">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 md:flex-row md:items-center">
+          <div>
+            <SectionLabel>Emergency blood requests</SectionLabel>
+            <h2 className="mt-4 font-serif text-4xl sm:text-5xl">
+              Help that can’t wait.
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-[#C2B5A8]">
+              Explore all active blood requirements shared by hospitals. Every
+              request displays essential information while keeping patient and
+              donor details private.
+            </p>
           </div>
 
-          {/* Loading */}
-          {requestsLoading && (
-            <div className="mt-12 flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] py-14 text-sm text-[#C2B5A8]">
-              <RefreshCw size={17} className="animate-spin" />
-              Loading active requests...
-            </div>
-          )}
-
-          {/* Error */}
-          {!requestsLoading && requestsError && (
-            <div className="mt-12 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
-              <p className="font-serif text-xl">
-                Requests are temporarily unavailable.
-              </p>
-              <p className="mt-3 text-sm text-[#C2B5A8]">
-                Please try again later.
-              </p>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!requestsLoading && !requestsError && requests.length === 0 && (
-            <div className="mt-12 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-14 text-center">
-              <HeartHandshake
-                size={30}
-                strokeWidth={1.3}
-                className="mx-auto text-[#E7B9BD]"
-              />
-              <h3 className="mt-5 font-serif text-2xl">
-                No active requests right now.
-              </h3>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#C2B5A8]">
-                When a hospital publishes an active blood request, it will
-                appear here.
-              </p>
-            </div>
-          )}
-
-          {/* Actual Backend Requests */}
-          {!requestsLoading && !requestsError && requests.length > 0 && (
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
-              {requests.map((item) => (
-                <div
-                  key={item._id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.06] p-6"
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#963D54] font-serif text-2xl">
-                      {item.bloodGroup}
-                    </span>
-
-                    <span className="rounded-full bg-[#6B5547] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#F8E9DD]">
-                      {item.urgency}
-                    </span>
-                  </div>
-
-                  <h3 className="mt-7 font-serif text-xl leading-snug">
-                    {item.hospital?.hospitalName || "Hospital"}
-                  </h3>
-
-                  <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#C2B5A8]">
-                    <span className="flex items-center gap-1.5">
-                      <MapPin size={14} />
-                      {item.city || "Location not specified"}
-                    </span>
-
-                    <span>{item.unitsRequired} units needed</span>
-                  </div>
-
-                  <div className="mt-6 flex items-center gap-2 border-t border-white/10 pt-5 text-xs text-[#E7B9BD]">
-                    <Clock3 size={14} />
-                    Required by: {formatRequiredDate(item.requiredBy)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <Link
+            to="/emergencies"
+            className="inline-flex shrink-0 items-center justify-center gap-4 self-start rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] md:self-auto"
+          >
+            View active emergencies
+            <ArrowRight size={18} />
+          </Link>
         </div>
       </section>
 
       {/* Role Selection */}
-      <section id="roles" className="px-6 py-24">
+      <section id="roles" className="px-4 py-16 sm:px-6 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          {/* Left: Role Selection */}
           <div>
             <SectionLabel>Choose your role</SectionLabel>
 
@@ -715,21 +699,18 @@ function Home() {
             </div>
           </div>
 
-          {/* Right: Dynamic Role Card */}
-          <div className="relative min-h-[455px] overflow-hidden bg-[#963D54] p-8 text-[#FFF8F0] sm:p-10 lg:p-12">
-            {/* Decorative Circles */}
+          <div className="relative min-h-[455px] overflow-hidden bg-[#963D54] p-5 text-[#FFF8F0] sm:p-10 lg:p-12">
             <div className="pointer-events-none absolute -bottom-40 -right-36 h-[500px] w-[500px] rounded-full border border-white/10" />
             <div className="pointer-events-none absolute -bottom-28 -right-24 h-[400px] w-[400px] rounded-full border border-white/10" />
             <div className="pointer-events-none absolute -bottom-16 -right-12 h-[300px] w-[300px] rounded-full border border-white/15" />
 
-            {/* Card Header */}
-            <div className="relative flex items-center justify-between">
+            <div className="relative flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center bg-white/10">
                   <RoleIcon size={25} strokeWidth={1.6} />
                 </div>
 
-                <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#F4D9D5]">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#F4D9D5] sm:text-[10px] sm:tracking-[0.15em]">
                   DONORNEXA · {activeRole.label.toUpperCase()}
                 </span>
               </div>
@@ -741,8 +722,7 @@ function Home() {
               />
             </div>
 
-            {/* Card Content */}
-            <div className="relative mt-12 max-w-md">
+            <div className="relative mt-8 max-w-md sm:mt-12">
               <h3 className="font-serif text-4xl leading-[1.05] sm:text-[46px]">
                 {activeRole.heading}
                 <br />
@@ -770,7 +750,7 @@ function Home() {
                   ) : (
                     <SignUpButton
                       mode="modal"
-                      signUpForceRedirectUrl={`/onboarding/${activeRole.id}`}
+                      signupforceredirecturl={`/onboarding/${activeRole.id}`}
                     >
                       <button className="inline-flex items-center gap-5 rounded-md bg-[#FFF8F0] px-7 py-4 text-xs font-semibold text-[#963D54] transition hover:bg-white">
                         {activeRole.action}
@@ -812,7 +792,6 @@ function Home() {
               </div>
             </div>
 
-            {/* Card Footer */}
             <div className="relative mt-11 flex items-center justify-between border-t border-white/20 pt-5">
               <div className="flex items-center gap-2 text-[10px] text-[#F4D9D5]">
                 <ShieldCheck size={17} />
@@ -832,7 +811,10 @@ function Home() {
       </section>
 
       {/* FAQs */}
-      <section id="faqs" className="border-t border-[#E6DCD0] px-6 py-24">
+      <section
+        id="faqs"
+        className="border-t border-[#E6DCD0] px-4 py-16 sm:px-6 sm:py-24"
+      >
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <SectionLabel>A few good questions</SectionLabel>
@@ -869,8 +851,8 @@ function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="px-6 pb-24">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-[#963D54] px-7 py-16 text-center text-white sm:px-12 sm:py-20">
+      <section className="px-4 pb-16 sm:px-6 sm:pb-24">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-2xl bg-[#963D54] px-5 py-14 text-center text-white sm:rounded-[2rem] sm:px-12 sm:py-20">
           <Sparkles size={25} className="mx-auto text-[#EBC9C4]" />
 
           <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-[#EBC9C4]">

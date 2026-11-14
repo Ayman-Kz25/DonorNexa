@@ -247,6 +247,13 @@ export const respondToMatch = async (req, res) => {
     const { userId } = getAuth(req);
     const { status } = req.body;
 
+    if (!mongoose.isValidObjectId(req.params.matchId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid match ID.",
+      });
+    }
+
     if (!["accepted", "declined"].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -393,6 +400,22 @@ export const respondToMatch = async (req, res) => {
 
       // Prevent accepting requests from inactive or unverified hospitals.
       if (status === "accepted") {
+        if (!donor.isAvailable) {
+          const error = new Error("You are currently unavailable to donate.");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const screening = await checkDonorEligibility(donor);
+
+        if (!screening.eligible) {
+          const error = new Error(
+            "You no longer meet the donor eligibility requirements.",
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+
         const hospital = await Hospital.findOne({
           _id: bloodRequest.hospital,
           verificationStatus: "verified",
@@ -657,6 +680,13 @@ export const confirmDonation = async (req, res) => {
     const cooldownSetting = await Setting.findOne({
       key: "donationCooldownDays",
     });
+
+    if (!mongoose.isValidObjectId(req.params.matchId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid match ID.",
+      });
+    }
 
     const cooldownDays = Number(cooldownSetting?.value) || 90;
 

@@ -87,6 +87,15 @@ export const createDonorProfile = async (req, res) => {
 
     const { bloodGroup, dateOfBirth, weight, city, phone } = req.body;
 
+    const validBloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+    if (!validBloodGroups.includes(bloodGroup)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid blood group.",
+      });
+    }
+
     if (
       !bloodGroup ||
       !dateOfBirth ||

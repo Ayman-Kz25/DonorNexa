@@ -151,6 +151,8 @@ export const generateRequestMatches = async (
     now.getTime() + responseWindowHours * 60 * 60 * 1000,
   );
 
+  let notifiedCount = 0;
+
   if (notify && selectedDonors.length > 0) {
     const bulkResult = await RequestMatch.bulkWrite(
       selectedDonors.map((donor) => ({
@@ -183,6 +185,8 @@ export const generateRequestMatches = async (
       insertedIndexes.has(index),
     );
 
+    notifiedCount = newlyMatchedDonors.length;
+
     await Promise.all(
       newlyMatchedDonors.map((donor) =>
         createNotification({
@@ -200,6 +204,6 @@ export const generateRequestMatches = async (
   return {
     compatibleGroups,
     rankedDonors,
-    notifiedCount: selectedDonors.length,
+    notifiedCount,
   };
 };

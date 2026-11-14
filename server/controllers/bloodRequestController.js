@@ -1,5 +1,9 @@
 import BloodRequest from "../models/BloodRequest.js";
 import RequestMatch from "../models/RequestMatch.js";
+import User from "../models/User.js";
+import Donor from "../models/Donor.js";
+import Donation from "../models/Donation.js";
+import Hospital from "../models/Hospital.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
@@ -321,6 +325,87 @@ export const getActiveBloodRequests = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to retrieve active blood requests.",
+    });
+  }
+};
+
+export const getPublicStats = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const [activeRequests, registeredDonors, fulfilledUnits] =
+      await Promise.all([
+        // Count active requests from active hospitals.
+        BloodRequest.aggregate([
+          {
+            $match: {
+              status: "open",
+              requiredBy: { $gt: now },
+              expiresAt: { $gt: now },
+            },
+          },
+          {
+            $lookup: {
+              from: "hospitals",
+              localField: "hospital",
+              foreignField: "_id",
+              as: "hospital",
+            },
+          },
+          { $unwind: "$hospital" },
+          {
+            $match: {
+              "hospital.isActive": { $ne: false },
+            },
+          },
+          { $count: "total" },
+        ]),
+
+        // Count donors with active user accounts.
+        Donor.aggregate([
+          {
+            $lookup: {
+              from: "users",
+              localField: "user",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          { $unwind: "$user" },
+          {
+            $match: {
+              "user.role": "donor",
+              "user.isActive": true,
+            },
+          },
+          { $count: "total" },
+        ]),
+
+        // Sum units from confirmed donation records.
+        Donation.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$units" },
+            },
+          },
+        ]),
+      ]);
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        activeRequests: activeRequests[0]?.total || 0,
+        registeredDonors: registeredDonors[0]?.total || 0,
+        unitsFulfilled: fulfilledUnits[0]?.total || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Public statistics error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to retrieve public statistics.",
     });
   }
 };

@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth } from "@clerk/react";
 
 import { useApi } from "./hooks/useApi";
@@ -8,6 +14,7 @@ import { UserProvider, useCurrentUser } from "./context/UserContext";
 
 import PublicLayout from "./layouts/PublicLayout";
 import Home from "./pages/public/Home";
+import ActiveEmergencies from "./pages/public/ActiveEmergencies";
 
 // Donor
 import DonorLayout from "./layouts/DonorLayout";
@@ -187,92 +194,124 @@ function HospitalOnboarding() {
   );
 }
 
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const sectionId = hash.substring(1);
+
+      const timer = setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({
+          behavior: "smooth",
+        });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }, [pathname, hash]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
-    <Routes>
-      {/* Public Website */}
-      <Route element={<PublicLayout />}>
+    <>
+      <ScrollToTop />
+      <Routes>
+        {/* Public Website */}
+        <Route element={<PublicLayout />}>
+          <Route
+            path="/"
+            element={
+              <GuestRoute>
+                <Home />
+              </GuestRoute>
+            }
+          />
+          <Route path="/emergencies" element={<ActiveEmergencies />} />
+        </Route>
+
+        {/* Onboarding */}
         <Route
-          path="/"
+          path="/onboarding/donor"
           element={
-            <GuestRoute>
-              <Home />
-            </GuestRoute>
+            <OnboardingRoute>
+              <DonorOnboarding />
+            </OnboardingRoute>
           }
         />
-      </Route>
 
-      {/* Onboarding */}
-      <Route
-        path="/onboarding/donor"
-        element={
-          <OnboardingRoute>
-            <DonorOnboarding />
-          </OnboardingRoute>
-        }
-      />
+        <Route
+          path="/onboarding/hospital"
+          element={
+            <OnboardingRoute>
+              <HospitalOnboarding />
+            </OnboardingRoute>
+          }
+        />
 
-      <Route
-        path="/onboarding/hospital"
-        element={
-          <OnboardingRoute>
-            <HospitalOnboarding />
-          </OnboardingRoute>
-        }
-      />
+        {/* Donor Routes */}
+        <Route
+          element={
+            <ProtectedRoute allowedRole="donor">
+              <DonorLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/donor/dashboard" element={<DonorDashboard />} />
+          <Route path="/donor/requests" element={<DonorRequests />} />
+          <Route path="/donor/donations" element={<MyDonations />} />
+          <Route path="/donor/hospitals" element={<Hospitals />} />
+          <Route path="/donor/profile" element={<DonorProfile />} />
+        </Route>
 
-      {/* Donor Routes */}
-      <Route
-        element={
-          <ProtectedRoute allowedRole="donor">
-            <DonorLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/donor/dashboard" element={<DonorDashboard />} />
-        <Route path="/donor/requests" element={<DonorRequests />} />
-        <Route path="/donor/donations" element={<MyDonations />} />
-        <Route path="/donor/hospitals" element={<Hospitals />} />
-        <Route path="/donor/profile" element={<DonorProfile />} />
-      </Route>
+        {/* Hospital Routes */}
+        <Route
+          element={
+            <ProtectedRoute allowedRole="hospital">
+              <HospitalLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
+          <Route path="/hospital/requests" element={<BloodRequests />} />
+          <Route path="/hospital/create-request" element={<CreateRequest />} />
+          <Route path="/hospital/inventory" element={<BloodInventory />} />
+          <Route path="/hospital/find-donors" element={<FindDonors />} />
+          <Route path="/hospital/profile" element={<HospitalProfile />} />
+        </Route>
 
-      {/* Hospital Routes */}
-      <Route
-        element={
-          <ProtectedRoute allowedRole="hospital">
-            <HospitalLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
-        <Route path="/hospital/requests" element={<BloodRequests />} />
-        <Route path="/hospital/create-request" element={<CreateRequest />} />
-        <Route path="/hospital/inventory" element={<BloodInventory />} />
-        <Route path="/hospital/find-donors" element={<FindDonors />} />
-        <Route path="/hospital/profile" element={<HospitalProfile />} />
-      </Route>
+        {/* Admin Routes */}
+        <Route
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin/donors" element={<DonorManagement />} />
+          <Route path="/admin/hospitals" element={<HospitalManagement />} />
+          <Route path="/admin/cities" element={<CityManagement />} />
+          <Route
+            path="/admin/blood-requests"
+            element={<AdminBloodRequests />}
+          />
+          <Route path="/admin/audit-logs" element={<AuditLogs />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+        </Route>
 
-      {/* Admin Routes */}
-      <Route
-        element={
-          <ProtectedRoute allowedRole="admin">
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/users" element={<UserManagement />} />
-        <Route path="/admin/donors" element={<DonorManagement />} />
-        <Route path="/admin/hospitals" element={<HospitalManagement />} />
-        <Route path="/admin/cities" element={<CityManagement />} />
-        <Route path="/admin/blood-requests" element={<AdminBloodRequests />} />
-        <Route path="/admin/audit-logs" element={<AuditLogs />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-      </Route>
-
-      {/* Unknown Routes */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Unknown Routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   getMatchingDonors,
   markBloodRequestFulfilled,
   updateBloodRequest,
+  getPublicStats,
 } from "../controllers/bloodRequestController.js";
 
 import requireVerifiedHospital from "../middleware/requireVerifiedHospital.js";
@@ -18,6 +19,7 @@ import {
 const router = express.Router();
 
 router.get("/active", getActiveBloodRequests);
+router.get("/stats", getPublicStats);
 
 router.post("/", requireVerifiedHospital, createBloodRequest);
 

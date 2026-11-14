@@ -31,11 +31,11 @@ function Footer() {
   };
 
   const exploreLinks = [
-    { label: "Home", href: "#home" },
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Blood Groups", href: "#blood-groups" },
-    { label: "Emergency Requests", href: "#requests" },
-    { label: "About Us", href: "#roles" },
+    { label: "Home", to: "/#home" },
+    { label: "How It Works", to: "/#how-it-works" },
+    { label: "Blood Groups", to: "/#blood-groups" },
+    { label: "Emergency Requests", to: "/emergencies" },
+    { label: "About Us", to: "/#roles" },
   ];
 
   return (
@@ -68,13 +68,13 @@ function Footer() {
 
             <div className="mt-6 flex flex-col gap-4">
               {exploreLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
+                <Link
+                  key={link.to}
+                  to={link.to}
                   className="text-sm text-[#6F6258] hover:text-[#963D54]"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -106,12 +106,12 @@ function Footer() {
                 <ArrowUpRight size={14} />
               </button>
 
-              <a
-                href="#faqs"
+              <Link
+                to="#faqs"
                 className="text-sm text-[#6F6258] hover:text-[#963D54]"
               >
                 FAQs
-              </a>
+              </Link>
             </div>
           </div>
         </div>
