@@ -98,15 +98,26 @@ function Home() {
   };
 
   const handleRoleAction = (roleId) => {
-    if (!isLoaded || userLoading || !isSignedIn || !user) return;
+    if (!isLoaded || !isSignedIn) return;
 
+    if (userLoading) return;
+
+    if (!user) {
+      navigate("/");
+      return;
+    }
+
+    // Only unassigned users can select their role.
     if (user.role === "unassigned") {
       navigate(`/onboarding/${roleId}`);
       return;
     }
 
-    if (dashboardPaths[user.role]) {
-      navigate(dashboardPaths[user.role]);
+    // Assigned users can only access their own dashboard.
+    const dashboardPath = dashboardPaths[user.role];
+
+    if (dashboardPath) {
+      navigate(dashboardPath);
     }
   };
 
@@ -206,17 +217,14 @@ function Home() {
                 <button
                   type="button"
                   onClick={() => handleRoleAction("donor")}
-                  disabled={userLoading}
+                  disabled={!isLoaded || userLoading || !user}
                   className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-60"
                 >
                   I want to donate
                   <ArrowRight size={18} />
                 </button>
               ) : (
-                <SignUpButton
-                  mode="modal"
-                  signupforceredirecturl="/onboarding/donor"
-                >
+                <SignUpButton mode="modal" forceRedirectUrl="/onboarding/donor">
                   <button className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045]">
                     I want to donate
                     <ArrowRight size={18} />
@@ -750,7 +758,7 @@ function Home() {
                   ) : (
                     <SignUpButton
                       mode="modal"
-                      signupforceredirecturl={`/onboarding/${activeRole.id}`}
+                      forceRedirectUrl={`/onboarding/${activeRole.id}`}
                     >
                       <button className="inline-flex items-center gap-5 rounded-md bg-[#FFF8F0] px-7 py-4 text-xs font-semibold text-[#963D54] transition hover:bg-white">
                         {activeRole.action}
@@ -781,7 +789,7 @@ function Home() {
                 ) : (
                   <SignInButton
                     mode="modal"
-                    signInForceRedirectUrl="/admin/dashboard"
+                    forceRedirectUrl="/admin/dashboard"
                   >
                     <button className="inline-flex items-center gap-5 rounded-md bg-[#FFF8F0] px-7 py-4 text-xs font-semibold text-[#963D54] transition hover:bg-white">
                       Admin sign in

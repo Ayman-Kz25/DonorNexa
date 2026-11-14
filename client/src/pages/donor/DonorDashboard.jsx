@@ -58,14 +58,16 @@ function DonorDashboard() {
   }, [fetchDashboardData]);
 
   const pendingRequests = matches.filter(
-    (match) => match.status === "pending",
+    (match) => match.status === "pending" || match.status === "notified",
   ).length;
 
   const acceptedRequests = matches.filter(
     (match) => match.status === "accepted",
   ).length;
 
-  const recentMatches = matches.slice(0, 3);
+  const recentMatches = [...matches]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 3);
 
   const donationBadges = [
     {
@@ -373,14 +375,17 @@ function DonorDashboard() {
 
                   <span
                     className={`w-fit rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${
-                      match.status === "accepted" ||
-                      match.status === "completed"
+                      ["accepted", "completed", "donated"].includes(
+                        match.status,
+                      )
                         ? "bg-[#F2E2DC] text-[#782B40]"
-                        : match.status === "pending"
+                        : ["pending", "notified"].includes(match.status)
                           ? "bg-[#F8F1DF] text-[#92702F]"
-                          : match.status === "expired"
+                          : ["expired", "no_response"].includes(match.status)
                             ? "bg-[#F8EDE2] text-[#98602F]"
-                            : "bg-[#F1EFEC] text-[#756C65]"
+                            : match.status === "declined"
+                              ? "bg-[#F1EFEC] text-[#756C65]"
+                              : "bg-[#F1EFEC] text-[#756C65]"
                     }`}
                   >
                     {match.status}

@@ -63,7 +63,7 @@ function LoadingScreen() {
 // Redirect users who already have an assigned role
 function GuestRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user, userLoading } = useCurrentUser();
+  const { user, userLoading, refreshUser, syncError } = useCurrentUser();
 
   if (!isLoaded || (isSignedIn && userLoading)) {
     return <LoadingScreen />;
@@ -110,6 +110,23 @@ function OnboardingRoute({ children }) {
   }
 
   if (!user) {
+    if (syncError) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8F5EF]">
+          <p className="text-sm text-[#81756A]">
+            Unable to load your account. Please try again.
+          </p>
+          <button
+            type="button"
+            onClick={refreshUser}
+            className="rounded-xl bg-[#963D54] px-5 py-2.5 text-sm font-medium text-white"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+
     return <LoadingScreen />;
   }
 
@@ -324,6 +341,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
 
+  const [syncError, setSyncError] = useState(false);
+
   const refreshUser = useCallback(async () => {
     if (!isLoaded) return null;
 
@@ -334,6 +353,7 @@ function App() {
     }
 
     setUserLoading(true);
+    setSyncError(false);
 
     try {
       const response = await request({
@@ -352,6 +372,7 @@ function App() {
       console.error("User Sync Failed:", error.response?.data || error.message);
 
       setUser(null);
+      setSyncError(true);
       return null;
     } finally {
       setUserLoading(false);
@@ -369,6 +390,7 @@ function App() {
         setUser,
         userLoading,
         refreshUser,
+        syncError,
       }}
     >
       <AppRoutes />
