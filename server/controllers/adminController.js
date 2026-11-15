@@ -742,17 +742,56 @@ export const exportAdminBloodRequests = async (req, res) => {
 // Get Admin Dashboard Analytics
 export const getAdminAnalytics = async (req, res) => {
   try {
-    const eightWeeksAgo = new Date(Date.now() - 8 * 7 * 24 * 60 * 60 * 1000);
+    const now = new Date();
 
     const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-    const [weeklyRequests, bloodGroupDemand, bloodGroupSupply] =
+    const TIMEZONE = "Asia/Karachi";
+    const TIMEZONE_OFFSET = 5 * 60 * 60 * 1000;
+
+    // Get the Monday starting the current week in Pakistan time.
+    const getWeekStart = (date) => {
+      const shiftedDate = new Date(date.getTime() + TIMEZONE_OFFSET);
+
+      const day = shiftedDate.getUTCDay();
+      const daysSinceMonday = (day + 6) % 7;
+
+      shiftedDate.setUTCDate(shiftedDate.getUTCDate() - daysSinceMonday);
+
+      shiftedDate.setUTCHours(0, 0, 0, 0);
+
+      return new Date(shiftedDate.getTime() - TIMEZONE_OFFSET);
+    };
+
+    const currentWeekStart = getWeekStart(now);
+
+    // Include the current week and previous seven weeks.
+    const eightWeeksStart = new Date(
+      currentWeekStart.getTime() - 7 * 7 * 24 * 60 * 60 * 1000,
+    );
+
+    const nextWeekStart = new Date(
+      currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000,
+    );
+
+    const formatWeek = (date) =>
+      new Intl.DateTimeFormat("en-PK", {
+        day: "2-digit",
+        month: "short",
+        timeZone: TIMEZONE,
+      }).format(date);
+
+    const [weeklyRequestResults, bloodGroupDemand, bloodGroupSupply] =
       await Promise.all([
-        // 1. Requests created per week
+        // 1. REQUESTS PER WEEK
+        // Chart type: Area Chart
         BloodRequest.aggregate([
           {
             $match: {
-              createdAt: { $gte: eightWeeksAgo },
+              createdAt: {
+                $gte: eightWeeksStart,
+                $lt: nextWeekStart,
+              },
             },
           },
           {
@@ -762,10 +801,14 @@ export const getAdminAnalytics = async (req, res) => {
                   date: "$createdAt",
                   unit: "week",
                   startOfWeek: "monday",
-                  timezone: "Asia/Karachi",
+                  timezone: TIMEZONE,
                 },
               },
-              totalRequests: { $sum: 1 },
+
+              totalRequests: {
+                $sum: 1,
+              },
+
               fulfilledRequests: {
                 $sum: {
                   $cond: [{ $eq: ["$status", "fulfilled"] }, 1, 0],
@@ -773,54 +816,59 @@ export const getAdminAnalytics = async (req, res) => {
               },
             },
           },
-          { $sort: { _id: 1 } },
+          {
+            $sort: {
+              _id: 1,
+            },
+          },
           {
             $project: {
               _id: 0,
               week: "$_id",
               totalRequests: 1,
               fulfilledRequests: 1,
-              fulfilmentRate: {
-                $cond: [
-                  { $gt: ["$totalRequests", 0] },
-                  {
-                    $multiply: [
-                      {
-                        $divide: ["$fulfilledRequests", "$totalRequests"],
-                      },
-                      100,
-                    ],
-                  },
-                  0,
-                ],
-              },
             },
           },
         ]),
 
-        // 2. Outstanding demand per blood group
+        // 2. OUTSTANDING DEMAND PER BLOOD GROUP
+        // Part of the Grouped Bar Chart
         BloodRequest.aggregate([
           {
             $match: {
               status: "open",
+              expiresAt: { $gt: now },
+              requiredBy: { $gt: now },
             },
           },
           {
             $group: {
               _id: "$bloodGroup",
-              unitsRequired: {
+
+              demand: {
                 $sum: {
                   $max: [
                     0,
-                    { $subtract: ["$unitsRequired", "$unitsFulfilled"] },
+                    {
+                      $subtract: [
+                        "$unitsRequired",
+                        { $ifNull: ["$unitsFulfilled", 0] },
+                      ],
+                    },
                   ],
                 },
               },
             },
           },
+          {
+            $sort: {
+              _id: 1,
+            },
+          },
         ]),
 
-        // 3. Available inventory per blood group
+        // 3. AVAILABLE BLOOD INVENTORY PER BLOOD GROUP
+        // Part of the Grouped Bar Chart
         BloodInventory.aggregate([
           {
             $lookup: {
@@ -830,7 +878,9 @@ export const getAdminAnalytics = async (req, res) => {
               as: "hospital",
             },
           },
-          { $unwind: "$hospital" },
+          {
+            $unwind: "$hospital",
+          },
           {
             $match: {
               "hospital.verificationStatus": "verified",
@@ -840,19 +890,52 @@ export const getAdminAnalytics = async (req, res) => {
           {
             $group: {
               _id: "$bloodGroup",
-              unitsAvailable: { $sum: "$unitsAvailable" },
+
+              supply: {
+                $sum: {
+                  $ifNull: ["$unitsAvailable", 0],
+                },
+              },
+            },
+          },
+          {
+            $sort: {
+              _id: 1,
             },
           },
         ]),
       ]);
 
-    // Prepare all eight blood groups, including groups with zero values
+    // PREPARE ALL EIGHT WEEKS
+    // Include weeks with zero requests.
+    const weeklyMap = new Map(
+      weeklyRequestResults.map((item) => [new Date(item.week).getTime(), item]),
+    );
+
+    const weeklyData = [];
+
+    for (let i = 0; i < 8; i++) {
+      const weekStart = new Date(
+        eightWeeksStart.getTime() + i * 7 * 24 * 60 * 60 * 1000,
+      );
+
+      const weekData = weeklyMap.get(weekStart.getTime());
+
+      weeklyData.push({
+        week: formatWeek(weekStart),
+        totalRequests: weekData?.totalRequests || 0,
+        fulfilledRequests: weekData?.fulfilledRequests || 0,
+      });
+    }
+
+    // PREPARE BLOOD-GROUP DEMAND AND SUPPLY
+    // Include groups with zero demand or supply.
     const demandMap = new Map(
-      bloodGroupDemand.map((item) => [item._id, item.unitsRequired]),
+      bloodGroupDemand.map((item) => [item._id, item.demand]),
     );
 
     const supplyMap = new Map(
-      bloodGroupSupply.map((item) => [item._id, item.unitsAvailable]),
+      bloodGroupSupply.map((item) => [item._id, item.supply]),
     );
 
     const bloodGroupComparison = bloodGroups.map((group) => ({
@@ -861,31 +944,38 @@ export const getAdminAnalytics = async (req, res) => {
       supply: supplyMap.get(group) || 0,
     }));
 
-    // Format weekly chart labels
-    const requestsPerWeek = weeklyRequests.map((item) => ({
-      week: new Date(item.week).toLocaleDateString("en-PK", {
-        day: "2-digit",
-        month: "short",
-        timeZone: "Asia/Karachi",
-      }),
+    // 4. WEEKLY FULFILMENT RATE
+    // Chart type: Line Chart
+    const fulfilmentRate = weeklyData.map((item) => ({
+      week: item.week,
+
+      rate:
+        item.totalRequests > 0
+          ? Math.round(
+              (item.fulfilledRequests / item.totalRequests) * 100 * 100,
+            ) / 100
+          : 0,
+
       totalRequests: item.totalRequests,
+      fulfilledRequests: item.fulfilledRequests,
     }));
 
-    const fulfilmentRate = weeklyRequests.map((item) => ({
-      week: new Date(item.week).toLocaleDateString("en-PK", {
-        day: "2-digit",
-        month: "short",
-        timeZone: "Asia/Karachi",
-      }),
-      rate: Math.round(item.fulfilmentRate * 100) / 100,
-    }));
-
+    // FINAL ANALYTICS RESPONSE
     return res.status(200).json({
       success: true,
+
       analytics: {
-        requestsPerWeek,
+        requestsPerWeek: weeklyData,
+
         bloodGroupComparison,
+
         fulfilmentRate,
+
+        chartTypes: {
+          requestsPerWeek: "area",
+          bloodGroupComparison: "bar",
+          fulfilmentRate: "line",
+        },
       },
     });
   } catch (error) {
