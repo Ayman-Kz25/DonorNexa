@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useApi } from "../../hooks/useApi";
 import {
   RefreshCw,
   Droplet,
@@ -11,9 +10,19 @@ import {
   AlertCircle,
   Loader2,
   Info,
-  ArrowRight,
+  Building2,
+  FileText,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/dateTime";
+import { useApi } from "../../hooks/useApi";
+
+const cardStyle = "rounded-xl border border-[#E8DDD4] bg-[#FFFDF9]";
+
+const detailStyle = "flex items-start gap-3 rounded-xl bg-[#F8F5EF] p-3.5";
+
+const labelStyle = "text-xs font-medium text-[#927E70]";
+
+const valueStyle = "mt-1 text-sm font-semibold text-[#302923]";
 
 export default function DonorMatchedRequests() {
   const { request } = useApi();
@@ -68,8 +77,8 @@ export default function DonorMatchedRequests() {
         },
       });
 
-      setMatches((prev) =>
-        prev.map((match) =>
+      setMatches((previous) =>
+        previous.map((match) =>
           match._id === matchId
             ? {
                 ...match,
@@ -93,47 +102,43 @@ export default function DonorMatchedRequests() {
     }
   };
 
-  const statusStyle = (status) => {
-    switch (status) {
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
       case "accepted":
       case "completed":
         return "bg-[#F2E2DC] text-[#782B40]";
-
       case "declined":
         return "bg-[#F1EFEC] text-[#756C65]";
-
       case "expired":
         return "bg-[#F8EDE2] text-[#98602F]";
-
       case "no_response":
         return "bg-[#FCE8E8] text-[#A33D45]";
-
       case "pending":
         return "bg-[#F8F1DF] text-[#92702F]";
-
       default:
         return "bg-[#F1EFEC] text-[#756C65]";
     }
   };
 
-  const statusIcon = (status) => {
-    if (status === "accepted" || status === "completed") {
-      return <CheckCircle2 size={13} />;
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case "accepted":
+      case "completed":
+        return <CheckCircle2 size={13} />;
+      case "declined":
+        return <XCircle size={13} />;
+      case "pending":
+        return <Clock size={13} />;
+      case "expired":
+      case "no_response":
+        return <AlertCircle size={13} />;
+      default:
+        return null;
     }
-
-    if (status === "declined") return <XCircle size={13} />;
-
-    if (status === "pending") return <Clock size={13} />;
-
-    if (status === "expired" || status === "no_response") {
-      return <AlertCircle size={13} />;
-    }
-
-    return null;
   };
 
-  const urgencyStyle = (urgency) => {
-    switch (urgency) {
+  const getUrgencyStyle = (urgency) => {
+    switch (urgency?.toLowerCase()) {
       case "critical":
         return "bg-[#F3DDE1] text-[#842B43]";
       case "urgent":
@@ -143,8 +148,8 @@ export default function DonorMatchedRequests() {
     }
   };
 
-  const urgencyAccent = (urgency) => {
-    switch (urgency) {
+  const getUrgencyAccent = (urgency) => {
+    switch (urgency?.toLowerCase()) {
       case "critical":
         return "border-l-[#842B43]";
       case "urgent":
@@ -155,20 +160,26 @@ export default function DonorMatchedRequests() {
   };
 
   const getTimeLeft = (date) => {
-    const diff = new Date(date).getTime() - Date.now();
+    const difference = new Date(date).getTime() - Date.now();
 
-    if (Number.isNaN(diff) || diff < 0) return null;
+    if (!Number.isFinite(difference) || difference <= 0) return null;
 
-    const minutes = Math.floor(diff / 60000);
+    const minutes = Math.floor(difference / 60000);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
     if (minutes < 60) {
-      return { label: `Due in ${Math.max(minutes, 1)} min`, soon: true };
+      return {
+        label: `Due in ${Math.max(minutes, 1)} min`,
+        soon: true,
+      };
     }
 
     if (hours < 24) {
-      return { label: `Due in ${hours} h`, soon: true };
+      return {
+        label: `Due in ${hours} h`,
+        soon: true,
+      };
     }
 
     return {
@@ -178,128 +189,102 @@ export default function DonorMatchedRequests() {
   };
 
   const pendingCount = matches.filter(
-    (match) => match.status === "pending",
+    (match) => match.status?.toLowerCase() === "pending",
   ).length;
 
-  if (loading) {
-    return (
-      <section className="space-y-5" role="status">
-        <div className="flex items-center gap-3 text-[#782B40]">
-          <Loader2 size={19} className="animate-spin" />
-          <p className="text-sm font-medium">Loading available requests...</p>
+  return (
+    <section className="space-y-5">
+      {/* Donor Summary */}
+      <div
+        className={`${cardStyle} flex flex-wrap items-center justify-between gap-4 p-4`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#782B40]">
+            <Droplet size={20} />
+          </div>
+
+          <div>
+            <p className={labelStyle}>Your blood group</p>
+            <p className={valueStyle}>{donorBloodGroup || "Not available"}</p>
+          </div>
         </div>
 
-        {[1, 2].map((item) => (
-          <div
-            key={item}
-            className="h-44 animate-pulse rounded-2xl bg-[#F5EFE8]"
-          />
-        ))}
-      </section>
-    );
-  }
+        <div className="flex items-center gap-5">
+          <div>
+            <p className="text-xl font-semibold tabular-nums text-[#302923]">
+              {matches.length}
+            </p>
+            <p className={labelStyle}>Total matches</p>
+          </div>
 
-  return (
-    <section className="space-y-6">
-      {/* Page heading */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A45B6D]">
-            Donor Portal
-          </p>
+          <div className="h-9 w-px bg-[#E8DDD4]" />
 
-          <h2 className="mt-2 text-2xl font-semibold text-[#302923] sm:text-3xl">
-            Available Blood Requests
-          </h2>
-
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[#81756A]">
-            Requests matched with your blood group and donor eligibility. Review
-            the details and respond when you can help.
-          </p>
+          <div>
+            <p className="text-xl font-semibold tabular-nums text-[#782B40]">
+              {pendingCount}
+            </p>
+            <p className={labelStyle}>Awaiting response</p>
+          </div>
         </div>
 
         <button
+          type="button"
           onClick={fetchMatches}
-          className="inline-flex items-center gap-2 rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-2.5 text-sm font-medium text-[#782B40] transition hover:border-[#A45B6D] hover:bg-[#F8F1ED]"
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-xl border border-[#E8DDD4] bg-white px-4 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <RefreshCw size={15} />
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           Refresh
         </button>
-      </div>
-
-      {/* Donor information and count */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[#E8DDD4] py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E2DC] text-[#782B40]">
-            <Droplet size={19} />
-          </div>
-
-          <div>
-            <p className="text-xs text-[#81756A]">
-              Your registered blood group
-            </p>
-            <p className="text-sm font-semibold text-[#302923]">
-              {donorBloodGroup || "Not available"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 text-sm">
-          <div>
-            <span className="font-semibold text-[#302923]">
-              {matches.length}
-            </span>{" "}
-            <span className="text-[#81756A]">Total matches</span>
-          </div>
-
-          <div className="h-5 w-px bg-[#E8DDD4]" />
-
-          <div>
-            <span className="font-semibold text-[#782B40]">{pendingCount}</span>{" "}
-            <span className="text-[#81756A]">Awaiting response</span>
-          </div>
-        </div>
       </div>
 
       {/* Error */}
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-3 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] px-4 py-3 text-sm text-[#963D54]"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] px-4 py-3"
         >
-          <AlertCircle size={18} className="shrink-0" />
-          {error}
+          <div className="flex items-center gap-2 text-sm text-[#963D54]">
+            <AlertCircle size={18} className="shrink-0" />
+            {error}
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchMatches}
+            disabled={loading}
+            className="text-sm font-semibold text-[#782B40] underline underline-offset-2 disabled:opacity-50"
+          >
+            Try again
+          </button>
         </div>
       )}
 
-      {/* Requests content */}
-      {error ? (
-        <div className="rounded-2xl border border-dashed border-[#DDCEC3] bg-[#FFFDF9] px-5 py-12 text-center">
-          <AlertCircle size={28} className="mx-auto text-[#A45B6D]" />
+      {/* Loading */}
+      {loading && (
+        <div className="space-y-4" role="status">
+          <div className="flex items-center gap-3 py-3 text-sm font-medium text-[#782B40]">
+            <Loader2 size={18} className="animate-spin" />
+            Loading matched requests...
+          </div>
 
-          <h3 className="mt-3 text-lg font-semibold text-[#302923]">
-            Unable to Load Requests
-          </h3>
-
-          <p className="mt-2 text-sm text-[#81756A]">
-            Your matched requests could not be retrieved. Please try again.
-          </p>
-
-          <button
-            onClick={fetchMatches}
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#782B40] hover:text-[#602032]"
-          >
-            <RefreshCw size={15} />
-            Try Again
-          </button>
+          {[1, 2].map((item) => (
+            <div
+              key={item}
+              className="h-40 animate-pulse rounded-xl bg-[#F5EFE8]"
+            />
+          ))}
         </div>
-      ) : matches.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#DDCEC3] bg-[#FFFDF9] px-5 py-16 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F2E2DC] text-[#782B40]">
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && matches.length === 0 && (
+        <div className={`${cardStyle} border-dashed px-5 py-14 text-center`}>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#782B40]">
             <Droplet size={25} />
           </div>
 
-          <h3 className="mt-4 text-lg font-semibold text-[#302923]">
+          <h3 className="mt-4 font-serif text-xl font-semibold text-[#302923]">
             No Matching Requests
           </h3>
 
@@ -309,30 +294,36 @@ export default function DonorMatchedRequests() {
           </p>
 
           <button
+            type="button"
             onClick={fetchMatches}
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#782B40] hover:text-[#602032]"
+            className="mt-5 text-sm font-semibold text-[#782B40] hover:text-[#602032]"
           >
-            Check again <ArrowRight size={15} />
+            Check again
           </button>
         </div>
-      ) : (
+      )}
+
+      {/* Matched Requests */}
+      {!loading && !error && matches.length > 0 && (
         <div className="space-y-4">
           {matches.map((match) => {
             const bloodRequest = match.bloodRequest;
 
             if (!bloodRequest) return null;
 
-            const now = Date.now();
+            const status = match.status?.toLowerCase();
+            const isPending = status === "pending";
+            const isProcessing = processingId === match._id;
 
+            const now = Date.now();
             const responseDeadline = match.responseDeadlineAt
               ? new Date(match.responseDeadlineAt).getTime()
               : NaN;
-
             const requiredBy = new Date(bloodRequest.requiredBy).getTime();
             const expiresAt = new Date(bloodRequest.expiresAt).getTime();
 
             const active =
-              bloodRequest.status === "open" &&
+              bloodRequest.status?.toLowerCase() === "open" &&
               Number.isFinite(requiredBy) &&
               Number.isFinite(expiresAt) &&
               Number.isFinite(responseDeadline) &&
@@ -340,18 +331,22 @@ export default function DonorMatchedRequests() {
               expiresAt > now &&
               responseDeadline > now;
 
+            const responseTimeLeft = match.responseDeadlineAt
+              ? getTimeLeft(match.responseDeadlineAt)
+              : null;
+
             return (
               <article
                 key={match._id}
-                className={`overflow-hidden rounded-2xl border border-l-4 border-[#E8DDD4] bg-[#FFFDF9] ${urgencyAccent(
+                className={`${cardStyle} overflow-hidden border-l-4 ${getUrgencyAccent(
                   bloodRequest.urgency,
-                )} transition hover:border-[#D7B9B5]`}
+                )}`}
               >
-                <div className="p-5 sm:p-6">
-                  {/* Card heading */}
+                <div className="space-y-5 p-4 sm:p-5">
+                  {/* Request Header */}
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F2E2DC] font-semibold text-[#782B40]">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F2E2DC] font-semibold text-[#782B40]">
                         {bloodRequest.bloodGroup}
                       </div>
 
@@ -359,62 +354,94 @@ export default function DonorMatchedRequests() {
                         <h3 className="font-semibold text-[#302923]">
                           {bloodRequest.bloodGroup} blood needed
                         </h3>
-
                         <p className="mt-1 text-sm text-[#81756A]">
                           {bloodRequest.unitsRequired} unit(s) required
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <span
-                        className={`rounded-md px-2.5 py-1 text-xs font-semibold capitalize ${urgencyStyle(
+                        className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold capitalize ${getUrgencyStyle(
                           bloodRequest.urgency,
                         )}`}
                       >
-                        {bloodRequest.urgency}
+                        {bloodRequest.urgency || "Normal"}
                       </span>
 
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold capitalize ${statusStyle(
-                          match.status,
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold capitalize ${getStatusStyle(
+                          status,
                         )}`}
                       >
-                        {statusIcon(match.status)}
-                        {match.status}
+                        {getStatusIcon(status)}
+                        {status?.replace("_", " ") || "Unknown"}
                       </span>
                     </div>
                   </div>
 
-                  {/* Request details */}
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="flex items-center gap-3 rounded-xl bg-[#F8F5EF] px-3.5 py-3">
-                      <MapPin size={17} className="shrink-0 text-[#963D54]" />
+                  {/* Request Information */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className={detailStyle}>
+                      <MapPin
+                        size={17}
+                        className="mt-0.5 shrink-0 text-[#963D54]"
+                      />
                       <div>
-                        <p className="text-xs text-[#927E70]">Request city</p>
-                        <p className="mt-0.5 text-sm font-medium text-[#302923]">
+                        <p className={labelStyle}>Request City</p>
+                        <p className={valueStyle}>
                           {bloodRequest.city || "Not specified"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 rounded-xl bg-[#F8F5EF] px-3.5 py-3">
+                    <div className={detailStyle}>
                       <CalendarDays
                         size={17}
-                        className="shrink-0 text-[#963D54]"
+                        className="mt-0.5 shrink-0 text-[#963D54]"
                       />
                       <div>
-                        <p className="text-xs text-[#927E70]">Required by</p>
-                        <p className="mt-0.5 text-sm font-medium text-[#302923]">
+                        <p className={labelStyle}>Required By</p>
+                        <p className={valueStyle}>
                           {formatDateTime(bloodRequest.requiredBy)}
                         </p>
                       </div>
                     </div>
+
+                    {/* Ward - shown only when provided by hospital */}
+                    {bloodRequest.ward?.trim() && (
+                      <div className={detailStyle}>
+                        <Building2
+                          size={17}
+                          className="mt-0.5 shrink-0 text-[#963D54]"
+                        />
+                        <div>
+                          <p className={labelStyle}>Ward / Department</p>
+                          <p className={valueStyle}>{bloodRequest.ward}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Hospital Notes */}
+                  {bloodRequest.hospitalNotes?.trim() && (
+                    <div className="flex items-start gap-3 rounded-xl border border-[#E8DDD4] bg-[#FFF9F7] p-4">
+                      <FileText
+                        size={17}
+                        className="mt-0.5 shrink-0 text-[#963D54]"
+                      />
+                      <div>
+                        <p className={labelStyle}>Additional Notes</p>
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#51463F]">
+                          {bloodRequest.hospitalNotes}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Compatibility */}
                   {donorBloodGroup && (
-                    <div className="mt-4 flex items-start gap-2.5 text-sm leading-6 text-[#655A51]">
+                    <div className="flex items-start gap-2.5 text-sm leading-6 text-[#655A51]">
                       <Info
                         size={16}
                         className="mt-1 shrink-0 text-[#963D54]"
@@ -433,72 +460,67 @@ export default function DonorMatchedRequests() {
                     </div>
                   )}
 
-                  {/* Response and request deadlines */}
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    {/* Donor response deadline */}
-                    <div className="flex items-start gap-3 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] px-3.5 py-3">
-                      <Clock
-                        size={17}
-                        className="mt-0.5 shrink-0 text-[#A33D45]"
-                      />
-
-                      <div>
-                        <p className="text-xs font-semibold text-[#963D54]">
-                          Your response deadline
+                  {/* Deadlines */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] p-3.5">
+                      <div className="flex items-center gap-2 text-[#963D54]">
+                        <Clock size={16} />
+                        <p className="text-xs font-semibold">
+                          Your Response Deadline
                         </p>
-
-                        <p className="mt-1 text-sm font-semibold text-[#842B43]">
-                          {formatDateTime(match.responseDeadlineAt)}
-                        </p>
-
-                        {match.status === "pending" &&
-                          match.responseDeadlineAt && (
-                            <p className="mt-1 text-xs text-[#963D54]">
-                              {getTimeLeft(match.responseDeadlineAt)?.label ||
-                                "Response deadline has passed"}
-                            </p>
-                          )}
                       </div>
+
+                      <p className="mt-2 text-sm font-semibold text-[#842B43]">
+                        {formatDateTime(match.responseDeadlineAt)}
+                      </p>
+
+                      {isPending && (
+                        <p className="mt-1 text-xs text-[#963D54]">
+                          {responseTimeLeft?.label ||
+                            "Response deadline has passed"}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Hospital request deadline */}
-                    <div className="flex items-start gap-3 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] px-3.5 py-3">
-                      <CalendarDays
-                        size={17}
-                        className="mt-0.5 shrink-0 text-[#963D54]"
-                      />
-
-                      <div>
+                    <div className="rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] p-3.5">
+                      <div className="flex items-center gap-2 text-[#963D54]">
+                        <CalendarDays size={16} />
                         <p className="text-xs font-semibold text-[#81756A]">
-                          Hospital request deadline
-                        </p>
-
-                        <p className="mt-1 text-sm font-semibold text-[#302923]">
-                          {formatDateTime(bloodRequest.requiredBy)}
+                          Hospital Request Deadline
                         </p>
                       </div>
+
+                      <p className="mt-2 text-sm font-semibold text-[#302923]">
+                        {formatDateTime(bloodRequest.requiredBy)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  {match.status === "pending" && active && (
-                    <div className="mt-5 border-t border-[#E8DDD4] pt-5">
+                  {/* Response Actions */}
+                  {isPending && active && (
+                    <div className="border-t border-[#E8DDD4] pt-5">
                       {declineTarget === match._id ? (
                         <div className="space-y-3">
-                          <label className="block text-sm font-medium text-[#302923]">
-                            Reason for declining
-                            <span className="ml-1 font-normal text-[#81756A]">
+                          <label
+                            htmlFor={`decline-reason-${match._id}`}
+                            className="block text-sm font-semibold text-[#302923]"
+                          >
+                            Reason for declining{" "}
+                            <span className="font-normal text-[#81756A]">
                               (Optional)
                             </span>
                           </label>
 
                           <textarea
+                            id={`decline-reason-${match._id}`}
                             value={declineReason}
-                            onChange={(e) => setDeclineReason(e.target.value)}
+                            onChange={(event) =>
+                              setDeclineReason(event.target.value)
+                            }
                             maxLength={500}
                             rows={3}
-                            placeholder="You may briefly explain why you cannot accept this request..."
-                            className="w-full resize-none rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54] focus:ring-2 focus:ring-[#F2E2DC]"
+                            placeholder="Briefly explain why you cannot accept this request..."
+                            className="w-full resize-none rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:ring-2 focus:ring-[#F2E2DC]"
                           />
 
                           <p className="text-right text-xs text-[#81756A]">
@@ -507,7 +529,8 @@ export default function DonorMatchedRequests() {
 
                           <div className="flex flex-wrap gap-3">
                             <button
-                              disabled={processingId === match._id}
+                              type="button"
+                              disabled={isProcessing}
                               onClick={() =>
                                 handleResponse(
                                   match._id,
@@ -515,9 +538,9 @@ export default function DonorMatchedRequests() {
                                   declineReason,
                                 )
                               }
-                              className="inline-flex items-center gap-2 rounded-lg bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#602032] disabled:opacity-50"
+                              className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:opacity-50"
                             >
-                              {processingId === match._id ? (
+                              {isProcessing ? (
                                 <Loader2 size={16} className="animate-spin" />
                               ) : (
                                 <XCircle size={16} />
@@ -527,43 +550,43 @@ export default function DonorMatchedRequests() {
 
                             <button
                               type="button"
-                              disabled={processingId === match._id}
+                              disabled={isProcessing}
                               onClick={() => {
                                 setDeclineTarget(null);
                                 setDeclineReason("");
                               }}
-                              className="rounded-lg border border-[#DCCBC3] px-5 py-2.5 text-sm font-semibold text-[#782B40] hover:bg-[#F8F1ED] disabled:opacity-50"
+                              className="rounded-xl border border-[#E8DDD4] px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:opacity-50"
                             >
                               Go Back
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap gap-3">
                           <button
-                            disabled={processingId === match._id}
+                            type="button"
+                            disabled={isProcessing}
                             onClick={() =>
                               handleResponse(match._id, "accepted")
                             }
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {processingId === match._id ? (
+                            {isProcessing ? (
                               <Loader2 size={16} className="animate-spin" />
                             ) : (
                               <CheckCircle2 size={16} />
                             )}
-                            {processingId === match._id
-                              ? "Please wait..."
-                              : "Accept Request"}
+                            {isProcessing ? "Please wait..." : "Accept Request"}
                           </button>
 
                           <button
-                            disabled={processingId === match._id}
+                            type="button"
+                            disabled={isProcessing}
                             onClick={() => {
                               setDeclineTarget(match._id);
                               setDeclineReason("");
                             }}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCCBC3] px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E8DDD4] px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F1ED] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <XCircle size={16} />
                             Decline
@@ -573,8 +596,9 @@ export default function DonorMatchedRequests() {
                     </div>
                   )}
 
-                  {match.status === "declined" && match.declineReason && (
-                    <div className="mt-4 rounded-xl bg-[#F8F5EF] px-4 py-3 text-sm text-[#655A51]">
+                  {/* Existing Response Information */}
+                  {status === "declined" && match.declineReason && (
+                    <div className="rounded-xl bg-[#F8F5EF] p-4 text-sm leading-6 text-[#655A51]">
                       <span className="font-semibold">
                         Your decline reason:
                       </span>{" "}
@@ -582,32 +606,31 @@ export default function DonorMatchedRequests() {
                     </div>
                   )}
 
-                  {match.status === "completed" && (
-                    <div className="mt-5 flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm font-medium text-[#782B40]">
+                  {status === "completed" && (
+                    <div className="flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm font-medium text-[#782B40]">
                       <CheckCircle2 size={17} />
                       Donation completed successfully. Thank you for helping
                       save a life!
                     </div>
                   )}
 
-                  {match.status === "accepted" && (
-                    <div className="mt-5 flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#782B40]">
+                  {status === "accepted" && (
+                    <div className="flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#782B40]">
                       <CheckCircle2 size={17} />
                       You accepted this request. The hospital can now contact
                       you.
                     </div>
                   )}
 
-                  {match.status === "no_response" && (
-                    <div className="mt-5 flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#A33D45]">
+                  {status === "no_response" && (
+                    <div className="flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#A33D45]">
                       <AlertCircle size={17} />
                       You did not respond before the response deadline.
                     </div>
                   )}
 
-                  {(match.status === "expired" ||
-                    (match.status === "pending" && !active)) && (
-                    <div className="mt-5 flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#98602F]">
+                  {(status === "expired" || (isPending && !active)) && (
+                    <div className="flex items-center gap-2 border-t border-[#E8DDD4] pt-4 text-sm text-[#98602F]">
                       <AlertCircle size={17} />
                       This request is no longer active.
                     </div>

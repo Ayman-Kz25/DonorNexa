@@ -9,30 +9,58 @@ import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
 import mongoose from "mongoose";
 
+const VALID_BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+const VALID_URGENCIES = ["normal", "urgent", "critical"];
+
+const hasValidTimezone = (value) =>
+  typeof value === "string" &&
+  /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) &&
+  !Number.isNaN(new Date(value).getTime());
+
 export const createBloodRequest = async (req, res) => {
   try {
-    const { bloodGroup, unitsRequired, urgency, requiredBy, hospitalNotes } =
-      req.body;
+    const {
+      bloodGroup,
+      unitsRequired,
+      urgency = "normal",
+      requiredBy,
+      ward = "",
+      hospitalNotes = "",
+    } = req.body;
 
-    if (!bloodGroup || !unitsRequired || !requiredBy) {
+    if (!bloodGroup || unitsRequired === undefined || !requiredBy) {
       return res.status(400).json({
         success: false,
         message:
-          "Blood group, units required and required-by date are required.",
+          "Blood group, units required, and required-by date are required.",
       });
     }
 
-    if (!Number.isInteger(Number(unitsRequired)) || Number(unitsRequired) < 1) {
+    if (!VALID_BLOOD_GROUPS.includes(bloodGroup)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid blood group.",
+      });
+    }
+
+    const units = Number(unitsRequired);
+
+    if (!Number.isInteger(units) || units < 1) {
       return res.status(400).json({
         success: false,
         message: "Units required must be a positive whole number.",
       });
     }
 
-    // Require an ISO date containing an explicit timezone (Z or ±HH:MM).
-    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(requiredBy);
+    if (!VALID_URGENCIES.includes(urgency)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid urgency level.",
+      });
+    }
 
-    if (typeof requiredBy !== "string" || !hasTimezone) {
+    if (!hasValidTimezone(requiredBy)) {
       return res.status(400).json({
         success: false,
         message: "Required-by date must include a valid timezone.",
@@ -42,13 +70,27 @@ export const createBloodRequest = async (req, res) => {
     const deadline = new Date(requiredBy);
     const now = new Date();
 
+    if (deadline <= now) {
+      return res.status(400).json({
+        success: false,
+        message: "Required-by date and time must be in the future.",
+      });
+    }
+
+    if (typeof ward !== "string" || ward.trim().length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Ward cannot exceed 100 characters.",
+      });
+    }
+
     if (
-      Number.isNaN(deadline.getTime()) ||
-      deadline.getTime() <= now.getTime()
+      typeof hospitalNotes !== "string" ||
+      hospitalNotes.trim().length > 500
     ) {
       return res.status(400).json({
         success: false,
-        message: "Required-by date must be in the future.",
+        message: "Hospital notes cannot exceed 500 characters.",
       });
     }
 
@@ -68,17 +110,16 @@ export const createBloodRequest = async (req, res) => {
       }
     }
 
-    const expiresAt = new Date(deadline);
-
     const bloodRequest = await BloodRequest.create({
       hospital: req.hospital._id,
       bloodGroup,
-      unitsRequired: Number(unitsRequired),
-      urgency: urgency || "normal",
+      unitsRequired: units,
+      urgency,
       requiredBy: deadline,
+      expiresAt: deadline,
       city: req.hospital.city,
-      hospitalNotes: hospitalNotes || "",
-      expiresAt,
+      ward: ward.trim(),
+      hospitalNotes: hospitalNotes.trim(),
     });
 
     // Generate matching records immediately after request creation.
@@ -95,6 +136,8 @@ export const createBloodRequest = async (req, res) => {
         unitsRequired: bloodRequest.unitsRequired,
         urgency: bloodRequest.urgency,
         requiredBy: bloodRequest.requiredBy,
+        ward: bloodRequest.ward,
+        hospitalNotes: bloodRequest.hospitalNotes,
         status: bloodRequest.status,
       },
       ipAddress: req.ip,
@@ -165,7 +208,15 @@ export const updateBloodRequest = async (req, res) => {
       });
     }
 
-    const { unitsRequired, urgency, requiredBy, hospitalNotes } = req.body;
+    const { unitsRequired, urgency, requiredBy, ward, hospitalNotes } =
+      req.body;
+
+    if (urgency !== undefined && !VALID_URGENCIES.includes(urgency)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid urgency level.",
+      });
+    }
 
     if (
       unitsRequired !== undefined &&
@@ -181,26 +232,34 @@ export const updateBloodRequest = async (req, res) => {
       });
     }
 
-    if (requiredBy !== undefined) {
-      const deadline = new Date(requiredBy);
+    const oldValue = {
+      unitsRequired: bloodRequest.unitsRequired,
+      urgency: bloodRequest.urgency,
+      requiredBy: bloodRequest.requiredBy,
+      ward: bloodRequest.ward,
+      hospitalNotes: bloodRequest.hospitalNotes,
+    };
 
-      if (Number.isNaN(deadline.getTime()) || deadline <= new Date()) {
+    if (requiredBy !== undefined) {
+      if (!hasValidTimezone(requiredBy)) {
         return res.status(400).json({
           success: false,
-          message: "Required-by date must be in the future.",
+          message: "Required-by date must include a valid timezone.",
+        });
+      }
+
+      const deadline = new Date(requiredBy);
+
+      if (deadline <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: "Required-by date and time must be in the future.",
         });
       }
 
       bloodRequest.requiredBy = deadline;
       bloodRequest.expiresAt = deadline;
     }
-
-    const oldValue = {
-      unitsRequired: bloodRequest.unitsRequired,
-      urgency: bloodRequest.urgency,
-      requiredBy: bloodRequest.requiredBy,
-      hospitalNotes: bloodRequest.hospitalNotes,
-    };
 
     if (urgency === "critical" && bloodRequest.urgency !== "critical") {
       const criticalRequestCount = await BloodRequest.countDocuments({
@@ -227,8 +286,29 @@ export const updateBloodRequest = async (req, res) => {
       bloodRequest.urgency = urgency;
     }
 
+    if (ward !== undefined) {
+      if (typeof ward !== "string" || ward.trim().length > 100) {
+        return res.status(400).json({
+          success: false,
+          message: "Ward cannot exceed 100 characters.",
+        });
+      }
+
+      bloodRequest.ward = ward.trim();
+    }
+
     if (hospitalNotes !== undefined) {
-      bloodRequest.hospitalNotes = hospitalNotes;
+      if (
+        typeof hospitalNotes !== "string" ||
+        hospitalNotes.trim().length > 500
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Hospital notes cannot exceed 500 characters.",
+        });
+      }
+
+      bloodRequest.hospitalNotes = hospitalNotes.trim();
     }
 
     await bloodRequest.save();
@@ -243,6 +323,7 @@ export const updateBloodRequest = async (req, res) => {
         unitsRequired: bloodRequest.unitsRequired,
         urgency: bloodRequest.urgency,
         requiredBy: bloodRequest.requiredBy,
+        ward: bloodRequest.ward,
         hospitalNotes: bloodRequest.hospitalNotes,
       },
       ipAddress: req.ip,
@@ -275,7 +356,7 @@ export const updateBloodRequest = async (req, res) => {
           recipient: recipientId,
           type: "REQUEST_UPDATED",
           title: "Blood Request Updated",
-          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been updated by the hospital. Please review the latest details.`,
+          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been updated by the hospital. Ward: ${bloodRequest.ward || "Not specified"}. Please review the latest details.`,
           relatedId: bloodRequest._id,
           relatedModel: "BloodRequest",
         });

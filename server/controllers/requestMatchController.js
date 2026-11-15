@@ -143,7 +143,7 @@ export const getMyMatches = async (req, res) => {
     }).populate({
       path: "bloodRequest",
       select:
-        "bloodGroup unitsRequired urgency city requiredBy expiresAt status",
+        "bloodGroup unitsRequired urgency city ward hospitalNotes requiredBy expiresAt status",
     });
 
     const requestsForExpansion = new Set();
@@ -221,7 +221,7 @@ export const getMyMatches = async (req, res) => {
       .populate({
         path: "bloodRequest",
         select:
-          "bloodGroup unitsRequired urgency city requiredBy expiresAt status",
+          "bloodGroup unitsRequired urgency city ward hospitalNotes requiredBy expiresAt status",
       })
       .sort({ createdAt: -1 });
 

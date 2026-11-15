@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const bloodRequestSchema = new mongoose.Schema(
@@ -17,22 +16,23 @@ const bloodRequestSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
+      validate: {
+        validator: Number.isInteger,
+        message: "Units required must be a whole number.",
+      },
     },
-
     // Units currently reserved by accepted donors
     unitsReserved: {
       type: Number,
       default: 0,
       min: 0,
     },
-
     // Units successfully donated and verified
     unitsFulfilled: {
       type: Number,
       default: 0,
       min: 0,
     },
-
     urgency: {
       type: String,
       enum: ["normal", "urgent", "critical"],
@@ -47,10 +47,17 @@ const bloodRequestSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    ward: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 100,
+    },
     hospitalNotes: {
       type: String,
       trim: true,
       default: "",
+      maxlength: 500,
     },
     status: {
       type: String,
