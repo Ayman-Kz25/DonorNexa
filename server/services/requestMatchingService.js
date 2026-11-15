@@ -1,3 +1,4 @@
+
 import Donor from "../models/Donor.js";
 import RequestMatch from "../models/RequestMatch.js";
 import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
@@ -29,8 +30,9 @@ const getResponseRate = async (donorId) => {
 
   const totalResponses = respondedCount + noResponseCount;
 
-  // Give new donors a neutral baseline.
-  return totalResponses === 0 ? 50 : (respondedCount / totalResponses) * 100;
+  return totalResponses === 0
+    ? 50
+    : (respondedCount / totalResponses) * 100;
 };
 
 // Calculate ranking score for an eligible donor.
@@ -44,17 +46,12 @@ const calculateMatchScore = ({
   const cityScore = isSameCity ? 1000 : 0;
   const bloodGroupScore = isExactBloodGroup ? 500 : 0;
 
-  // Reward previous successful donation experience.
-  // First donation = 60 points.
-  // Each additional donation = 10 points, up to 5 donations.
   const donationExperienceScore =
     totalDonations > 0 ? 60 + Math.min(totalDonations - 1, 4) * 10 : 0;
 
-  // Reward donors with sufficient time since their last donation.
   const donationHistoryScore =
     (Math.min(Math.max(daysSinceLastDonation, 0), 365) / 365) * 20;
 
-  // Reward reliable responses to previous requests.
   const responseRateScore = (responseRate / 100) * 30;
 
   return (
@@ -95,14 +92,15 @@ export const generateRequestMatches = async (
     };
   }
 
-  // Get compatible blood groups.
-  const compatibleGroups = getCompatibleDonorGroups(bloodRequest.bloodGroup);
+  const compatibleGroups = getCompatibleDonorGroups(
+    bloodRequest.bloodGroup,
+  );
 
   const priorityCity = String(hospitalCity || bloodRequest.city || "")
     .trim()
     .toLowerCase();
 
-  // Fetch available donors and their active donor accounts.
+  // Fetch available donors with active donor accounts.
   const donors = await Donor.find({
     bloodGroup: { $in: compatibleGroups },
     isAvailable: true,
@@ -115,21 +113,19 @@ export const generateRequestMatches = async (
     select: "name",
   });
 
-  // Apply all medical and account eligibility requirements.
+  // Apply medical and account eligibility requirements.
   const eligibilityResults = await Promise.all(
     donors.map(async (donor) => ({
       donor,
-      eligibility: donor.user ? await checkDonorEligibility(donor) : null,
+      eligibility: donor.user
+        ? await checkDonorEligibility(donor)
+        : null,
     })),
   );
 
   const eligibleDonors = eligibilityResults
     .filter(({ eligibility }) => eligibility?.eligible)
     .map(({ donor }) => donor);
-
-  const donorUsersByDonorId = new Map(
-    eligibleDonors.map((donor) => [donor._id.toString(), donor.user._id]),
-  );
 
   // Calculate scores and rank eligible donors.
   const rankedDonors = await Promise.all(
@@ -138,19 +134,25 @@ export const generateRequestMatches = async (
         .trim()
         .toLowerCase();
 
-      const isSameCity = priorityCity !== "" && donorCity === priorityCity;
+      const isSameCity =
+        priorityCity !== "" && donorCity === priorityCity;
 
-      const isExactBloodGroup = donor.bloodGroup === bloodRequest.bloodGroup;
+      const isExactBloodGroup =
+        donor.bloodGroup === bloodRequest.bloodGroup;
 
       const daysSinceLastDonation = donor.lastDonationDate
         ? Math.floor(
-            (now - new Date(donor.lastDonationDate)) / (1000 * 60 * 60 * 24),
+            (now - new Date(donor.lastDonationDate)) /
+              (1000 * 60 * 60 * 24),
           )
         : 365;
 
       const responseRate = await getResponseRate(donor._id);
 
-      const totalDonations = Math.max(0, Number(donor.totalDonations) || 0);
+      const totalDonations = Math.max(
+        0,
+        Number(donor.totalDonations) || 0,
+      );
 
       const matchScore = calculateMatchScore({
         isSameCity,
@@ -174,18 +176,43 @@ export const generateRequestMatches = async (
     }),
   );
 
-  // Highest matching score first.
-  // If scores are equal, prioritize more previous donations.
   rankedDonors.sort(
     (a, b) =>
-      b.matchScore - a.matchScore || b.totalDonations - a.totalDonations,
+      b.matchScore - a.matchScore ||
+      b.totalDonations - a.totalDonations,
+  );
+
+  // Recheck availability and account status before selecting donors.
+  // This prevents donors who switched OFF during ranking from being selected.
+  const rankedDonorIds = rankedDonors.map((donor) => donor.donorId);
+
+  const currentlyAvailableDonors = await Donor.find({
+    _id: { $in: rankedDonorIds },
+    isAvailable: true,
+  }).populate({
+    path: "user",
+    match: {
+      role: "donor",
+      isActive: true,
+    },
+    select: "_id",
+  });
+
+  const currentlyAvailableIds = new Set(
+    currentlyAvailableDonors
+      .filter((donor) => donor.user)
+      .map((donor) => donor._id.toString()),
+  );
+
+  const availableRankedDonors = rankedDonors.filter((donor) =>
+    currentlyAvailableIds.has(donor.donorId.toString()),
   );
 
   // Determine notification batch size from request urgency.
   const batchSize =
     NOTIFICATION_LIMITS[bloodRequest.urgency?.toLowerCase()] || 10;
 
-  // Exclude donors who already have a match record for this request.
+  // Exclude donors who already have a match for this request.
   const existingMatches = await RequestMatch.find({
     bloodRequest: bloodRequest._id,
   }).select("donor");
@@ -194,7 +221,7 @@ export const generateRequestMatches = async (
     existingMatches.map((match) => match.donor.toString()),
   );
 
-  const newDonors = rankedDonors.filter(
+  const newDonors = availableRankedDonors.filter(
     (donor) => !existingDonorIds.has(donor.donorId.toString()),
   );
 
@@ -211,7 +238,7 @@ export const generateRequestMatches = async (
 
   let notifiedCount = 0;
 
-  // Create match records and notify newly selected donors.
+  // Create match records only for currently available donors.
   if (notify && selectedDonors.length > 0) {
     const bulkResult = await RequestMatch.bulkWrite(
       selectedDonors.map((donor) => ({
@@ -235,7 +262,7 @@ export const generateRequestMatches = async (
       })),
     );
 
-    // Notify only donors whose match records were newly created.
+    // Only process match records created by this operation.
     const insertedIndexes = new Set(
       Object.keys(bulkResult.upsertedIds || {}).map(Number),
     );
@@ -244,10 +271,44 @@ export const generateRequestMatches = async (
       insertedIndexes.has(index),
     );
 
+    // Recheck availability immediately before notification delivery.
     const notificationResults = await Promise.all(
       newlyMatchedDonors.map(async (donor) => {
+        const currentDonor = await Donor.findOne({
+          _id: donor.donorId,
+          isAvailable: true,
+        }).populate({
+          path: "user",
+          match: {
+            role: "donor",
+            isActive: true,
+          },
+          select: "_id",
+        });
+
+        // If the donor is now unavailable or inactive, expire the
+        // newly created pending match instead of leaving it actionable.
+        if (!currentDonor?.user) {
+          await RequestMatch.updateOne(
+            {
+              bloodRequest: bloodRequest._id,
+              donor: donor.donorId,
+              status: "pending",
+              notifiedAt: now,
+            },
+            {
+              $set: {
+                status: "expired",
+                responseDeadlineAt: new Date(),
+              },
+            },
+          );
+
+          return false;
+        }
+
         const notification = await createNotification({
-          recipient: donorUsersByDonorId.get(donor.donorId.toString()),
+          recipient: currentDonor.user._id,
           type: "NEW_MATCH",
           title: "New Blood Request Match",
           message: `You have been matched with a ${bloodRequest.urgency} blood request for ${bloodRequest.bloodGroup} blood in ${bloodRequest.city}. Please review and respond before the deadline.`,
@@ -264,7 +325,7 @@ export const generateRequestMatches = async (
 
   return {
     compatibleGroups,
-    rankedDonors,
+    rankedDonors: availableRankedDonors,
     notifiedCount,
   };
 };
