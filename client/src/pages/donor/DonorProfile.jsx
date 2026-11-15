@@ -4,51 +4,55 @@ import DonorAvailability from "../../components/donor/DonorAvailability";
 
 function DonorProfile() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <section>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A45B6D]">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#BE4565] mb-2">
           Donor Portal
         </p>
 
-        <h1 className="mt-2 font-serif text-3xl font-semibold text-[#302923] sm:text-4xl">
+        <h1 className="font-serif text-3xl font-semibold text-[#302923] sm:text-4xl">
           My Profile
         </h1>
 
-        <p className="mt-3 text-sm text-[#81756A]">
-          Manage your personal information and donor details.
+        <p className="mt-2 text-sm text-[#817780]">
+          Manage your personal information and donation preferences.
         </p>
       </section>
 
-      <section className="w-full rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6 shadow-sm sm:p-8">
-        <div className="mb-7 flex items-center gap-3 border-b border-[#E8DDD4] pb-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#963D54]">
-            <UserRound size={24} />
+      <section className="overflow-hidden rounded-2xl border border-[#F0DDE3] bg-white shadow-[0_4px_24px_rgba(92,35,54,0.04)]">
+        <div className="flex items-center gap-3 border-b border-[#F3E7EB] px-5 py-4 sm:px-7">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FCEBF0] text-[#BE4565]">
+            <UserRound size={20} />
           </div>
 
           <div>
-            <h2 className="font-serif text-xl font-semibold text-[#302923]">
-              Donor Information
+            <h2 className="text-base font-semibold text-[#29232A]">
+              Personal Information
             </h2>
-            <p className="mt-1 text-sm text-[#927E70]">
-              View and update your registered information.
+            <p className="mt-0.5 text-xs text-[#8C8087]">
+              Your registered donor details
             </p>
           </div>
         </div>
 
-        <DonorProfileForm />
+        <div className="p-5 sm:p-7">
+          <DonorProfileForm />
+        </div>
       </section>
 
-      <section className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6 shadow-sm">
-        <div className="mb-5">
-          <h2 className="font-serif text-xl font-semibold text-[#302923]">
+      <section className="overflow-hidden rounded-2xl border border-[#F0DDE3] bg-white shadow-[0_4px_24px_rgba(92,35,54,0.04)]">
+        <div className="border-b border-[#F3E7EB] px-5 py-4 sm:px-7">
+          <h2 className="text-base font-semibold text-[#29232A]">
             Donation Availability
           </h2>
-          <p className="mt-1 text-sm text-[#81756A]">
-            Manage whether you are currently available to donate blood.
+          <p className="mt-1 text-xs text-[#8C8087]">
+            Control whether you are currently available to donate blood.
           </p>
         </div>
 
-        <DonorAvailability />
+        <div className="p-5 sm:p-7">
+          <DonorAvailability />
+        </div>
       </section>
     </div>
   );

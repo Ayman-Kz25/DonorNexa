@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import {
   UserRound,
@@ -15,8 +14,10 @@ import {
   Camera,
   ShieldCheck,
   Phone,
-  ChevronRight,
-  Info,
+  ArrowUpRight,
+  HeartHandshake,
+  Plus,
+  Sparkle,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
@@ -74,9 +75,7 @@ function DonorProfileForm({ onRegistered }) {
   useEffect(() => {
     if (!message) return;
 
-    const timer = setTimeout(() => {
-      setMessage("");
-    }, TOAST_DURATION);
+    const timer = setTimeout(() => setMessage(""), TOAST_DURATION);
 
     return () => clearTimeout(timer);
   }, [message, messageType]);
@@ -136,10 +135,7 @@ function DonorProfileForm({ onRegistered }) {
     loadProfile();
   }, [loadProfile]);
 
-  // --------------------------------------------------
-  // Load available cities
-  // --------------------------------------------------
-
+  // Load cities
   useEffect(() => {
     const loadCities = async () => {
       try {
@@ -161,28 +157,20 @@ function DonorProfileForm({ onRegistered }) {
     loadCities();
   }, [request]);
 
-  // --------------------------------------------------
-  // Clean up temporary photo preview URL
-  // --------------------------------------------------
-
+  // Temporary photo preview cleanup
   useEffect(() => {
     if (!photoPreview || !photoPreview.startsWith("blob:")) return;
 
     return () => URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
 
-  // --------------------------------------------------
   // Profile photo
-  // --------------------------------------------------
-
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
-    const validTypes = ["image/jpeg", "image/png"];
-
-    if (!validTypes.includes(file.type)) {
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
       setMessage("Only JPG and PNG images are allowed.");
       setMessageType("error");
       e.target.value = "";
@@ -222,7 +210,6 @@ function DonorProfileForm({ onRegistered }) {
       setPhotoPreview("");
 
       const fileInput = document.getElementById("donorProfilePhoto");
-
       if (fileInput) fileInput.value = "";
 
       setMessage(
@@ -244,14 +231,10 @@ function DonorProfileForm({ onRegistered }) {
     setPhotoPreview("");
 
     const fileInput = document.getElementById("donorProfilePhoto");
-
     if (fileInput) fileInput.value = "";
   };
 
-  // --------------------------------------------------
   // Form fields
-  // --------------------------------------------------
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -280,6 +263,7 @@ function DonorProfileForm({ onRegistered }) {
     }));
   };
 
+  // Validation
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null;
 
@@ -358,10 +342,7 @@ function DonorProfileForm({ onRegistered }) {
     return "";
   };
 
-  // --------------------------------------------------
   // Save profile
-  // --------------------------------------------------
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -383,7 +364,7 @@ function DonorProfileForm({ onRegistered }) {
       return;
     }
 
-    if (!isDirty) {
+    if (!isDirty && hasProfile) {
       setIsEditing(false);
       return;
     }
@@ -433,9 +414,7 @@ function DonorProfileForm({ onRegistered }) {
 
       onRegistered?.(response.data.donor || synced);
 
-      setMessage(
-        response.data.message || "Donor profile saved successfully.",
-      );
+      setMessage(response.data.message || "Donor profile saved successfully.");
       setMessageType("success");
     } catch (error) {
       console.error("Save donor profile error:", error);
@@ -457,10 +436,7 @@ function DonorProfileForm({ onRegistered }) {
     }
   };
 
-  // --------------------------------------------------
   // Edit actions
-  // --------------------------------------------------
-
   const handleStartEdit = () => {
     setFormData(savedData);
     setFieldErrors({});
@@ -475,10 +451,7 @@ function DonorProfileForm({ onRegistered }) {
     setIsEditing(false);
   };
 
-  // --------------------------------------------------
-  // Formatting helpers
-  // --------------------------------------------------
-
+  // Formatting
   const formatDate = (date) => {
     if (!date) return "Not provided";
 
@@ -521,30 +494,30 @@ function DonorProfileForm({ onRegistered }) {
       </p>
     ) : null;
 
-  // --------------------------------------------------
-  // Loading state
-  // --------------------------------------------------
+  const displayPhoto = photoPreview || profilePhoto;
 
+  // Loading
   if (isLoading) {
     return (
       <div
-        className="flex min-h-[300px] items-center justify-center gap-3 rounded-3xl border border-[#E8DDD4] bg-[#FFFDF9]"
+        className="flex min-h-[360px] items-center justify-center gap-3 border border-[#E3D5C8] bg-[#F8F5EF]"
         role="status"
       >
         <Loader2 size={22} className="animate-spin text-[#963D54]" />
-        <p className="text-sm font-medium text-[#81756A]">
-          Loading your profile...
-        </p>
+        <p className="text-sm text-[#81756A]">Loading your profile...</p>
       </div>
     );
   }
 
-  // --------------------------------------------------
-  // Main account profile page
-  // --------------------------------------------------
+  // Reusable field styling
+  const inputClass =
+    "w-full rounded-none border-0 border-b border-[#DCCFC2] bg-transparent py-3 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:ring-0";
+
+  const iconClass =
+    "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[#A45B6D]";
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-10 text-[#302923]">
       <style>{`
         @keyframes donor-toast-in {
           from { opacity: 0; transform: translateY(-10px); }
@@ -557,23 +530,21 @@ function DonorProfileForm({ onRegistered }) {
         }
       `}</style>
 
-      {/* Toast notification */}
+      {/* Toast */}
       {message && (
         <div
           role="status"
           style={{ animation: "donor-toast-in 0.3s ease-out" }}
-          className={`fixed right-4 top-24 z-[60] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl border bg-[#FFFDF9] shadow-xl sm:right-6 ${
-            messageType === "error"
-              ? "border-[#E8C9C9]"
-              : "border-[#E5C8C0]"
+          className={`fixed right-4 top-24 z-[60] w-[calc(100%-2rem)] max-w-sm overflow-hidden border bg-[#FFFDF9] shadow-xl sm:right-6 ${
+            messageType === "error" ? "border-[#E8C9C9]" : "border-[#E5C8C0]"
           }`}
         >
           <div className="flex items-start gap-3 p-4">
             <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+              className={`flex h-9 w-9 shrink-0 items-center justify-center ${
                 messageType === "error"
                   ? "bg-[#FBEEEE] text-[#A33E4E]"
-                  : "bg-[#F2E2DC] text-[#782B40]"
+                  : "bg-[#F2E2DC] text-[#963D54]"
               }`}
             >
               {messageType === "error" ? (
@@ -585,9 +556,7 @@ function DonorProfileForm({ onRegistered }) {
 
             <p
               className={`flex-1 pt-1.5 text-sm font-medium ${
-                messageType === "error"
-                  ? "text-[#A33E4E]"
-                  : "text-[#782B40]"
+                messageType === "error" ? "text-[#A33E4E]" : "text-[#963D54]"
               }`}
             >
               {message}
@@ -597,7 +566,7 @@ function DonorProfileForm({ onRegistered }) {
               type="button"
               onClick={() => setMessage("")}
               aria-label="Dismiss notification"
-              className="rounded-full p-1.5 text-[#9B8D83] transition hover:bg-[#F2E2DC]"
+              className="p-1.5 text-[#9B8D83] transition hover:bg-[#F2E2DC]"
             >
               <X size={16} />
             </button>
@@ -615,19 +584,17 @@ function DonorProfileForm({ onRegistered }) {
         </div>
       )}
 
-      {/* Page heading */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Profile introduction */}
+      <section className="flex flex-col justify-between gap-4 border-b border-[#F0DDE3] pb-6 sm:flex-row sm:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A45B6D]">
-            Account Settings
-          </p>
+          <p className="text-xs font-medium text-[#BE4565]">Account details</p>
 
-          <h2 className="mt-1 font-serif text-2xl font-semibold text-[#302923] sm:text-3xl">
-            My Profile
+          <h2 className="mt-1 text-xl font-semibold tracking-tight text-[#29232A]">
+            Donor profile
           </h2>
 
-          <p className="mt-1 text-sm text-[#81756A]">
-            Manage your personal details and donor information.
+          <p className="mt-1 text-sm text-[#817780]">
+            View and manage your personal information.
           </p>
         </div>
 
@@ -635,464 +602,457 @@ function DonorProfileForm({ onRegistered }) {
           <button
             type="button"
             onClick={handleStartEdit}
-            className="inline-flex items-center gap-2 rounded-full bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#602032]"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-[#96334F] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#7D3045] sm:self-auto"
           >
             <Pencil size={15} />
-            Edit Profile
+            Edit profile
           </button>
         )}
-      </div>
+      </section>
+      <form onSubmit={handleSubmit} className="space-y-12">
+        {/* Profile identity composition */}
+        <section className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
+          {/* Photo area */}
+          <div className="relative flex min-h-[330px] items-center justify-center overflow-hidden rounded-xl bg-[#F0EAE0] p-8 sm:min-h-[390px]">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-40"
+              style={{
+                backgroundImage:
+                  "radial-gradient(#D9BFAF 0.8px, transparent 0.8px)",
+                backgroundSize: "12px 12px",
+              }}
+            />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Profile overview */}
-        <section className="overflow-hidden rounded-3xl border border-[#E8DDD4] bg-[#FFFDF9] shadow-sm">
-          <div className="h-2 bg-gradient-to-r from-[#782B40] via-[#A45B6D] to-[#D7A9A0]" />
+            <div className="pointer-events-none absolute h-[290px] w-[290px] rounded-full border border-[#D5C2B3] sm:h-[340px] sm:w-[340px]" />
+            <div className="pointer-events-none absolute h-[230px] w-[230px] rounded-full border border-[#D5C2B3] sm:h-[275px] sm:w-[275px]" />
 
-          <div className="p-5 sm:p-7">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              {/* Avatar: image only, no text overlay */}
-              <div className="relative mx-auto shrink-0 sm:mx-0">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-[5px] border-[#F2E2DC] bg-[#F8F1ED] shadow-sm sm:h-32 sm:w-32">
-                  {photoPreview || profilePhoto ? (
-                    <img
-                      src={photoPreview || profilePhoto}
-                      alt="Profile photo"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <UserRound
-                      size={48}
-                      strokeWidth={1.4}
-                      className="text-[#A45B6D]"
-                    />
-                  )}
-                </div>
-
-                <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full border-[3px] border-[#FFFDF9] bg-[#782B40] text-white">
-                  <Camera size={14} />
-                </span>
+            <div className="relative z-10">
+              <div className="flex h-48 w-48 items-center justify-center overflow-hidden rounded-full border-[7px] border-[#FFFDF9] bg-[#E8D8CC] shadow-[0_15px_45px_rgba(80,48,40,0.12)] sm:h-56 sm:w-56">
+                {displayPhoto ? (
+                  <img
+                    src={displayPhoto}
+                    alt="Donor profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserRound
+                    size={76}
+                    strokeWidth={1.1}
+                    className="text-[#963D54]"
+                  />
+                )}
               </div>
 
-              {/* Profile information */}
-              <div className="min-w-0 flex-1 text-center sm:text-left">
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  <span className="rounded-full bg-[#F2E2DC] px-3 py-1 text-xs font-semibold text-[#782B40]">
-                    Donor Account
-                  </span>
+              {hasProfile && (
+                <label
+                  htmlFor="donorProfilePhoto"
+                  title="Change profile photo"
+                  className={`absolute bottom-3 right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-[3px] border-[#F0EAE0] bg-[#963D54] text-white shadow-md transition hover:bg-[#7D3045] ${
+                    isUploadingPhoto ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  <Camera size={18} />
+                </label>
+              )}
+            </div>
 
-                  {hasProfile && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EDF4EB] px-3 py-1 text-xs font-semibold text-[#55744E]">
-                      <CheckCircle2 size={13} />
-                      Profile Complete
-                    </span>
-                  )}
-                </div>
+            <span className="absolute left-6 top-6 text-[#B27A70]">
+              <Sparkle size={23} strokeWidth={1.2} />
+            </span>
 
-                <h3 className="mt-3 font-serif text-2xl font-semibold text-[#302923]">
-                  {hasProfile ? "Your donor profile" : "Complete your profile"}
-                </h3>
+            <span className="absolute bottom-7 right-7 text-[#B27A70]">
+              <Sparkle size={18} strokeWidth={1.2} />
+            </span>
+          </div>
 
-                <p className="mx-auto mt-1 max-w-lg text-sm leading-6 text-[#81756A] sm:mx-0">
-                  {hasProfile
-                    ? "Your information helps us match you with compatible blood donation requests."
-                    : "Add your personal and donor information to start receiving compatible donation requests."}
+          {/* Identity details */}
+          <div className="flex flex-col justify-center py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+              {hasProfile ? "Donor identity" : "Your donor journey"}
+            </p>
+
+            <h3 className="mt-2 text-lg font-semibold text-[#29232A]">
+              Profile overview
+            </h3>
+
+            <p className="mt-1 text-sm leading-6 text-[#817780]">
+              Your donor details and profile photo.
+            </p>
+
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <div className="border-l-2 border-[#963D54] rounded-xl bg-[#F0EAE0] px-4 py-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
+                  Blood group
                 </p>
+                <p className="mt-2 font-serif text-4xl text-[#963D54]">
+                  {hasProfile && formData.bloodGroup
+                    ? formData.bloodGroup
+                    : "—"}
+                </p>
+              </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-                  {hasProfile && formData.bloodGroup && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] px-3 py-2 text-sm font-semibold text-[#782B40]">
-                      <Droplet size={15} />
-                      {formData.bloodGroup}
-                    </span>
-                  )}
-
-                  {hasProfile && formData.city && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] px-3 py-2 text-sm text-[#655A51]">
-                      <MapPin size={15} className="text-[#A45B6D]" />
-                      {formData.city}
-                    </span>
-                  )}
-                </div>
+              <div className="border-l-2 border-[#C9A99B] rounded-xl bg-[#F0EAE0] px-4 py-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
+                  Location
+                </p>
+                <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-[#302923]">
+                  <MapPin size={15} className="shrink-0 text-[#963D54]" />
+                  <span className="truncate">
+                    {hasProfile && formData.city ? formData.city : "Not set"}
+                  </span>
+                </p>
               </div>
             </div>
 
-            {/* Photo controls */}
-            <div className="mt-7 border-t border-[#EEE5DE] pt-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[#302923]">
-                    Profile picture
-                  </p>
-                  <p className="mt-1 text-xs text-[#92857B]">
-                    JPG or PNG · Maximum 2 MB
-                  </p>
-                </div>
+            {/* Photo upload controls */}
+            <div className="mt-7 border-t border-[#E3D5C8] pt-5">
+              <input
+                id="donorProfilePhoto"
+                type="file"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                onChange={handlePhotoSelect}
+                disabled={!hasProfile || isUploadingPhoto}
+                className="sr-only"
+              />
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <label
-                    htmlFor="donorProfilePhoto"
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#DCCBC3] bg-[#FFFDF9] px-4 py-2.5 text-sm font-semibold text-[#782B40] transition hover:border-[#A45B6D] hover:bg-[#F8F1ED] ${
-                      !hasProfile || isUploadingPhoto
-                        ? "pointer-events-none opacity-50"
-                        : ""
-                    }`}
-                  >
-                    <Camera size={15} />
-                    {profilePhoto ? "Change Photo" : "Choose Photo"}
-                  </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="mr-auto text-xs text-[#81756A]">
+                  Profile image · JPG or PNG · Maximum 2 MB
+                </p>
 
-                  <input
-                    id="donorProfilePhoto"
-                    type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                    onChange={handlePhotoSelect}
-                    disabled={!hasProfile || isUploadingPhoto}
-                    className="sr-only"
-                  />
+                {photoFile && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handlePhotoUpload}
+                      disabled={isUploadingPhoto}
+                      className="inline-flex items-center gap-2 bg-[#963D54] px-4 py-2.5 text-xs font-semibold rounded-lg text-white transition hover:bg-[#7D3045] disabled:opacity-50"
+                    >
+                      {isUploadingPhoto ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      {isUploadingPhoto ? "Uploading..." : "Upload photo"}
+                    </button>
 
-                  {photoFile && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handlePhotoUpload}
-                        disabled={isUploadingPhoto}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isUploadingPhoto ? (
-                          <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                          <Save size={15} />
-                        )}
-                        {isUploadingPhoto ? "Uploading..." : "Upload"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleCancelPhoto}
-                        disabled={isUploadingPhoto}
-                        aria-label="Cancel photo selection"
-                        className="rounded-xl border border-[#E8DDD4] p-2.5 text-[#81756A] transition hover:bg-[#F8F5EF] disabled:opacity-50"
-                      >
-                        <X size={16} />
-                      </button>
-                    </>
-                  )}
-                </div>
+                    <button
+                      type="button"
+                      onClick={handleCancelPhoto}
+                      disabled={isUploadingPhoto}
+                      aria-label="Cancel photo selection"
+                      className="border border-[#DCCFC2] rounded-lg p-2.5 text-[#81756A] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                    >
+                      <X size={15} />
+                    </button>
+                  </>
+                )}
               </div>
 
               {!hasProfile && (
-                <p className="mt-3 flex items-center gap-2 text-xs text-[#98602F]">
-                  <Info size={14} />
-                  Save your donor information before uploading a profile photo.
+                <p className="mt-3 text-xs text-[#98602F]">
+                  Save your donor profile before uploading a photo.
                 </p>
               )}
             </div>
           </div>
         </section>
 
-        {/* Personal information */}
-        <section className="overflow-hidden rounded-3xl border border-[#E8DDD4] bg-[#FFFDF9] shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEE5DE] px-5 py-5 sm:px-7">
+        {/* Information heading */}
+        <section className="border-t border-[#E3D5C8] pt-8">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <h3 className="font-serif text-xl font-semibold text-[#302923]">
-                Personal Information
-              </h3>
-              <p className="mt-1 text-sm text-[#81756A]">
-                Your contact and personal details.
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+                The essentials
               </p>
+              <h3 className="mt-2 text-lg font-semibold text-[#29232A]">
+                Personal information
+              </h3>
             </div>
 
-            {!isEditing && hasProfile && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F2E2DC] px-3 py-1.5 text-xs font-semibold text-[#782B40]">
-                <ShieldCheck size={14} />
-                Saved Details
-              </span>
-            )}
+            <p className="max-w-xs text-xs leading-6 text-[#81756A]">
+              Your details are used for donor eligibility and matching. Keep
+              them correct.
+            </p>
           </div>
 
-          <div className="p-5 sm:p-7">
-            {/* Blood group */}
-            <div className="mb-7">
-              <label className="mb-3 block text-sm font-semibold text-[#55483F]">
-                Blood Group
-              </label>
-
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                {BLOOD_GROUPS.map((group) => {
-                  const selected = formData.bloodGroup === group;
-
-                  return (
-                    <button
-                      key={group}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      disabled={!isEditing}
-                      onClick={() => handleBloodGroupSelect(group)}
-                      className={`flex h-12 items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition ${
-                        selected
-                          ? "border-[#782B40] bg-[#782B40] text-white shadow-sm"
-                          : isEditing
-                            ? "border-[#E5D8CE] bg-[#F8F5EF] text-[#55483F] hover:border-[#A45B6D] hover:bg-[#F2E2DC]"
-                            : "border-[#E8DDD4] bg-[#F8F5EF] text-[#655A51]"
-                      } disabled:cursor-default`}
-                    >
-                      {selected && <Droplet size={14} />}
-                      {group}
-                    </button>
-                  );
-                })}
+          {/* Blood group selector */}
+          <div className="mt-9 border-y border-[#E3D5C8] py-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <label className="text-sm font-semibold text-[#302923]">
+                  Your blood group
+                </label>
+                <p className="mt-1 text-xs text-[#81756A]">
+                  Select the blood group shown in your medical records.
+                </p>
               </div>
 
-              {renderFieldError("bloodGroup")}
+              {hasProfile && !isEditing && (
+                <span className="text-xs font-semibold text-[#963D54]">
+                  Saved information
+                </span>
+              )}
             </div>
 
-            <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2">
-              {/* City */}
-              <div>
-                <label
-                  htmlFor="city"
-                  className="mb-2 block text-sm font-semibold text-[#55483F]"
+            <div
+              role="radiogroup"
+              aria-label="Blood group"
+              className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-8"
+            >
+              {BLOOD_GROUPS.map((group) => {
+                const selected = formData.bloodGroup === group;
+
+                return (
+                  <button
+                    key={group}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={!isEditing}
+                    onClick={() => handleBloodGroupSelect(group)}
+                    className={`flex h-12 items-center justify-center gap-1.5 border rounded-lg text-sm font-semibold transition ${
+                      selected
+                        ? "border-[#963D54] bg-[#963D54] text-white"
+                        : isEditing
+                          ? "border-[#DCCFC2] bg-[#F0EAE0] text-[#55483F] hover:border-[#963D54] hover:text-[#963D54]"
+                          : "border-[#E3D5C8] bg-[#F0EAE0] text-[#655A51]"
+                    } disabled:cursor-default`}
+                  >
+                    {selected && <Droplet size={14} />}
+                    {group}
+                  </button>
+                );
+              })}
+            </div>
+
+            {renderFieldError("bloodGroup")}
+          </div>
+
+          {/* Personal details */}
+          <div className="grid gap-x-12 gap-y-8 py-8 sm:grid-cols-2">
+            {/* City */}
+            <div>
+              <label
+                htmlFor="city"
+                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+              >
+                <MapPin size={15} className="text-[#963D54]" />
+                City
+              </label>
+
+              {isEditing ? (
+                <select
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  disabled={isCitiesLoading}
+                  required
+                  className={inputClass}
                 >
-                  City
-                </label>
+                  <option value="">
+                    {isCitiesLoading ? "Loading cities..." : "Select city"}
+                  </option>
+                  {cities.map((city) => (
+                    <option key={city._id} value={city.name}>
+                      {city.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                  {formData.city || "Not provided"}
+                </p>
+              )}
 
-                {isEditing ? (
-                  <div className="relative">
-                    <MapPin
-                      size={17}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
-                    />
+              {renderFieldError("city")}
+            </div>
 
-                    <select
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      disabled={isCitiesLoading}
-                      required
-                      className="w-full appearance-none rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] py-3 pl-11 pr-4 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:bg-white focus:ring-4 focus:ring-[#F2E2DC] disabled:opacity-50"
-                    >
-                      <option value="">
-                        {isCitiesLoading ? "Loading cities..." : "Select city"}
-                      </option>
+            {/* Weight */}
+            <div>
+              <label
+                htmlFor="weight"
+                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+              >
+                <Scale size={15} className="text-[#963D54]" />
+                Weight
+              </label>
 
-                      {cities.map((city) => (
-                        <option key={city._id} value={city.name}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div className="flex min-h-[48px] items-center gap-3 rounded-xl border border-[#EEE5DE] bg-[#FAF8F4] px-4 py-3">
-                    <MapPin size={17} className="shrink-0 text-[#A45B6D]" />
-                    <span className="text-sm font-medium text-[#302923]">
-                      {formData.city || "Not provided"}
-                    </span>
-                  </div>
-                )}
+              {isEditing ? (
+                <div className="relative">
+                  <input
+                    id="weight"
+                    type="number"
+                    name="weight"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    placeholder="Enter your weight"
+                    min="50"
+                    step="0.1"
+                    required
+                    className={inputClass}
+                  />
+                  <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-xs text-[#81756A]">
+                    kg
+                  </span>
+                </div>
+              ) : (
+                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                  {formData.weight ? `${formData.weight} kg` : "Not provided"}
+                </p>
+              )}
 
-                {renderFieldError("city")}
-              </div>
+              {renderFieldError("weight")}
+            </div>
 
-              {/* Weight */}
-              <div>
-                <label
-                  htmlFor="weight"
-                  className="mb-2 block text-sm font-semibold text-[#55483F]"
-                >
-                  Weight
-                </label>
+            {/* Date of birth */}
+            <div>
+              <label
+                htmlFor="dateOfBirth"
+                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+              >
+                <CalendarDays size={15} className="text-[#963D54]" />
+                Date of birth
+              </label>
 
-                {isEditing ? (
-                  <div className="relative">
-                    <Scale
-                      size={17}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
-                    />
+              {isEditing ? (
+                <input
+                  id="dateOfBirth"
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={handleChange}
+                  required
+                  min={dateLimits.min}
+                  max={dateLimits.max}
+                  className={inputClass}
+                />
+              ) : (
+                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                  {formatDate(formData.dateOfBirth)}
+                </p>
+              )}
 
-                    <input
-                      id="weight"
-                      type="number"
-                      name="weight"
-                      value={formData.weight}
-                      onChange={handleChange}
-                      placeholder="Enter your weight"
-                      min="50"
-                      step="0.1"
-                      required
-                      className="w-full rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] py-3 pl-11 pr-4 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:bg-white focus:ring-4 focus:ring-[#F2E2DC]"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex min-h-[48px] items-center gap-3 rounded-xl border border-[#EEE5DE] bg-[#FAF8F4] px-4 py-3">
-                    <Scale size={17} className="shrink-0 text-[#A45B6D]" />
-                    <span className="text-sm font-medium text-[#302923]">
-                      {formData.weight
-                        ? `${formData.weight} kg`
-                        : "Not provided"}
-                    </span>
-                  </div>
-                )}
+              {renderFieldError("dateOfBirth")}
+            </div>
 
-                {renderFieldError("weight")}
-              </div>
+            {/* Phone */}
+            <div>
+              <label
+                htmlFor="phone"
+                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+              >
+                <Phone size={15} className="text-[#963D54]" />
+                Phone number
+              </label>
 
-              {/* Date of birth */}
-              <div>
-                <label
-                  htmlFor="dateOfBirth"
-                  className="mb-2 block text-sm font-semibold text-[#55483F]"
-                >
-                  Date of Birth
-                </label>
+              {isEditing ? (
+                <input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="03XXXXXXXXX or +92XXXXXXXXXX"
+                  required
+                  maxLength={13}
+                  pattern="(03[0-9]{9}|\+92[0-9]{10})"
+                  title="Enter 03XXXXXXXXX or +92XXXXXXXXXX without spaces or symbols."
+                  className={inputClass}
+                />
+              ) : (
+                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                  {formData.phone || "Not provided"}
+                </p>
+              )}
 
-                {isEditing ? (
-                  <div className="relative">
-                    <CalendarDays
-                      size={17}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
-                    />
-
-                    <input
-                      id="dateOfBirth"
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      required
-                      min={dateLimits.min}
-                      max={dateLimits.max}
-                      className="w-full rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] py-3 pl-11 pr-4 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:bg-white focus:ring-4 focus:ring-[#F2E2DC]"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex min-h-[48px] items-center gap-3 rounded-xl border border-[#EEE5DE] bg-[#FAF8F4] px-4 py-3">
-                    <CalendarDays
-                      size={17}
-                      className="shrink-0 text-[#A45B6D]"
-                    />
-                    <span className="text-sm font-medium text-[#302923]">
-                      {formatDate(formData.dateOfBirth)}
-                    </span>
-                  </div>
-                )}
-
-                {renderFieldError("dateOfBirth")}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="mb-2 block text-sm font-semibold text-[#55483F]"
-                >
-                  Phone Number
-                </label>
-
-                {isEditing ? (
-                  <div className="relative">
-                    <Phone
-                      size={17}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
-                    />
-
-                    <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="03XXXXXXXXX or +92XXXXXXXXXX"
-                      required
-                      maxLength={13}
-                      pattern="(03[0-9]{9}|\+92[0-9]{10})"
-                      title="Enter 03XXXXXXXXX or +92XXXXXXXXXX without spaces or symbols."
-                      className="w-full rounded-xl border border-[#E5D8CE] bg-[#F8F5EF] py-3 pl-11 pr-4 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:bg-white focus:ring-4 focus:ring-[#F2E2DC]"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex min-h-[48px] items-center gap-3 rounded-xl border border-[#EEE5DE] bg-[#FAF8F4] px-4 py-3">
-                    <Phone size={17} className="shrink-0 text-[#A45B6D]" />
-                    <span className="text-sm font-medium text-[#302923]">
-                      {formData.phone || "Not provided"}
-                    </span>
-                  </div>
-                )}
-
-                {renderFieldError("phone")}
-              </div>
+              {renderFieldError("phone")}
             </div>
           </div>
         </section>
 
-        {/* Edit mode actions */}
+        {/* Privacy note */}
+        <section className="flex flex-col gap-4 border-y border-[#E3D5C8] py-6 sm:flex-row sm:items-center">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F0E2DA] text-[#963D54]">
+            <ShieldCheck size={21} />
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-[#302923]">
+              Your information matters.
+            </h4>
+            <p className="mt-1 max-w-2xl text-xs leading-6 text-[#81756A]">
+              Your contact details are not displayed on public emergency
+              listings. Hospitals can access your phone number only after you
+              accept a matched donation request.
+            </p>
+          </div>
+        </section>
+
+        {/* Edit actions */}
         {isEditing && (
-          <section className="rounded-3xl border border-[#E8DDD4] bg-[#FFFDF9] p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[#302923]">
-                  {hasProfile ? "Update your information" : "Create your profile"}
-                </p>
+          <section className="flex flex-col gap-4 border-t border-[#E3D5C8] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-serif text-xl">
+                {hasProfile ? "Ready to update?" : "Ready to get started?"}
+              </p>
+              <p className="mt-1 text-xs text-[#81756A]">
+                {isDirty
+                  ? "You have unsaved changes."
+                  : "Complete all required information before saving."}
+              </p>
+            </div>
 
-                <p className="mt-1 text-xs text-[#81756A]">
-                  {isDirty
-                    ? "You have changes that have not been saved."
-                    : "Complete all required fields before saving."}
-                </p>
-              </div>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              {hasProfile && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 border border-[#DCCFC2] rounded-lg px-5 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+              )}
 
-              <div className="flex flex-col-reverse gap-2 sm:flex-row">
-                {hasProfile && (
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCCBC3] bg-white px-5 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F8F5EF] disabled:opacity-50"
-                  >
-                    <X size={16} />
-                    Cancel
-                  </button>
+              <button
+                type="submit"
+                disabled={isSaving || (hasProfile && !isDirty)}
+                className="inline-flex items-center justify-center gap-3 bg-[#963D54] rounded-lg px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <Loader2 size={17} className="animate-spin" />
+                ) : (
+                  <Save size={17} />
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isSaving || (hasProfile && !isDirty)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#602032] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isSaving ? (
-                    <Loader2 size={17} className="animate-spin" />
-                  ) : (
-                    <Save size={17} />
-                  )}
-
-                  {isSaving
-                    ? "Saving..."
-                    : hasProfile
-                      ? "Save Changes"
-                      : "Create Profile"}
-                </button>
-              </div>
+                {isSaving
+                  ? "Saving..."
+                  : hasProfile
+                    ? "Save changes"
+                    : "Create donor profile"}
+              </button>
             </div>
           </section>
         )}
 
         {/* View mode footer */}
         {!isEditing && hasProfile && (
-          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#E3D5C8] rounded-lg pt-6">
             <div className="flex items-center gap-2 text-xs text-[#81756A]">
-              <ShieldCheck size={15} className="text-[#A45B6D]" />
+              <CheckCircle2 size={15} className="text-[#963D54]" />
               Your profile information is saved.
             </div>
 
             <button
               type="button"
               onClick={handleStartEdit}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#782B40] transition hover:text-[#A45B6D]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#963D54] transition hover:text-[#7D3045]"
             >
               Update information
-              <ChevronRight size={16} />
+              <ArrowUpRight size={16} />
             </button>
           </div>
         )}

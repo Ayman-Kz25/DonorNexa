@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  AlertTriangle,
+  RefreshCw,
+  CalendarDays,
+  Clock,
+} from "lucide-react";
 import { useApi } from "../../hooks/useApi";
-import { formatDateTime } from "../../utils/dateTime";
+import { formatDate } from "../../utils/dateTime";
 
 function DonorAvailability() {
   const { request } = useApi();
@@ -11,7 +17,6 @@ function DonorAvailability() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
   const [reasons, setReasons] = useState([]);
-  const [eligibleAgainDate, setEligibleAgainDate] = useState(null);
 
   const loadDonor = useCallback(async () => {
     try {
@@ -62,7 +67,6 @@ function DonorAvailability() {
       setUpdating(true);
       setMessage("");
       setReasons([]);
-      setEligibleAgainDate(null);
 
       const response = await request({
         method: "PATCH",
@@ -75,6 +79,9 @@ function DonorAvailability() {
       setDonor((previous) => ({
         ...previous,
         isAvailable: response.data.isAvailable,
+        ...(response.data.eligibleAgainDate && {
+          eligibleAgainDate: response.data.eligibleAgainDate,
+        }),
       }));
 
       setMessage(response.data.message || "Availability updated successfully.");
@@ -86,7 +93,6 @@ function DonorAvailability() {
       );
 
       setReasons(error.response?.data?.reasons || []);
-      setEligibleAgainDate(error.response?.data?.eligibleAgainDate || null);
     } finally {
       setUpdating(false);
     }
@@ -95,7 +101,7 @@ function DonorAvailability() {
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center gap-3 rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] py-12 text-[#782B40]"
+        className="flex items-center justify-center gap-3 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] py-12 text-[#782B40]"
         role="status"
       >
         <Loader2 size={20} className="animate-spin" />
@@ -106,7 +112,7 @@ function DonorAvailability() {
 
   if (!donor) {
     return (
-      <div className="rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-5">
+      <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-5">
         <p className="text-sm font-medium text-[#782B40]">
           {message || "Donor profile is not available."}
         </p>
@@ -114,7 +120,7 @@ function DonorAvailability() {
         <button
           type="button"
           onClick={loadDonor}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#782B40] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#612033]"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#612033]"
         >
           <RefreshCw size={15} />
           Check Again
@@ -123,10 +129,19 @@ function DonorAvailability() {
     );
   }
 
+  const lastDonationDate = donor.lastDonationDate || null;
+  const eligibleAgainDate = donor.eligibleAgainDate || null;
+
+  const isCoolingDown =
+    eligibleAgainDate &&
+    !Number.isNaN(new Date(eligibleAgainDate).getTime()) &&
+    new Date(eligibleAgainDate).getTime() > Date.now();
+
   return (
     <div className="w-full space-y-4">
+      {/* Availability toggle */}
       <div
-        className={`flex items-center justify-between gap-5 rounded-2xl border p-5 transition-colors duration-300 sm:p-6 ${
+        className={`flex items-center justify-between gap-5 rounded-xl border p-5 transition-colors duration-300 sm:p-6 ${
           donor.isAvailable
             ? "border-[#E8C9CE] bg-[#F7E9E7]"
             : "border-[#E8DDD4] bg-[#F1EDE6]"
@@ -190,6 +205,44 @@ function DonorAvailability() {
         </div>
       </div>
 
+      {/* Donation dates */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {!donor.isAvailable && lastDonationDate && (
+          <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-4">
+            <div className="flex items-center gap-2 text-[#81756A]">
+              <CalendarDays size={17} />
+              <p className="text-xs font-semibold uppercase tracking-wide">
+                Last Donation Date
+              </p>
+            </div>
+
+            <p className="mt-3 text-base font-semibold text-[#302923]">
+              {formatDate(lastDonationDate)}
+            </p>
+          </div>
+        )}
+
+        {isCoolingDown && (
+          <div className="rounded-xl border border-[#E8C9CE] bg-[#F7E9E7] p-4">
+            <div className="flex items-center gap-2 text-[#782B40]">
+              <Clock size={17} />
+              <p className="text-xs font-semibold uppercase tracking-wide">
+                Eligible Again On
+              </p>
+            </div>
+
+            <p className="mt-3 text-base font-semibold text-[#782B40]">
+              {formatDate(eligibleAgainDate)}
+            </p>
+
+            <p className="mt-1 text-xs text-[#81756A]">
+              Your donation cooldown period is still active.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Status message */}
       {message && (
         <div
           role="status"
@@ -199,8 +252,9 @@ function DonorAvailability() {
         </div>
       )}
 
+      {/* Eligibility reasons */}
       {reasons.length > 0 && (
-        <div className="rounded-2xl border border-[#E8D5B9] bg-[#FBF3E8] p-5">
+        <div className="rounded-xl border border-[#E8D5B9] bg-[#FBF3E8] p-5">
           <p className="mb-3 flex items-center gap-2 font-semibold text-[#895B2D]">
             <AlertTriangle size={18} />
             Eligibility requirements not met:
@@ -211,18 +265,6 @@ function DonorAvailability() {
               <li key={index}>{reason}</li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {eligibleAgainDate && (
-        <div className="rounded-xl border border-[#E8D5B9] bg-[#FBF3E8] px-4 py-3">
-          <p className="text-sm font-medium text-[#895B2D]">
-            You can try donating again on:
-          </p>
-
-          <p className="mt-1 text-sm font-semibold text-[#624126]">
-            {formatDateTime(eligibleAgainDate)}
-          </p>
         </div>
       )}
     </div>
