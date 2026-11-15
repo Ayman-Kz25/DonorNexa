@@ -33,24 +33,59 @@ export const syncUser = async (req, res) => {
 
     let user = await User.findOne({ clerkUserId: userId });
 
-    if (user && !user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account has been deactivated.",
-      });
-    }
+    if (user) {
+      if (!user.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: "Your account has been deactivated.",
+        });
+      }
 
-    if (!user) {
-      user = await User.create({
-        clerkUserId: userId,
-        name,
-        email,
-        role: "unassigned",
-      });
-    } else {
       user.name = name;
       user.email = email;
       await user.save();
+    } else {
+      // Never link an existing account using email alone.
+      const existingEmailUser = await User.findOne({ email });
+
+      if (existingEmailUser) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "An account with this email already exists. Please contact the administrator to resolve the account connection.",
+        });
+      }
+
+      try {
+        user = await User.create({
+          clerkUserId: userId,
+          name,
+          email,
+          role: "unassigned",
+        });
+      } catch (createError) {
+        // Handle concurrent sync requests safely.
+        if (createError.code !== 11000) {
+          throw createError;
+        }
+
+        user = await User.findOne({ clerkUserId: userId });
+
+        if (!user) {
+          return res.status(409).json({
+            success: false,
+            message:
+              "An account with this email already exists. Please contact the administrator.",
+          });
+        }
+
+        if (!user.isActive) {
+          return res.status(403).json({
+            success: false,
+            message: "Your account has been deactivated.",
+          });
+        }
+      }
     }
 
     return res.status(200).json({
