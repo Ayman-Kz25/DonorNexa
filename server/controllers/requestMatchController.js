@@ -674,6 +674,7 @@ export const getHospitalMatchResponses = async (req, res) => {
         }
 
         return {
+          donorId: match.donor?._id?.toString(),
           matchId: match._id,
           donorName: match.donor?.user?.name || "Unknown Donor",
           bloodGroup: match.donor?.bloodGroup,
