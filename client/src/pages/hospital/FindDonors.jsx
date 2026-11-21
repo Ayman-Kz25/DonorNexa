@@ -241,6 +241,9 @@ const FindDonors = () => {
       case "open":
         return "bg-[#F2E2DC] text-[#782B40]";
 
+      case "not_notified":
+        return "bg-[#F1EDE7] text-[#81756A]";
+
       case "fulfilled":
         return "bg-[#EEE8E1] text-[#6E5949]";
 
@@ -269,11 +272,12 @@ const FindDonors = () => {
 
   const getDonorScore = (donor) => donor.matchScore ?? null;
 
-  const getDonorResponseStatus = (donor) => donor.response?.status || "pending";
+  const getDonorResponseStatus = (donor) =>
+    donor.response?.status || "not_notified";
 
   const getResponseCounts = (donors = []) => {
     const getStatus = (donor) =>
-      (donor.response?.status || donor.status || "pending").toLowerCase();
+      (donor.response?.status || donor.status || "not_notified").toLowerCase();
 
     return {
       accepted: donors.filter((donor) => getStatus(donor) === "accepted")

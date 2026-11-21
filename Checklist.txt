@@ -52,25 +52,27 @@
 - [x] Backend authorization is enforced independently of frontend route protection.
 - [x] Users cannot assign themselves an unauthorized role.
 - [x] User profile/account information is synchronized correctly.
-- [ ] Inactive or blocked users cannot perform restricted operations.
-- [ ] Invalid or expired authentication tokens are rejected.
-- [ ] Authentication errors are handled gracefully.
+- [x] Inactive or blocked users cannot perform restricted operations.
+- [x] Invalid or expired authentication tokens are rejected.
+- [x] Authentication errors are handled gracefully.
 3. Donor Module
+
 3.1 Donor profile
-- [ ] Donor can view their profile.
-- [ ] Donor can edit their profile.
-- [ ] Donor can update their name and contact details where permitted.
-- [ ] Donor can select/update blood group.
-- [ ] Donor can enter date of birth.
-- [ ] Donor can enter weight.
-- [ ] Donor can select city.
-- [ ] Donor can view their last donation date.
-- [ ] Donor can view their eligibility status.
-- [ ] Donor can view the automatic "Eligible again on" date.
-- [ ] Profile changes are saved in the database.
-- [ ] Profile changes are reflected when the page is reloaded.
+- [x] Donor can view their profile.
+- [x] Donor can edit their profile.
+- [x] Donor can update their name and contact details where permitted.
+- [x] Donor can select/update blood group.
+- [x] Donor can enter date of birth.
+- [x] Donor can enter weight.
+- [x] Donor can select city.
+- [x] Donor can view their last donation date.
+- [x] Donor can view their eligibility status.
+- [x] Donor can view the automatic "Eligible again on" date.
+- [x] Profile changes are saved in the database.
+- [x] Profile changes are reflected when the page is reloaded.
+
 3.2 Donor profile photo upload
-- [ ] Donor can upload a profile photo.
+- [x] Donor can upload a profile photo.
 - [ ] JPG images are accepted.
 - [ ] PNG images are accepted.
 - [ ] Maximum file size is 2 MB.
@@ -82,6 +84,7 @@
 - [ ] Uploaded image is displayed in the donor profile.
 - [ ] Existing profile photo can be replaced.
 - [ ] Upload is protected against malicious files and unsafe paths.
+
 3.3 Donor availability
 - [ ] Donor can turn availability ON.
 - [ ] Donor can turn availability OFF.
@@ -90,6 +93,7 @@
 - [ ] Ineligible donors cannot become available for matching.
 - [ ] Inactive donors cannot participate in matching.
 - [ ] Availability changes are validated on the backend.
+
 3.4 Matched blood requests
 - [ ] Donor can view matched blood requests.
 - [ ] Donor receives a notification when matched.
@@ -106,6 +110,7 @@
 - [ ] Donor cannot respond twice in a way that creates conflicting statuses.
 - [ ] Response status is saved correctly.
 - [ ] Hospital can see the donor's response.
+
 3.5 Donation history and badges
 - [ ] Donor can view donation history.
 - [ ] Donation history displays donation date.
@@ -116,7 +121,9 @@
 - [ ] Donor receives a tenth-donation badge.
 - [ ] Badges are calculated from actual completed donations.
 - [ ] Badges do not get awarded incorrectly for pending or declined matches.
-4. Hospital Module
+
+1. Hospital Module
+
 4.1 Hospital registration and verification
 - [ ] Hospital can register.
 - [ ] Hospital can provide hospital name and required details.
@@ -132,6 +139,7 @@
 - [ ] Verification status is saved in the database.
 - [ ] Hospital is notified of verification/rejection where implemented.
 - [ ] Rejected or inactive hospitals cannot access protected hospital operations.
+
 4.2 Blood request creation
 - [ ] Verified hospital can create a blood request.
 - [ ] Hospital can select blood group.
@@ -149,6 +157,7 @@
 - [ ] Request receives the correct initial status.
 - [ ] Matching engine runs after request creation.
 - [ ] Request creation is recorded in the audit log.
+
 4.3 Blood request management
 - [ ] Hospital can view its own blood requests.
 - [ ] Hospital can view request details.
@@ -163,6 +172,7 @@
 - [ ] Relevant donors receive request update notifications.
 - [ ] Cancellation releases reserved units appropriately.
 - [ ] Expired requests release outstanding reservations appropriately.
+
 4.4 Matched donor list
 - [ ] Hospital can view matched donors.
 - [ ] Donors are ranked by matching score.
@@ -179,6 +189,7 @@
 - [ ] Donor phone number becomes visible after acceptance.
 - [ ] Phone reveal is recorded in the audit log.
 - [ ] Hospital cannot reveal contact information through an unauthorized API call.
+
 4.5 Donation completion and inventory
 - [ ] Hospital can view accepted donor responses.
 - [ ] Hospital can confirm a donation as completed.
@@ -194,7 +205,9 @@
 - [ ] Request closes when its required units are fulfilled.
 - [ ] Duplicate donation completion is prevented.
 - [ ] Inventory cannot become negative.
-5. Administrator Module
+
+6. Administrator Module
+
 5.1 Admin dashboard
 - [ ] Admin dashboard is accessible only to administrators.
 - [ ] Dashboard displays total donors.
@@ -205,6 +218,7 @@
 - [ ] Dashboard displays relevant summary statistics.
 - [ ] Dashboard statistics are fetched from actual database data.
 - [ ] Dashboard handles empty datasets.
+
 5.2 Mandatory charts
 - [ ] Requests per week chart is implemented.
 - [ ] Chart displays weekly request counts.
@@ -217,6 +231,7 @@
 - [ ] Charts update when the underlying data changes.
 - [ ] Charts display useful labels and values.
 - [ ] Empty chart data is handled correctly.
+
 5.3 Hospital management
 - [ ] Admin can view hospitals.
 - [ ] Admin can search hospitals.
@@ -228,6 +243,7 @@
 - [ ] Admin can deactivate/block hospitals.
 - [ ] Admin can reactivate/unblock hospitals.
 - [ ] Hospital status changes are recorded in the audit log.
+
 5.4 User management
 - [ ] Admin can view users.
 - [ ] Admin can search users.
@@ -237,6 +253,7 @@
 - [ ] Blocked users cannot perform restricted operations.
 - [ ] Admin cannot accidentally grant unauthorized privileges.
 - [ ] User status changes are recorded in the audit log.
+
 5.5 City management
 - [ ] Admin can view cities.
 - [ ] Admin can add cities.
@@ -245,6 +262,7 @@
 - [ ] Duplicate city records are prevented.
 - [ ] City data is used by donor and hospital forms.
 - [ ] City changes are validated.
+
 5.6 System settings
 - [ ] Admin can view system settings.
 - [ ] Admin can update donor cooldown days.
@@ -253,6 +271,7 @@
 - [ ] Default cooldown is 90 days when no valid setting exists.
 - [ ] Settings changes are saved in the database.
 - [ ] Settings changes are recorded in the audit log.
+
 5.7 Search, filters, pagination and reports
 - [ ] Admin can search records.
 - [ ] Admin can filter records.
@@ -265,6 +284,7 @@
 - [ ] Exported CSV contains correct records.
 - [ ] CSV values are safely formatted.
 - [ ] Export respects the intended filters and permissions.
+
 5.8 Audit logs
 - [ ] Admin can view audit logs.
 - [ ] Audit logs show the responsible user.
@@ -281,8 +301,10 @@
 - [ ] Sensitive phone number reveal events are logged.
 - [ ] Inventory changes are logged.
 - [ ] Unauthorized users cannot modify or delete audit records.
-6. Business Rules and Core Matching Engine
+
+1.Business Rules and Core Matching Engine
 These are among the most important CEP requirements. A working interface alone does not prove that these rules are implemented correctly.
+
 6.1 Blood compatibility
 - [ ] Full ABO/Rh blood compatibility is implemented.
 - [ ] Compatibility is data-driven rather than a long chain of hardcoded conditions.
@@ -296,6 +318,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] AB− compatibility is correct.
 - [ ] Incompatible donors are never included in matching.
 - [ ] Compatibility is checked by the backend.
+
 6.2 Donor eligibility
 - [ ] Minimum donor age is 18.
 - [ ] Maximum donor age is 60.
@@ -309,6 +332,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Ineligible donors are excluded from matching.
 - [ ] Eligibility is enforced on the backend, not just the frontend.
 - [ ] Ineligible donors receive a clear explanation where appropriate.
+
 6.3 Matching and ranking score
 - [ ] Exact blood-group match bonus is implemented.
 - [ ] Same-city match bonus is implemented.
@@ -320,6 +344,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Only eligible donors are ranked.
 - [ ] Duplicate donor/request matches are prevented.
 - [ ] Matching results are reproducible for the same input data.
+
 6.4 Notification limits and urgency
 - [ ] Top-N donors are notified first.
 - [ ] Normal requests use the configured notification limit.
@@ -330,6 +355,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Notification limits are enforced by the backend.
 - [ ] Failed notifications can be retried or recovered.
 - [ ] Existing matches do not accidentally prevent a missing notification from being sent.
+
 6.5 Concurrency safety
 - [ ] Simultaneous donor acceptances are handled safely.
 - [ ] Reserved units are updated atomically.
@@ -339,6 +365,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Transaction rolls back if an operation fails.
 - [ ] Match status and request reservation status remain consistent.
 - [ ] Duplicate requests/responses cannot cause over-allocation.
+
 6.6 Automatic expiry
 - [ ] Requests expire after their required-by time.
 - [ ] Expired requests receive the correct status.
@@ -350,6 +377,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Expiry changes are reflected in the database.
 - [ ] Expiry notifications are generated where required.
 - [ ] Expiry logic uses the correct timezone.
+
 6.7 Privacy controls
 - [ ] Donor contact details remain hidden before acceptance.
 - [ ] Contact details are revealed only after acceptance.
@@ -357,6 +385,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Unauthorized API requests cannot retrieve masked contact details.
 - [ ] Phone reveal is recorded in the audit log.
 - [ ] Public pages never expose private contact details.
+
 6.8 Anti-misuse rules
 - [ ] A hospital cannot have more than 3 open Critical requests simultaneously.
 - [ ] The restriction is checked on the backend.
@@ -365,6 +394,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Cancellation count is tracked correctly.
 - [ ] Trust-score changes are persisted.
 - [ ] Invalid or unauthorized cancellation operations are rejected.
+
 6.9 Audit trail
 - [ ] Request status changes are recorded.
 - [ ] Match status changes are recorded.
@@ -375,9 +405,11 @@ These are among the most important CEP requirements. A working interface alone d
 - [ ] Old and new values are recorded.
 - [ ] IP address is recorded where available.
 - [ ] Timestamp is recorded.
-- [ ] Audit logging does not silently fail without an appropriate recovery/error strategy.
-7. Mandatory Programming Concept Coverage
+- [ ] Audit logging does not silently fail without an appropriate recovery/error strategy
+
+1. Mandatory Programming Concept Coverage
 The CEP explicitly asks students to demonstrate concepts and identify the file/class where each is implemented. Your report should include a concept-to-file mapping.
+
 7.1 Variables, data types, arrays and functions
 - [ ] Variables are used meaningfully.
 - [ ] Appropriate data types are used.
@@ -388,6 +420,7 @@ The CEP explicitly asks students to demonstrate concepts and identify the file/c
 - [ ] Blood compatibility is represented through a data-driven structure.
 - [ ] Ranking algorithm uses reusable functions.
 - [ ] Helper functions are separated appropriately.
+
 7.2 Object-oriented programming
 - [ ] Models/classes represent important system entities.
 - [ ] User, Donor and Request entities are represented.
@@ -401,7 +434,7 @@ The CEP explicitly asks students to demonstrate concepts and identify the file/c
 - [ ] Dependency management/imports are structured.
 - [ ] Reusable code is not unnecessarily duplicated.
 - [ ] The report identifies files/classes demonstrating OOP concepts.
-For JavaScript, document the actual language equivalents. Do not claim that JavaScript has PHP-style interfaces or traits.
+
 7.3 Forms and request handling
 - [ ] Registration forms are implemented.
 - [ ] Profile forms are implemented.
@@ -412,6 +445,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] File uploads are handled.
 - [ ] Server request information is handled where needed.
 - [ ] Inputs are validated before database operations.
+
 7.4 Sessions, cookies and authentication
 - [ ] Authentication state is maintained securely.
 - [ ] Tokens/session credentials are handled securely.
@@ -419,6 +453,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Role-based access is implemented.
 - [ ] Protected routes are implemented.
 - [ ] Logout invalidates the relevant authentication state.
+
 7.5 Reusable templates and modules
 - [ ] Shared layouts are implemented.
 - [ ] Shared navigation components are implemented.
@@ -426,6 +461,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Reusable components are separated into modules.
 - [ ] Frontend and backend responsibilities are separated.
 - [ ] Application routing is organized.
+
 7.6 File handling
 - [ ] Donor photo upload is implemented.
 - [ ] Hospital licence upload is implemented.
@@ -434,6 +470,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Error logging is implemented.
 - [ ] File access is controlled appropriately.
 - [ ] Uploaded files are stored using a suitable storage solution.
+
 7.7 Date and time functions
 - [ ] Cooldown calculation is implemented.
 - [ ] Countdown timer is implemented.
@@ -443,6 +480,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Asia/Karachi timezone is handled correctly.
 - [ ] Date/time display is consistent.
 - [ ] Date calculations are tested around midnight and date boundaries.
+
 7.8 Regular expressions and validation
 - [ ] Email validation is implemented.
 - [ ] Pakistani mobile number validation is implemented.
@@ -451,6 +489,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Numeric field validation is implemented.
 - [ ] File format and size validation are implemented.
 - [ ] Both client-side and server-side validation are present.
+
 7.9 Error and exception handling
 - [ ] Database errors are handled.
 - [ ] API errors are handled.
@@ -461,6 +500,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Appropriate error messages are displayed.
 - [ ] Sensitive internal error details are not exposed to users.
 - [ ] Errors are logged appropriately.
+
 7.10 Database operations
 - [ ] Data is accessed through Mongoose models or an equivalent data-access layer.
 - [ ] Database queries are parameterized/safely constructed.
@@ -469,6 +509,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Relationships between entities are handled correctly.
 - [ ] Population/joins are used where appropriate.
 - [ ] Data integrity is maintained.
+
 7.11 HTML5, CSS3 and frontend
 - [ ] Semantic HTML elements are used.
 - [ ] Forms use appropriate input types.
@@ -487,6 +528,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Countdown timers work dynamically.
 - [ ] Inline validation is implemented.
 - [ ] Charts are generated dynamically.
+
 7.12 Security concepts
 - [ ] Passwords are not stored in plain text.
 - [ ] Password hashing is handled by the authentication provider or a secure hashing implementation.
@@ -499,6 +541,7 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Authentication tokens are validated.
 - [ ] Security headers are configured.
 - [ ] Rate limiting is implemented where appropriate.
+
 7.13 Pagination, sorting and search
 - [ ] Request lists support pagination.
 - [ ] Donor lists support pagination.
@@ -509,8 +552,10 @@ For JavaScript, document the actual language equivalents. Do not claim that Java
 - [ ] Sorting is implemented.
 - [ ] Backend pagination is used for large datasets.
 - [ ] Invalid page and sort parameters are handled safely.
-8. Database Requirements
+
+1. Database Requirements
 The original CEP specifies relational database concepts. Since your instructor approved MERN, verify that you demonstrate their equivalent using MongoDB and clearly explain the design choices in your report.
+
 8.1 Database design and entities
 - [ ] ERD is prepared.
 - [ ] Database schema/design is documented.
@@ -528,6 +573,7 @@ The original CEP specifies relational database concepts. Since your instructor a
 - [ ] Required fields are present.
 - [ ] Appropriate references are used.
 - [ ] Duplicate records are prevented where necessary.
+
 8.2 Data integrity and constraints
 - [ ] Appropriate primary identifiers are used.
 - [ ] Foreign-key-equivalent references are maintained.
@@ -539,6 +585,7 @@ The original CEP specifies relational database concepts. Since your instructor a
 - [ ] Duplicate request/donor matches are prevented.
 - [ ] Appropriate deletion rules are documented.
 - [ ] Referential integrity is maintained when records are updated or deleted.
+
 8.3 Normalization and indexes
 - [ ] Database design avoids unnecessary duplication.
 - [ ] Data dependencies are documented.
@@ -548,6 +595,7 @@ The original CEP specifies relational database concepts. Since your instructor a
 - [ ] Indexes are created for frequently queried fields.
 - [ ] Unique indexes are created where appropriate.
 - [ ] Index choices are justified in the report.
+
 8.4 Views, triggers and transactions
 - [ ] At least one database view or suitable MongoDB equivalent is demonstrated.
 - [ ] At least one trigger or suitable MongoDB/Mongoose equivalent is demonstrated.
@@ -556,6 +604,7 @@ The original CEP specifies relational database concepts. Since your instructor a
 - [ ] Transaction success is tested.
 - [ ] The report explains how MongoDB equivalents satisfy the underlying requirement.
 Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer hooks are not identical to SQL views and triggers. Explain exactly which implementation you used and what responsibility it fulfils.
+
 8.5 Seed data
 - [ ] At least 30 donors are present.
 - [ ] At least 5 hospitals are present.
@@ -567,6 +616,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Seed data includes useful matching scenarios.
 - [ ] Seed data can be generated again using the seed script.
 - [ ] Seed process does not create unintended duplicate records.
+
 8.6 Required database queries in the report
 - [ ] At least five meaningful JOIN-equivalent or aggregation queries are documented.
 - [ ] Donors by blood group and city query is documented.
@@ -576,7 +626,9 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Weekly requests/fulfilment query is documented.
 - [ ] Queries are explained with their purpose and output.
 - [ ] The report identifies the relevant collection/model and aggregation logic.
-9. Non-Functional Requirements
+
+10. Non-Functional Requirements
+
 9.1 Security
 - [ ] OWASP Top 10 risks are considered.
 - [ ] No plaintext passwords are stored.
@@ -590,6 +642,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] File upload security is implemented.
 - [ ] Rate limiting is considered.
 - [ ] Error messages do not expose secrets or internal stack traces.
+
 9.2 Performance
 - [ ] Every page loads in under 2 seconds on localhost under reasonable test conditions.
 - [ ] Images are compressed.
@@ -600,6 +653,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] API responses do not return unnecessary data.
 - [ ] Charts and dashboards do not make excessive database queries.
 - [ ] Application remains usable on slower networks.
+
 9.3 Usability and accessibility
 - [ ] Mobile-first responsive design is implemented.
 - [ ] Layout works on mobile phones.
@@ -614,6 +668,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Buttons have clear labels.
 - [ ] Interactive elements have appropriate focus states.
 - [ ] Urdu labels are considered as an optional bonus.
+
 9.4 Maintainability
 - [ ] Configuration is separated.
 - [ ] Models are separated.
@@ -629,6 +684,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Code is readable.
 - [ ] Unnecessary duplicate code is avoided.
 - [ ] Important business logic is documented.
+
 9.5 Reliability
 - [ ] Database failure is handled gracefully.
 - [ ] Invalid input is handled gracefully.
@@ -640,7 +696,9 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] API failures do not crash the frontend.
 - [ ] Failed operations do not leave inconsistent database records.
 - [ ] The application recovers appropriately after refresh/reconnection.
-10. Testing and Verification
+
+1. Testing and Verification
+
 10.1 Functional testing
 - [ ] Guest can access public pages.
 - [ ] Donor can complete registration.
@@ -660,6 +718,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Admin can view audit logs.
 - [ ] CSV export works.
 - [ ] Dashboard charts display correct data.
+
 10.2 Business-rule testing
 - [ ] Test a donor below 18 years old.
 - [ ] Test a donor above 60 years old.
@@ -682,6 +741,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Test simultaneous donor acceptance.
 - [ ] Test reservation release after cancellation.
 - [ ] Test unauthorized phone-number access.
+
 10.3 Security testing
 - [ ] Test unauthorized donor access to hospital endpoints.
 - [ ] Test unauthorized hospital access to admin endpoints.
@@ -695,6 +755,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Test unauthorized modification of another user's records.
 - [ ] Test attempts to change user roles through request data.
 - [ ] Test that private donor details remain hidden.
+
 10.4 UI and responsive testing
 - [ ] Test all pages on mobile.
 - [ ] Test all pages on tablet.
@@ -710,7 +771,8 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Test page refresh and navigation.
 - [ ] Test countdown timers.
 - [ ] Test date/time display.
-11. Project Structure and Technical Documentation
+
+1. Project Structure and Technical Documentation
 - [ ] Configuration files are organized.
 - [ ] Backend models are organized.
 - [ ] Backend controllers are organized.
@@ -733,8 +795,10 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] README explains how to run the backend.
 - [ ] README explains how to seed the database.
 - [ ] README includes test credentials for each role.
-- [ ] README explains any deployment limitations.
-12. Required Academic Deliverables
+- [ ] README explains any deployment limitations
+
+14. Required Academic Deliverables 
+
 12.1 Requirement analysis and design
 - [ ] Problem analysis is documented.
 - [ ] Functional requirements are documented.
@@ -745,6 +809,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Wireframes are prepared.
 - [ ] System architecture is documented.
 - [ ] Major design decisions are explained.
+
 12.2 Project report
 - [ ] Report is 10–15 pages.
 - [ ] Problem analysis is included.
@@ -760,6 +825,7 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] Mandatory programming concepts are mapped to files/classes.
 - [ ] MERN equivalents for PHP/MySQL-specific concepts are explained.
 - [ ] Technology choices and design trade-offs are justified.
+
 12.3 Final submission
 - [ ] Complete source code is included.
 - [ ] Database dump/backup is included.
@@ -774,7 +840,8 @@ Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer 
 - [ ] AI-generated code is declared according to academic requirements.
 - [ ] All group members can explain their individual contributions.
 - [ ] Every member is prepared for individual viva questions.
-13. Final Viva Preparation
+
+1. Final Viva Preparation
 - [ ] Explain the problem DonorNexa solves.
 - [ ] Explain why the system needs three roles.
 - [ ] Explain donor registration and eligibility.
