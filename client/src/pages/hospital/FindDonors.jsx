@@ -64,7 +64,6 @@ const FindDonors = () => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Fetch ranked donors and their response statuses
   const fetchDonors = async (requestId) => {
     setLoadingRequest(requestId);
 
@@ -88,20 +87,31 @@ const FindDonors = () => {
       const rankedDonors = matchingResponse.data?.donors || [];
       const responses = responsesResponse.data?.responses || [];
 
-      // Connect each ranked donor with their response using donorId.
-      const responseMap = new Map(
-        responses.map((response) => [String(response.donorId), response]),
-      );
+      // Index historical responses by donor ID.
+      const responseMap = new Map();
 
+      responses.forEach((match) => {
+        const donorId = String(
+          match.donorId || match.donor?._id || match.donor?.donorId || "",
+        );
+
+        if (donorId) {
+          responseMap.set(donorId, match);
+        }
+      });
+
+      // Merge responses into the current ranked donor list.
       const mergedDonors = rankedDonors.map((donor, index) => {
-        const donorId =
+        const donorId = String(
           donor.donorId ||
-          donor._id ||
-          donor.id ||
-          donor.donor?._id ||
-          donor.donor?.donorId;
+            donor._id ||
+            donor.id ||
+            donor.donor?._id ||
+            donor.donor?.donorId ||
+            "",
+        );
 
-        const donorResponse = donorId ? responseMap.get(String(donorId)) : null;
+        const donorResponse = responseMap.get(donorId);
 
         return {
           ...donor,
@@ -111,12 +121,38 @@ const FindDonors = () => {
         };
       });
 
+      // Preserve historical matches whose donors are no longer eligible
+      // or available and therefore do not appear in the current ranking.
+      const rankedIds = new Set(
+        mergedDonors.map((donor) => donor.donorId).filter(Boolean),
+      );
+
+      const historicalDonors = responses
+        .filter((match) => {
+          const donorId = String(
+            match.donorId || match.donor?._id || match.donor?.donorId || "",
+          );
+
+          return donorId && !rankedIds.has(donorId);
+        })
+        .map((match) => ({
+          ...match,
+          donorId: String(
+            match.donorId || match.donor?._id || match.donor?.donorId || "",
+          ),
+          rank: null,
+          response: match,
+        }));
+
+      // Keep both currently ranked donors and historical responses.
+      const allDonors = [...mergedDonors, ...historicalDonors];
+
       setDonorData((previous) => ({
         ...previous,
         [requestId]: {
-          donors: mergedDonors,
+          donors: allDonors,
           compatibleGroups: matchingResponse.data?.compatibleGroups || [],
-          count: matchingResponse.data?.count ?? mergedDonors.length,
+          count: allDonors.length,
           loadedAt: new Date(),
         },
       }));
@@ -235,15 +271,20 @@ const FindDonors = () => {
 
   const getDonorResponseStatus = (donor) => donor.response?.status || "pending";
 
-  const getResponseCounts = (donors = []) => ({
-    accepted: donors.filter((donor) => donor.response?.status === "accepted")
-      .length,
-    completed: donors.filter((donor) => donor.response?.status === "completed")
-      .length,
-    pending: donors.filter(
-      (donor) => !donor.response || donor.response.status === "pending",
-    ).length,
-  });
+  const getResponseCounts = (donors = []) => {
+    const getStatus = (donor) =>
+      (donor.response?.status || donor.status || "pending").toLowerCase();
+
+    return {
+      accepted: donors.filter((donor) => getStatus(donor) === "accepted")
+        .length,
+
+      completed: donors.filter((donor) => getStatus(donor) === "completed")
+        .length,
+
+      pending: donors.filter((donor) => getStatus(donor) === "pending").length,
+    };
+  };
 
   const activeRequests = requests.filter((item) => item.status === "open");
 
@@ -433,38 +474,34 @@ const FindDonors = () => {
                       )}
                     </div>
 
-                    {isActive ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleDonors(item._id)}
-                        disabled={loadingRequest === item._id}
-                        aria-expanded={isExpanded}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#642235] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {loadingRequest === item._id ? (
-                          <RefreshCw size={16} className="animate-spin" />
+                    <button
+                      type="button"
+                      onClick={() => toggleDonors(item._id)}
+                      disabled={loadingRequest === item._id}
+                      aria-expanded={isExpanded}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#642235] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loadingRequest === item._id ? (
+                        <RefreshCw size={16} className="animate-spin" />
+                      ) : (
+                        <Search size={16} />
+                      )}
+
+                      {loadingRequest === item._id
+                        ? "Loading Donors..."
+                        : isExpanded
+                          ? "Hide Donor Records"
+                          : isActive
+                            ? "View Matched Donors"
+                            : "View Donor History"}
+
+                      {!loadingRequest &&
+                        (isExpanded ? (
+                          <ChevronUp size={16} />
                         ) : (
-                          <Search size={16} />
-                        )}
-
-                        {loadingRequest === item._id
-                          ? "Finding Donors..."
-                          : isExpanded
-                            ? "Hide Matched Donors"
-                            : "View Matched Donors"}
-
-                        {!loadingRequest &&
-                          (isExpanded ? (
-                            <ChevronUp size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
-                          ))}
-                      </button>
-                    ) : (
-                      <p className="text-xs text-[#81756A]">
-                        Donor matching is available for open requests.
-                      </p>
-                    )}
+                          <ChevronDown size={16} />
+                        ))}
+                    </button>
                   </div>
                 </div>
 

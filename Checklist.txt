@@ -1,0 +1,802 @@
+# DonorNexa - Complete CEP Verification Checklist
+
+1. Guest / Public Module
+
+1.1 Landing page
+- [x] Landing page loads successfully without login.
+- [x] Landing page displays registered donor statistics.
+- [x] Landing page displays active blood request statistics.
+- [x] Landing page displays fulfilled blood units.
+- [x] Statistics are loaded dynamically through an API (AJAX equivalent).
+- [x] Statistics reflect actual database records, not hardcoded values.
+- [x] Statistics update when relevant database records change.
+- [x] Loading states are displayed while statistics are being fetched.
+- [x] API errors are handled gracefully.
+- [x] Landing page has working navigation and registration/login options.
+
+1.2 Active Emergencies board
+- [x] Public Active Emergencies page is accessible without authentication.
+- [x] Displays blood group.
+- [x] Displays city.
+- [x] Displays urgency (Critical, Urgent, Normal).
+- [ ] Displays required-by date/time.
+- [x] Displays a live countdown timer.
+- [x] Countdown updates without refreshing the page.
+- [x] Expired requests are not presented as active emergencies.
+- [x] Only active/open requests are displayed.
+- [x] Patient names are never exposed.
+- [x] Donor or patient phone numbers are never exposed.
+- [x] Sensitive hospital notes and private information are not exposed.
+- [x] Data is fetched dynamically from the backend.
+- [x] Empty-state message is displayed when no emergencies exist.
+
+1.3 Registration
+- [x] Donor registration is available.
+- [x] Hospital registration is available.
+- [x] Client-side validation is implemented.
+- [x] Server-side validation is implemented.
+- [x] Invalid data is rejected by the backend, even if frontend validation is bypassed.
+- [x] Duplicate accounts/emails are handled properly.
+- [x] Clear validation errors are displayed.
+- [x] Successful registration leads to the correct onboarding/dashboard flow.
+2. Authentication and Account Management
+- [ ] User can register/sign up.
+- [ ] User can log in.
+- [ ] User can log out.
+- [ ] Authentication state persists appropriately.
+- [ ] Authenticated routes are protected.
+- [ ] Unauthenticated users cannot access protected pages.
+- [ ] Donor routes are restricted to donors.
+- [ ] Hospital routes are restricted to hospitals.
+- [ ] Admin routes are restricted to administrators.
+- [ ] Backend authorization is enforced independently of frontend route protection.
+- [ ] Users cannot assign themselves an unauthorized role.
+- [ ] User profile/account information is synchronized correctly.
+- [ ] Inactive or blocked users cannot perform restricted operations.
+- [ ] Invalid or expired authentication tokens are rejected.
+- [ ] Authentication errors are handled gracefully.
+3. Donor Module
+3.1 Donor profile
+- [ ] Donor can view their profile.
+- [ ] Donor can edit their profile.
+- [ ] Donor can update their name and contact details where permitted.
+- [ ] Donor can select/update blood group.
+- [ ] Donor can enter date of birth.
+- [ ] Donor can enter weight.
+- [ ] Donor can select city.
+- [ ] Donor can view their last donation date.
+- [ ] Donor can view their eligibility status.
+- [ ] Donor can view the automatic "Eligible again on" date.
+- [ ] Profile changes are saved in the database.
+- [ ] Profile changes are reflected when the page is reloaded.
+3.2 Donor profile photo upload
+- [ ] Donor can upload a profile photo.
+- [ ] JPG images are accepted.
+- [ ] PNG images are accepted.
+- [ ] Maximum file size is 2 MB.
+- [ ] Files larger than 2 MB are rejected.
+- [ ] Invalid file formats are rejected.
+- [ ] File MIME type is checked on the server.
+- [ ] Uploaded filenames are renamed or stored using unique identifiers.
+- [ ] File upload errors are handled.
+- [ ] Uploaded image is displayed in the donor profile.
+- [ ] Existing profile photo can be replaced.
+- [ ] Upload is protected against malicious files and unsafe paths.
+3.3 Donor availability
+- [ ] Donor can turn availability ON.
+- [ ] Donor can turn availability OFF.
+- [ ] Availability is saved in the database.
+- [ ] Availability is reflected after refreshing the page.
+- [ ] Ineligible donors cannot become available for matching.
+- [ ] Inactive donors cannot participate in matching.
+- [ ] Availability changes are validated on the backend.
+3.4 Matched blood requests
+- [ ] Donor can view matched blood requests.
+- [ ] Donor receives a notification when matched.
+- [ ] Donor can view request blood group.
+- [ ] Donor can view required units.
+- [ ] Donor can view urgency.
+- [ ] Donor can view hospital/city information as permitted.
+- [ ] Donor can view the response deadline.
+- [ ] Donor can accept a matched request.
+- [ ] Donor can decline a matched request.
+- [ ] Donor can provide an optional decline reason.
+- [ ] Decline reason is validated.
+- [ ] Donor cannot respond to an expired match.
+- [ ] Donor cannot respond twice in a way that creates conflicting statuses.
+- [ ] Response status is saved correctly.
+- [ ] Hospital can see the donor's response.
+3.5 Donation history and badges
+- [ ] Donor can view donation history.
+- [ ] Donation history displays donation date.
+- [ ] Donation history displays relevant hospital/request information.
+- [ ] Completed donations are reflected in the history.
+- [ ] Donor receives a first-donation badge.
+- [ ] Donor receives a fifth-donation badge.
+- [ ] Donor receives a tenth-donation badge.
+- [ ] Badges are calculated from actual completed donations.
+- [ ] Badges do not get awarded incorrectly for pending or declined matches.
+4. Hospital Module
+4.1 Hospital registration and verification
+- [ ] Hospital can register.
+- [ ] Hospital can provide hospital name and required details.
+- [ ] Hospital can select its city.
+- [ ] Hospital can upload its licence document.
+- [ ] Only PDF licence documents are accepted.
+- [ ] Invalid file formats are rejected.
+- [ ] Hospital registration creates a pending verification status.
+- [ ] Pending hospitals cannot create or manage blood requests.
+- [ ] Admin can view pending hospital applications.
+- [ ] Admin can verify a hospital.
+- [ ] Admin can reject a hospital.
+- [ ] Verification status is saved in the database.
+- [ ] Hospital is notified of verification/rejection where implemented.
+- [ ] Rejected or inactive hospitals cannot access protected hospital operations.
+4.2 Blood request creation
+- [ ] Verified hospital can create a blood request.
+- [ ] Hospital can select blood group.
+- [ ] Hospital can enter required units.
+- [ ] Hospital can select urgency.
+- [ ] Hospital can select required-by date and time.
+- [ ] Hospital can enter ward information.
+- [ ] Hospital can enter additional notes.
+- [ ] Required fields are validated.
+- [ ] Units must be valid positive numbers.
+- [ ] Required-by date/time must be valid.
+- [ ] Past deadlines are rejected.
+- [ ] Request is associated with the authenticated hospital.
+- [ ] Request is saved in the database.
+- [ ] Request receives the correct initial status.
+- [ ] Matching engine runs after request creation.
+- [ ] Request creation is recorded in the audit log.
+4.3 Blood request management
+- [ ] Hospital can view its own blood requests.
+- [ ] Hospital can view request details.
+- [ ] Hospital can update permitted request fields.
+- [ ] Hospital can cancel a request.
+- [ ] Hospital can close/fulfil a request.
+- [ ] Hospital can view fulfilled units.
+- [ ] Hospital can view reserved units.
+- [ ] Hospital cannot reduce required units below already reserved/fulfilled units.
+- [ ] Hospital cannot modify another hospital's requests.
+- [ ] Request status updates are reflected in the database.
+- [ ] Relevant donors receive request update notifications.
+- [ ] Cancellation releases reserved units appropriately.
+- [ ] Expired requests release outstanding reservations appropriately.
+4.4 Matched donor list
+- [ ] Hospital can view matched donors.
+- [ ] Donors are ranked by matching score.
+- [ ] Blood compatibility is considered.
+- [ ] Same-city donors receive the appropriate ranking bonus.
+- [ ] Donation history contributes to ranking.
+- [ ] Donor response rate contributes to ranking.
+- [ ] Donor eligibility is checked before matching.
+- [ ] Ineligible donors are excluded.
+- [ ] Unavailable donors are excluded.
+- [ ] Inactive donors are excluded.
+- [ ] Hospital can view donor name and permitted profile information.
+- [ ] Donor phone number remains masked before acceptance.
+- [ ] Donor phone number becomes visible after acceptance.
+- [ ] Phone reveal is recorded in the audit log.
+- [ ] Hospital cannot reveal contact information through an unauthorized API call.
+4.5 Donation completion and inventory
+- [ ] Hospital can view accepted donor responses.
+- [ ] Hospital can confirm a donation as completed.
+- [ ] Donation record is saved.
+- [ ] Donation is linked to the correct match.
+- [ ] Donation is linked to the correct request.
+- [ ] Donation units are validated.
+- [ ] Donor donation history is updated.
+- [ ] Donor's last donation date is updated.
+- [ ] Donor's next eligible date is recalculated.
+- [ ] Blood inventory is updated after a completed donation.
+- [ ] Request fulfilled units are updated.
+- [ ] Request closes when its required units are fulfilled.
+- [ ] Duplicate donation completion is prevented.
+- [ ] Inventory cannot become negative.
+5. Administrator Module
+5.1 Admin dashboard
+- [ ] Admin dashboard is accessible only to administrators.
+- [ ] Dashboard displays total donors.
+- [ ] Dashboard displays total hospitals.
+- [ ] Dashboard displays total blood requests.
+- [ ] Dashboard displays active requests.
+- [ ] Dashboard displays fulfilled units.
+- [ ] Dashboard displays relevant summary statistics.
+- [ ] Dashboard statistics are fetched from actual database data.
+- [ ] Dashboard handles empty datasets.
+5.2 Mandatory charts
+- [ ] Requests per week chart is implemented.
+- [ ] Chart displays weekly request counts.
+- [ ] Blood-group demand versus supply chart is implemented.
+- [ ] Demand is calculated using outstanding request requirements.
+- [ ] Supply is calculated using relevant blood inventory.
+- [ ] Fulfilment rate chart is implemented.
+- [ ] Fulfilment rate is calculated correctly.
+- [ ] Charts use real database data.
+- [ ] Charts update when the underlying data changes.
+- [ ] Charts display useful labels and values.
+- [ ] Empty chart data is handled correctly.
+5.3 Hospital management
+- [ ] Admin can view hospitals.
+- [ ] Admin can search hospitals.
+- [ ] Admin can filter hospitals.
+- [ ] Admin can view hospital licence information.
+- [ ] Admin can verify hospitals.
+- [ ] Admin can reject hospitals.
+- [ ] Admin can change verification status where authorized.
+- [ ] Admin can deactivate/block hospitals.
+- [ ] Admin can reactivate/unblock hospitals.
+- [ ] Hospital status changes are recorded in the audit log.
+5.4 User management
+- [ ] Admin can view users.
+- [ ] Admin can search users.
+- [ ] Admin can filter users.
+- [ ] Admin can block/deactivate users.
+- [ ] Admin can unblock/reactivate users.
+- [ ] Blocked users cannot perform restricted operations.
+- [ ] Admin cannot accidentally grant unauthorized privileges.
+- [ ] User status changes are recorded in the audit log.
+5.5 City management
+- [ ] Admin can view cities.
+- [ ] Admin can add cities.
+- [ ] Admin can edit cities.
+- [ ] Admin can activate/deactivate cities where supported.
+- [ ] Duplicate city records are prevented.
+- [ ] City data is used by donor and hospital forms.
+- [ ] City changes are validated.
+5.6 System settings
+- [ ] Admin can view system settings.
+- [ ] Admin can update donor cooldown days.
+- [ ] Cooldown value is validated.
+- [ ] Updated cooldown is used by donor eligibility calculations.
+- [ ] Default cooldown is 90 days when no valid setting exists.
+- [ ] Settings changes are saved in the database.
+- [ ] Settings changes are recorded in the audit log.
+5.7 Search, filters, pagination and reports
+- [ ] Admin can search records.
+- [ ] Admin can filter records.
+- [ ] Admin can sort records.
+- [ ] Admin can paginate records.
+- [ ] Pagination works with different page sizes.
+- [ ] Search and filters work together.
+- [ ] Sorting works correctly.
+- [ ] CSV reports can be exported.
+- [ ] Exported CSV contains correct records.
+- [ ] CSV values are safely formatted.
+- [ ] Export respects the intended filters and permissions.
+5.8 Audit logs
+- [ ] Admin can view audit logs.
+- [ ] Audit logs show the responsible user.
+- [ ] Audit logs show the action.
+- [ ] Audit logs identify the affected entity.
+- [ ] Audit logs record old values.
+- [ ] Audit logs record new values.
+- [ ] Audit logs record IP address where available.
+- [ ] Audit logs record timestamps.
+- [ ] Request status changes are logged.
+- [ ] Match status changes are logged.
+- [ ] Donation status changes are logged.
+- [ ] Hospital verification changes are logged.
+- [ ] Sensitive phone number reveal events are logged.
+- [ ] Inventory changes are logged.
+- [ ] Unauthorized users cannot modify or delete audit records.
+6. Business Rules and Core Matching Engine
+These are among the most important CEP requirements. A working interface alone does not prove that these rules are implemented correctly.
+6.1 Blood compatibility
+- [ ] Full ABO/Rh blood compatibility is implemented.
+- [ ] Compatibility is data-driven rather than a long chain of hardcoded conditions.
+- [ ] O− can donate to all blood groups.
+- [ ] AB+ can receive from all blood groups.
+- [ ] O+ compatibility is correct.
+- [ ] A+ compatibility is correct.
+- [ ] A− compatibility is correct.
+- [ ] B+ compatibility is correct.
+- [ ] B− compatibility is correct.
+- [ ] AB− compatibility is correct.
+- [ ] Incompatible donors are never included in matching.
+- [ ] Compatibility is checked by the backend.
+6.2 Donor eligibility
+- [ ] Minimum donor age is 18.
+- [ ] Maximum donor age is 60.
+- [ ] Donor weight must be at least 50 kg.
+- [ ] Donor availability must be ON.
+- [ ] Donor account must be active.
+- [ ] Donor must satisfy the donation cooldown period.
+- [ ] Default cooldown is 90 days.
+- [ ] Admin can configure the cooldown period.
+- [ ] Eligibility is recalculated using the latest donor information.
+- [ ] Ineligible donors are excluded from matching.
+- [ ] Eligibility is enforced on the backend, not just the frontend.
+- [ ] Ineligible donors receive a clear explanation where appropriate.
+6.3 Matching and ranking score
+- [ ] Exact blood-group match bonus is implemented.
+- [ ] Same-city match bonus is implemented.
+- [ ] Days since last donation contribute to the score.
+- [ ] Donation-day contribution has a cap.
+- [ ] Donor response rate contributes to the score.
+- [ ] Donors are sorted by score.
+- [ ] Tie-breaking is consistent.
+- [ ] Only eligible donors are ranked.
+- [ ] Duplicate donor/request matches are prevented.
+- [ ] Matching results are reproducible for the same input data.
+6.4 Notification limits and urgency
+- [ ] Top-N donors are notified first.
+- [ ] Normal requests use the configured notification limit.
+- [ ] Urgent requests use the configured notification limit.
+- [ ] Critical requests use the configured notification limit.
+- [ ] Critical requests automatically widen the matching pool.
+- [ ] Lower-ranked donors are not unnecessarily notified when higher-ranked donors are available.
+- [ ] Notification limits are enforced by the backend.
+- [ ] Failed notifications can be retried or recovered.
+- [ ] Existing matches do not accidentally prevent a missing notification from being sent.
+6.5 Concurrency safety
+- [ ] Simultaneous donor acceptances are handled safely.
+- [ ] Reserved units are updated atomically.
+- [ ] Reserved units never exceed required units.
+- [ ] Two donors cannot reserve the same remaining units.
+- [ ] Database transaction is used for reservation operations.
+- [ ] Transaction rolls back if an operation fails.
+- [ ] Match status and request reservation status remain consistent.
+- [ ] Duplicate requests/responses cannot cause over-allocation.
+6.6 Automatic expiry
+- [ ] Requests expire after their required-by time.
+- [ ] Expired requests receive the correct status.
+- [ ] Unanswered matches receive the No Response status.
+- [ ] Expired pending matches cannot be accepted.
+- [ ] Reservations are released when appropriate.
+- [ ] Expiry job runs automatically.
+- [ ] Expiry logic handles already-processed records safely.
+- [ ] Expiry changes are reflected in the database.
+- [ ] Expiry notifications are generated where required.
+- [ ] Expiry logic uses the correct timezone.
+6.7 Privacy controls
+- [ ] Donor contact details remain hidden before acceptance.
+- [ ] Contact details are revealed only after acceptance.
+- [ ] Backend enforces phone-number privacy.
+- [ ] Unauthorized API requests cannot retrieve masked contact details.
+- [ ] Phone reveal is recorded in the audit log.
+- [ ] Public pages never expose private contact details.
+6.8 Anti-misuse rules
+- [ ] A hospital cannot have more than 3 open Critical requests simultaneously.
+- [ ] The restriction is checked on the backend.
+- [ ] Simultaneous Critical request creation cannot bypass the restriction.
+- [ ] Repeated hospital cancellations reduce its trust score.
+- [ ] Cancellation count is tracked correctly.
+- [ ] Trust-score changes are persisted.
+- [ ] Invalid or unauthorized cancellation operations are rejected.
+6.9 Audit trail
+- [ ] Request status changes are recorded.
+- [ ] Match status changes are recorded.
+- [ ] Donation status changes are recorded.
+- [ ] Hospital verification changes are recorded.
+- [ ] Every relevant audit record includes the user.
+- [ ] Every relevant audit record includes the action.
+- [ ] Old and new values are recorded.
+- [ ] IP address is recorded where available.
+- [ ] Timestamp is recorded.
+- [ ] Audit logging does not silently fail without an appropriate recovery/error strategy.
+7. Mandatory Programming Concept Coverage
+The CEP explicitly asks students to demonstrate concepts and identify the file/class where each is implemented. Your report should include a concept-to-file mapping.
+7.1 Variables, data types, arrays and functions
+- [ ] Variables are used meaningfully.
+- [ ] Appropriate data types are used.
+- [ ] Arrays are used meaningfully.
+- [ ] Functions are used for reusable operations.
+- [ ] Loops are implemented.
+- [ ] Conditional statements are implemented.
+- [ ] Blood compatibility is represented through a data-driven structure.
+- [ ] Ranking algorithm uses reusable functions.
+- [ ] Helper functions are separated appropriately.
+7.2 Object-oriented programming
+- [ ] Models/classes represent important system entities.
+- [ ] User, Donor and Request entities are represented.
+- [ ] Services contain reusable business logic.
+- [ ] Controllers handle application requests.
+- [ ] Repository/data-access responsibilities are appropriately separated where applicable.
+- [ ] Inheritance or an appropriate equivalent is demonstrated.
+- [ ] Interfaces/contracts or an appropriate equivalent are demonstrated.
+- [ ] Composition is demonstrated where appropriate.
+- [ ] Namespaces/modules are used.
+- [ ] Dependency management/imports are structured.
+- [ ] Reusable code is not unnecessarily duplicated.
+- [ ] The report identifies files/classes demonstrating OOP concepts.
+For JavaScript, document the actual language equivalents. Do not claim that JavaScript has PHP-style interfaces or traits.
+7.3 Forms and request handling
+- [ ] Registration forms are implemented.
+- [ ] Profile forms are implemented.
+- [ ] Blood request forms are implemented.
+- [ ] Search/filter forms are implemented.
+- [ ] Request body parameters are handled.
+- [ ] Query parameters are handled.
+- [ ] File uploads are handled.
+- [ ] Server request information is handled where needed.
+- [ ] Inputs are validated before database operations.
+7.4 Sessions, cookies and authentication
+- [ ] Authentication state is maintained securely.
+- [ ] Tokens/session credentials are handled securely.
+- [ ] Secure cookie settings are configured where applicable.
+- [ ] Role-based access is implemented.
+- [ ] Protected routes are implemented.
+- [ ] Logout invalidates the relevant authentication state.
+7.5 Reusable templates and modules
+- [ ] Shared layouts are implemented.
+- [ ] Shared navigation components are implemented.
+- [ ] Shared UI components are reused.
+- [ ] Reusable components are separated into modules.
+- [ ] Frontend and backend responsibilities are separated.
+- [ ] Application routing is organized.
+7.6 File handling
+- [ ] Donor photo upload is implemented.
+- [ ] Hospital licence upload is implemented.
+- [ ] CSV export is implemented.
+- [ ] File validation is implemented.
+- [ ] Error logging is implemented.
+- [ ] File access is controlled appropriately.
+- [ ] Uploaded files are stored using a suitable storage solution.
+7.7 Date and time functions
+- [ ] Cooldown calculation is implemented.
+- [ ] Countdown timer is implemented.
+- [ ] Automatic expiry is implemented.
+- [ ] Required-by dates are validated.
+- [ ] Response deadlines are calculated.
+- [ ] Asia/Karachi timezone is handled correctly.
+- [ ] Date/time display is consistent.
+- [ ] Date calculations are tested around midnight and date boundaries.
+7.8 Regular expressions and validation
+- [ ] Email validation is implemented.
+- [ ] Pakistani mobile number validation is implemented.
+- [ ] CNIC validation is implemented if applicable to the registration design.
+- [ ] Blood group validation is implemented.
+- [ ] Numeric field validation is implemented.
+- [ ] File format and size validation are implemented.
+- [ ] Both client-side and server-side validation are present.
+7.9 Error and exception handling
+- [ ] Database errors are handled.
+- [ ] API errors are handled.
+- [ ] Validation errors are handled.
+- [ ] Authentication errors are handled.
+- [ ] Authorization errors are handled.
+- [ ] File upload errors are handled.
+- [ ] Appropriate error messages are displayed.
+- [ ] Sensitive internal error details are not exposed to users.
+- [ ] Errors are logged appropriately.
+7.10 Database operations
+- [ ] Data is accessed through Mongoose models or an equivalent data-access layer.
+- [ ] Database queries are parameterized/safely constructed.
+- [ ] Transactions are used for operations requiring atomicity.
+- [ ] Aggregation pipelines are used where appropriate.
+- [ ] Relationships between entities are handled correctly.
+- [ ] Population/joins are used where appropriate.
+- [ ] Data integrity is maintained.
+7.11 HTML5, CSS3 and frontend
+- [ ] Semantic HTML elements are used.
+- [ ] Forms use appropriate input types.
+- [ ] Form labels are associated with inputs.
+- [ ] ARIA attributes are used where appropriate.
+- [ ] Flexbox is used.
+- [ ] CSS Grid is used.
+- [ ] Media queries are used.
+- [ ] CSS variables or an equivalent design-token system is used.
+- [ ] At least 30% of styling is hand-written CSS, even if a framework is used.
+- [ ] Responsive design is implemented.
+- [ ] JavaScript events are used.
+- [ ] DOM interactions are implemented where appropriate.
+- [ ] AJAX/API requests are implemented.
+- [ ] Live donor search supports debounce.
+- [ ] Countdown timers work dynamically.
+- [ ] Inline validation is implemented.
+- [ ] Charts are generated dynamically.
+7.12 Security concepts
+- [ ] Passwords are not stored in plain text.
+- [ ] Password hashing is handled by the authentication provider or a secure hashing implementation.
+- [ ] CSRF protection is considered and implemented where applicable to the authentication architecture.
+- [ ] XSS prevention is implemented.
+- [ ] Database injection protection is implemented.
+- [ ] Role-based access is enforced on every protected backend operation.
+- [ ] File uploads are secured.
+- [ ] Sensitive information is protected.
+- [ ] Authentication tokens are validated.
+- [ ] Security headers are configured.
+- [ ] Rate limiting is implemented where appropriate.
+7.13 Pagination, sorting and search
+- [ ] Request lists support pagination.
+- [ ] Donor lists support pagination.
+- [ ] Hospital lists support pagination.
+- [ ] Audit logs support pagination.
+- [ ] Search is implemented.
+- [ ] Filtering is implemented.
+- [ ] Sorting is implemented.
+- [ ] Backend pagination is used for large datasets.
+- [ ] Invalid page and sort parameters are handled safely.
+8. Database Requirements
+The original CEP specifies relational database concepts. Since your instructor approved MERN, verify that you demonstrate their equivalent using MongoDB and clearly explain the design choices in your report.
+8.1 Database design and entities
+- [ ] ERD is prepared.
+- [ ] Database schema/design is documented.
+- [ ] Users collection exists.
+- [ ] Donors collection exists.
+- [ ] Hospitals collection exists.
+- [ ] Cities collection exists.
+- [ ] BloodRequests collection exists.
+- [ ] RequestMatches collection exists.
+- [ ] Donations collection exists.
+- [ ] BloodInventory collection exists.
+- [ ] Notifications collection exists.
+- [ ] AuditLogs collection exists.
+- [ ] Relationships between collections are documented.
+- [ ] Required fields are present.
+- [ ] Appropriate references are used.
+- [ ] Duplicate records are prevented where necessary.
+8.2 Data integrity and constraints
+- [ ] Appropriate primary identifiers are used.
+- [ ] Foreign-key-equivalent references are maintained.
+- [ ] Unique constraints are implemented where required.
+- [ ] Enum/allowed-value validation is implemented.
+- [ ] Required fields are enforced.
+- [ ] Numeric constraints are enforced.
+- [ ] Date constraints are enforced.
+- [ ] Duplicate request/donor matches are prevented.
+- [ ] Appropriate deletion rules are documented.
+- [ ] Referential integrity is maintained when records are updated or deleted.
+8.3 Normalization and indexes
+- [ ] Database design avoids unnecessary duplication.
+- [ ] Data dependencies are documented.
+- [ ] The design is explained in relation to 3NF.
+- [ ] Denormalized data, if any, has a documented reason.
+- [ ] Search indexes are created.
+- [ ] Indexes are created for frequently queried fields.
+- [ ] Unique indexes are created where appropriate.
+- [ ] Index choices are justified in the report.
+8.4 Views, triggers and transactions
+- [ ] At least one database view or suitable MongoDB equivalent is demonstrated.
+- [ ] At least one trigger or suitable MongoDB/Mongoose equivalent is demonstrated.
+- [ ] At least one explicit database transaction is implemented.
+- [ ] Transaction rollback is tested.
+- [ ] Transaction success is tested.
+- [ ] The report explains how MongoDB equivalents satisfy the underlying requirement.
+Important: MongoDB views, Atlas triggers, Mongoose middleware and service-layer hooks are not identical to SQL views and triggers. Explain exactly which implementation you used and what responsibility it fulfils.
+8.5 Seed data
+- [ ] At least 30 donors are present.
+- [ ] At least 5 hospitals are present.
+- [ ] At least 20 blood requests are present.
+- [ ] Seed data contains realistic values.
+- [ ] Seed data contains multiple blood groups.
+- [ ] Seed data contains different cities.
+- [ ] Seed data contains different urgency levels.
+- [ ] Seed data includes useful matching scenarios.
+- [ ] Seed data can be generated again using the seed script.
+- [ ] Seed process does not create unintended duplicate records.
+8.6 Required database queries in the report
+- [ ] At least five meaningful JOIN-equivalent or aggregation queries are documented.
+- [ ] Donors by blood group and city query is documented.
+- [ ] Eligible donor query is documented.
+- [ ] Blood demand by group query is documented.
+- [ ] Blood supply/inventory by group query is documented.
+- [ ] Weekly requests/fulfilment query is documented.
+- [ ] Queries are explained with their purpose and output.
+- [ ] The report identifies the relevant collection/model and aggregation logic.
+9. Non-Functional Requirements
+9.1 Security
+- [ ] OWASP Top 10 risks are considered.
+- [ ] No plaintext passwords are stored.
+- [ ] Database operations are safely constructed.
+- [ ] Authentication is secure.
+- [ ] Authorization is secure.
+- [ ] Secure cookie/token practices are followed.
+- [ ] XSS is prevented.
+- [ ] CSRF is addressed where applicable.
+- [ ] Sensitive information is not exposed.
+- [ ] File upload security is implemented.
+- [ ] Rate limiting is considered.
+- [ ] Error messages do not expose secrets or internal stack traces.
+9.2 Performance
+- [ ] Every page loads in under 2 seconds on localhost under reasonable test conditions.
+- [ ] Images are compressed.
+- [ ] Unnecessary full-page reloads are avoided.
+- [ ] Search and status updates use asynchronous requests.
+- [ ] Large lists use backend pagination.
+- [ ] Database indexes support common searches.
+- [ ] API responses do not return unnecessary data.
+- [ ] Charts and dashboards do not make excessive database queries.
+- [ ] Application remains usable on slower networks.
+9.3 Usability and accessibility
+- [ ] Mobile-first responsive design is implemented.
+- [ ] Layout works on mobile phones.
+- [ ] Layout works on tablets.
+- [ ] Layout works on desktop.
+- [ ] Text has readable contrast.
+- [ ] Forms are keyboard navigable.
+- [ ] Inputs have clear labels.
+- [ ] Error messages are understandable.
+- [ ] Loading indicators are displayed.
+- [ ] Empty states are displayed.
+- [ ] Buttons have clear labels.
+- [ ] Interactive elements have appropriate focus states.
+- [ ] Urdu labels are considered as an optional bonus.
+9.4 Maintainability
+- [ ] Configuration is separated.
+- [ ] Models are separated.
+- [ ] Controllers are separated.
+- [ ] Services are separated.
+- [ ] Routes are separated.
+- [ ] Middleware is separated.
+- [ ] Frontend components are reusable.
+- [ ] API utilities are centralized.
+- [ ] File uploads are organized.
+- [ ] Seed scripts are organized.
+- [ ] Logging is organized.
+- [ ] Code is readable.
+- [ ] Unnecessary duplicate code is avoided.
+- [ ] Important business logic is documented.
+9.5 Reliability
+- [ ] Database failure is handled gracefully.
+- [ ] Invalid input is handled gracefully.
+- [ ] Unauthorized access is handled gracefully.
+- [ ] HTTP 401 responses are handled.
+- [ ] HTTP 403 responses are handled.
+- [ ] HTTP 404 responses are handled.
+- [ ] HTTP 500 errors are handled.
+- [ ] API failures do not crash the frontend.
+- [ ] Failed operations do not leave inconsistent database records.
+- [ ] The application recovers appropriately after refresh/reconnection.
+10. Testing and Verification
+10.1 Functional testing
+- [ ] Guest can access public pages.
+- [ ] Donor can complete registration.
+- [ ] Hospital can complete registration.
+- [ ] Admin can verify a hospital.
+- [ ] Verified hospital can create a request.
+- [ ] Eligible donor receives a match.
+- [ ] Donor can accept a match.
+- [ ] Donor can decline a match.
+- [ ] Hospital can view responses.
+- [ ] Hospital can confirm a donation.
+- [ ] Inventory updates correctly.
+- [ ] Request fulfilment works correctly.
+- [ ] Admin can manage users.
+- [ ] Admin can manage cities.
+- [ ] Admin can manage settings.
+- [ ] Admin can view audit logs.
+- [ ] CSV export works.
+- [ ] Dashboard charts display correct data.
+10.2 Business-rule testing
+- [ ] Test a donor below 18 years old.
+- [ ] Test a donor above 60 years old.
+- [ ] Test a donor weighing below 50 kg.
+- [ ] Test an unavailable donor.
+- [ ] Test an inactive donor.
+- [ ] Test a donor within the cooldown period.
+- [ ] Test a donor who has completed the cooldown period.
+- [ ] Test compatible blood groups.
+- [ ] Test incompatible blood groups.
+- [ ] Test donors from the same city.
+- [ ] Test donors from different cities.
+- [ ] Test ranking order.
+- [ ] Test notification limits.
+- [ ] Test Critical request pool widening.
+- [ ] Test maximum three open Critical requests.
+- [ ] Test repeated cancellations and trust-score changes.
+- [ ] Test automatic request expiry.
+- [ ] Test unanswered match expiry.
+- [ ] Test simultaneous donor acceptance.
+- [ ] Test reservation release after cancellation.
+- [ ] Test unauthorized phone-number access.
+10.3 Security testing
+- [ ] Test unauthorized donor access to hospital endpoints.
+- [ ] Test unauthorized hospital access to admin endpoints.
+- [ ] Test unauthenticated access to protected APIs.
+- [ ] Test access using an invalid token.
+- [ ] Test access using an inactive account.
+- [ ] Test invalid file upload.
+- [ ] Test oversized file upload.
+- [ ] Test malformed request bodies.
+- [ ] Test duplicate registration.
+- [ ] Test unauthorized modification of another user's records.
+- [ ] Test attempts to change user roles through request data.
+- [ ] Test that private donor details remain hidden.
+10.4 UI and responsive testing
+- [ ] Test all pages on mobile.
+- [ ] Test all pages on tablet.
+- [ ] Test all pages on desktop.
+- [ ] Test all navigation links.
+- [ ] Test all forms.
+- [ ] Test loading states.
+- [ ] Test empty states.
+- [ ] Test API error states.
+- [ ] Test notification bell.
+- [ ] Test real-time notification delivery locally.
+- [ ] Test production notification behaviour separately.
+- [ ] Test page refresh and navigation.
+- [ ] Test countdown timers.
+- [ ] Test date/time display.
+11. Project Structure and Technical Documentation
+- [ ] Configuration files are organized.
+- [ ] Backend models are organized.
+- [ ] Backend controllers are organized.
+- [ ] Backend services are organized.
+- [ ] Backend routes are organized.
+- [ ] Middleware is organized.
+- [ ] Frontend pages are organized.
+- [ ] Frontend components are organized.
+- [ ] API utilities are organized.
+- [ ] Assets are organized.
+- [ ] Upload functionality is organized.
+- [ ] Seed scripts are available.
+- [ ] Logging is configured.
+- [ ] Environment variables are documented.
+- [ ] Secrets are not committed to the repository.
+- [ ] README explains the project.
+- [ ] README explains installation.
+- [ ] README explains environment configuration.
+- [ ] README explains how to run the frontend.
+- [ ] README explains how to run the backend.
+- [ ] README explains how to seed the database.
+- [ ] README includes test credentials for each role.
+- [ ] README explains any deployment limitations.
+12. Required Academic Deliverables
+12.1 Requirement analysis and design
+- [ ] Problem analysis is documented.
+- [ ] Functional requirements are documented.
+- [ ] Non-functional requirements are documented.
+- [ ] Use-case diagram is prepared.
+- [ ] ERD is prepared.
+- [ ] Database schema is documented.
+- [ ] Wireframes are prepared.
+- [ ] System architecture is documented.
+- [ ] Major design decisions are explained.
+12.2 Project report
+- [ ] Report is 10–15 pages.
+- [ ] Problem analysis is included.
+- [ ] Use cases are included.
+- [ ] ERD is included.
+- [ ] Database schema is included.
+- [ ] Matching algorithm is explained.
+- [ ] Screenshots are included.
+- [ ] Test-case table is included.
+- [ ] Security measures are explained.
+- [ ] Limitations are documented.
+- [ ] Database queries are included.
+- [ ] Mandatory programming concepts are mapped to files/classes.
+- [ ] MERN equivalents for PHP/MySQL-specific concepts are explained.
+- [ ] Technology choices and design trade-offs are justified.
+12.3 Final submission
+- [ ] Complete source code is included.
+- [ ] Database dump/backup is included.
+- [ ] README is included.
+- [ ] Setup instructions are included.
+- [ ] Test credentials for each role are included.
+- [ ] Project report is included.
+- [ ] Final ZIP is prepared.
+- [ ] ZIP has been checked for missing files.
+- [ ] Environment secrets are excluded from the ZIP.
+- [ ] Optional 3–5 minute demo video is prepared.
+- [ ] AI-generated code is declared according to academic requirements.
+- [ ] All group members can explain their individual contributions.
+- [ ] Every member is prepared for individual viva questions.
+13. Final Viva Preparation
+- [ ] Explain the problem DonorNexa solves.
+- [ ] Explain why the system needs three roles.
+- [ ] Explain donor registration and eligibility.
+- [ ] Explain hospital verification.
+- [ ] Explain ABO/Rh compatibility.
+- [ ] Explain the donor matching algorithm.
+- [ ] Explain the ranking score.
+- [ ] Explain notification limits.
+- [ ] Explain how Critical requests widen the matching pool.
+- [ ] Explain how donor privacy is maintained.
+- [ ] Explain reservation and concurrency safety.
+- [ ] Explain automatic expiry.
+- [ ] Explain the donation and inventory workflow.
+- [ ] Explain the database relationships.
+- [ ] Explain indexes and their purpose.
+- [ ] Explain database transactions.
+- [ ] Explain database views/triggers or their equivalents.
+- [ ] Explain authentication and authorization.
+- [ ] Explain security measures.
+- [ ] Explain the dashboard charts.
+- [ ] Explain the audit log.
+- [ ] Explain the project folder structure.
+- [ ] Explain the MERN architecture.
+- [ ] Explain deployment and its limitations.
+- [ ] Explain the project's limitations and future improvement

@@ -445,6 +445,32 @@ export const respondToMatch = async (req, res) => {
           throw error;
         }
 
+        // Allow a donor to have only one active accepted request.
+        const claimedDonor = await Donor.findOneAndUpdate(
+          {
+            _id: donor._id,
+            isAvailable: true,
+            activeRequestMatch: null,
+          },
+          {
+            $set: {
+              activeRequestMatch: match._id,
+            },
+          },
+          {
+            new: true,
+            session,
+          },
+        );
+
+        if (!claimedDonor) {
+          const error = new Error(
+            "You already have an accepted blood request. You can accept another request only after the hospital closes or cancels your current request.",
+          );
+          error.statusCode = 409;
+          throw error;
+        }
+
         // Reserve one unit only if the request still has capacity.
         const updatedRequest = await BloodRequest.findOneAndUpdate(
           {
@@ -891,6 +917,52 @@ export const confirmDonation = async (req, res) => {
       ) {
         updatedRequest.status = "fulfilled";
         await updatedRequest.save({ session });
+
+        await RequestMatch.updateMany(
+          {
+            bloodRequest: bloodRequest._id,
+            status: "pending",
+          },
+          {
+            $set: { status: "expired" },
+          },
+          { session },
+        );
+
+        // Release all donor locks associated with this fulfilled request.
+        const requestMatchIds = await RequestMatch.find({
+          bloodRequest: bloodRequest._id,
+        })
+          .distinct("_id")
+          .session(session);
+
+        if (requestMatchIds.length > 0) {
+          await Donor.updateMany(
+            {
+              activeRequestMatch: { $in: requestMatchIds },
+            },
+            {
+              $set: {
+                activeRequestMatch: null,
+              },
+            },
+            { session },
+          );
+        }
+
+        if (requestMatchIds.length > 0) {
+          await Donor.updateMany(
+            {
+              activeRequestMatch: { $in: requestMatchIds },
+            },
+            {
+              $set: {
+                activeRequestMatch: null,
+              },
+            },
+            { session },
+          );
+        }
       }
     });
 

@@ -578,6 +578,28 @@ export const cancelBloodRequest = async (req, res) => {
         { session },
       );
 
+      // Release locks belonging to donors who accepted this request.
+      // This also releases locks for donors whose donations were already completed.
+      const requestMatchIds = await RequestMatch.find({
+        bloodRequest: bloodRequest._id,
+      })
+        .distinct("_id")
+        .session(session);
+
+      if (requestMatchIds.length > 0) {
+        await Donor.updateMany(
+          {
+            activeRequestMatch: { $in: requestMatchIds },
+          },
+          {
+            $set: {
+              activeRequestMatch: null,
+            },
+          },
+          { session },
+        );
+      }
+
       cancellationResult = {
         bloodRequest,
         affectedMatches,

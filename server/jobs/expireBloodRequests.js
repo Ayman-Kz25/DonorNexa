@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import BloodRequest from "../models/BloodRequest.js";
 import RequestMatch from "../models/RequestMatch.js";
+import Donor from "../models/Donor.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import { generateRequestMatches } from "../services/requestMatchingService.js";
 import { createNotification } from "../services/notificationService.js";
@@ -164,6 +165,27 @@ const startExpirationJob = () => {
               // Release their reserved units.
               updatedRequest.unitsReserved -= acceptedCount;
               await updatedRequest.save({ session });
+            }
+
+            // Release donor locks associated with this expired request.
+            // Include completed matches because their donor may still have
+            // an active lock while the request remains open.
+            const requestMatchIds = await RequestMatch.distinct("_id", {
+              bloodRequest: updatedRequest._id,
+            }).session(session);
+
+            if (requestMatchIds.length > 0) {
+              await Donor.updateMany(
+                {
+                  activeRequestMatch: { $in: requestMatchIds },
+                },
+                {
+                  $set: {
+                    activeRequestMatch: null,
+                  },
+                },
+                { session },
+              );
             }
 
             expiryData = {

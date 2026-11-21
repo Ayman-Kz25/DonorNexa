@@ -52,6 +52,12 @@ const donorSchema = new mongoose.Schema(
       default: false,
     },
 
+    activeRequestMatch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RequestMatch",
+      default: null,
+    },
+
     lastDonationDate: {
       type: Date,
       default: null,
