@@ -11,9 +11,24 @@ export function useSocket() {
       return;
     }
 
+    let isMounted = true;
+
+    const handleConnect = () => {
+      console.log("Socket connected:", socket.id);
+    };
+
+    const handleConnectError = (error) => {
+      console.error("Socket connection failed:", error.message);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("connect_error", handleConnectError);
+
     const connectSocket = async () => {
       try {
         const token = await getToken();
+
+        if (!isMounted || !token) return;
 
         socket.auth = { token };
         socket.connect();
@@ -24,17 +39,12 @@ export function useSocket() {
 
     connectSocket();
 
-    socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("Socket connection failed:", error.message);
-    });
-
     return () => {
-      socket.off("connect");
-      socket.off("connect_error");
+      isMounted = false;
+
+      socket.off("connect", handleConnect);
+      socket.off("connect_error", handleConnectError);
+
       socket.disconnect();
     };
   }, [isLoaded, isSignedIn, getToken]);

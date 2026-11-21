@@ -134,6 +134,8 @@ function Home() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchStats = async () => {
       try {
         const response = await request({
@@ -141,13 +143,26 @@ function Home() {
           url: "/api/blood-requests/stats",
         });
 
-        setStats(response.data.stats);
+        if (isMounted && response.data?.stats) {
+          setStats(response.data.stats);
+        }
       } catch (error) {
-        console.error("Unable to fetch public statistics:", error);
+        if (isMounted) {
+          console.error("Unable to fetch public statistics:", error);
+        }
       }
     };
 
+    // Fetch immediately when the page loads
     fetchStats();
+
+    // Refresh statistics every 30 seconds
+    const intervalId = setInterval(fetchStats, 30 * 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, [request]);
 
   useEffect(() => {
@@ -377,7 +392,7 @@ function Home() {
           <div className="mb-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
-                DonorNexa in numbers
+                DonorNexa Live Statistics
               </p>
               <h2 className="mt-2 font-serif text-2xl text-[#302923]">
                 Every number represents a connection.

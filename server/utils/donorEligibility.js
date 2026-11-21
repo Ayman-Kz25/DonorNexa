@@ -43,10 +43,9 @@ export const checkDonorEligibility = async (donor) => {
 
   if (donor.lastDonationDate) {
     eligibleAgainDate = new Date(donor.lastDonationDate);
-
     eligibleAgainDate.setDate(eligibleAgainDate.getDate() + cooldownDays);
 
-    if (today < eligibleAgainDate) {
+    if (new Date() < eligibleAgainDate) {
       reasons.push(
         `You can try again after ${eligibleAgainDate.toDateString()}.`,
       );

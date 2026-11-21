@@ -59,9 +59,18 @@ function NotificationBell() {
     }
   }, [request]);
 
-  // Fetch existing notifications when the component mounts.
+  // Fetch notifications on mount and periodically refresh them.
+  // This also works when Socket.IO is unavailable in serverless deployment.
   useEffect(() => {
     fetchNotifications();
+
+    const intervalId = setInterval(() => {
+      fetchNotifications();
+    }, 5000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [fetchNotifications]);
 
   // Listen for new notifications through Socket.IO.

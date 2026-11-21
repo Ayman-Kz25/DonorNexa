@@ -1,6 +1,6 @@
-
 import Donor from "../models/Donor.js";
 import RequestMatch from "../models/RequestMatch.js";
+import Notification from "../models/Notification.js";
 import { getCompatibleDonorGroups } from "../utils/bloodCompatibility.js";
 import { checkDonorEligibility } from "../utils/donorEligibility.js";
 import { createNotification } from "./notificationService.js";
@@ -30,9 +30,7 @@ const getResponseRate = async (donorId) => {
 
   const totalResponses = respondedCount + noResponseCount;
 
-  return totalResponses === 0
-    ? 50
-    : (respondedCount / totalResponses) * 100;
+  return totalResponses === 0 ? 50 : (respondedCount / totalResponses) * 100;
 };
 
 // Calculate ranking score for an eligible donor.
@@ -92,9 +90,7 @@ export const generateRequestMatches = async (
     };
   }
 
-  const compatibleGroups = getCompatibleDonorGroups(
-    bloodRequest.bloodGroup,
-  );
+  const compatibleGroups = getCompatibleDonorGroups(bloodRequest.bloodGroup);
 
   const priorityCity = String(hospitalCity || bloodRequest.city || "")
     .trim()
@@ -117,9 +113,7 @@ export const generateRequestMatches = async (
   const eligibilityResults = await Promise.all(
     donors.map(async (donor) => ({
       donor,
-      eligibility: donor.user
-        ? await checkDonorEligibility(donor)
-        : null,
+      eligibility: donor.user ? await checkDonorEligibility(donor) : null,
     })),
   );
 
@@ -134,25 +128,19 @@ export const generateRequestMatches = async (
         .trim()
         .toLowerCase();
 
-      const isSameCity =
-        priorityCity !== "" && donorCity === priorityCity;
+      const isSameCity = priorityCity !== "" && donorCity === priorityCity;
 
-      const isExactBloodGroup =
-        donor.bloodGroup === bloodRequest.bloodGroup;
+      const isExactBloodGroup = donor.bloodGroup === bloodRequest.bloodGroup;
 
       const daysSinceLastDonation = donor.lastDonationDate
         ? Math.floor(
-            (now - new Date(donor.lastDonationDate)) /
-              (1000 * 60 * 60 * 24),
+            (now - new Date(donor.lastDonationDate)) / (1000 * 60 * 60 * 24),
           )
         : 365;
 
       const responseRate = await getResponseRate(donor._id);
 
-      const totalDonations = Math.max(
-        0,
-        Number(donor.totalDonations) || 0,
-      );
+      const totalDonations = Math.max(0, Number(donor.totalDonations) || 0);
 
       const matchScore = calculateMatchScore({
         isSameCity,
@@ -178,8 +166,7 @@ export const generateRequestMatches = async (
 
   rankedDonors.sort(
     (a, b) =>
-      b.matchScore - a.matchScore ||
-      b.totalDonations - a.totalDonations,
+      b.matchScore - a.matchScore || b.totalDonations - a.totalDonations,
   );
 
   // Recheck availability and account status before selecting donors.
@@ -212,18 +199,30 @@ export const generateRequestMatches = async (
   const batchSize =
     NOTIFICATION_LIMITS[bloodRequest.urgency?.toLowerCase()] || 10;
 
-  // Exclude donors who already have a match for this request.
+  // Prioritize exact blood-group donors before compatible donors.
+  const prioritizedDonors = [...availableRankedDonors].sort(
+    (a, b) =>
+      Number(b.isExactBloodGroup) - Number(a.isExactBloodGroup) ||
+      b.matchScore - a.matchScore ||
+      b.totalDonations - a.totalDonations,
+  );
+
+  // Check existing matches so previously notified donors are not duplicated.
   const existingMatches = await RequestMatch.find({
     bloodRequest: bloodRequest._id,
-  }).select("donor");
+  }).select("donor status");
 
-  const existingDonorIds = new Set(
-    existingMatches.map((match) => match.donor.toString()),
+  const existingMatchMap = new Map(
+    existingMatches.map((match) => [match.donor.toString(), match.status]),
   );
 
-  const newDonors = availableRankedDonors.filter(
-    (donor) => !existingDonorIds.has(donor.donorId.toString()),
-  );
+  // Include new donors and donors with no previous match.
+  // Existing pending matches will also be checked for missing notifications.
+  const newDonors = prioritizedDonors.filter((donor) => {
+    const existingStatus = existingMatchMap.get(donor.donorId.toString());
+
+    return !existingStatus || existingStatus === "pending";
+  });
 
   const selectedDonors = newDonors.slice(0, batchSize);
 
@@ -238,9 +237,9 @@ export const generateRequestMatches = async (
 
   let notifiedCount = 0;
 
-  // Create match records only for currently available donors.
   if (notify && selectedDonors.length > 0) {
-    const bulkResult = await RequestMatch.bulkWrite(
+    // Create missing match records without marking them notified yet.
+    await RequestMatch.bulkWrite(
       selectedDonors.map((donor) => ({
         updateOne: {
           filter: {
@@ -252,7 +251,7 @@ export const generateRequestMatches = async (
               bloodRequest: bloodRequest._id,
               donor: donor.donorId,
               status: "pending",
-              notifiedAt: now,
+              notifiedAt: null,
               responseDeadlineAt,
               score: donor.matchScore,
             },
@@ -262,53 +261,66 @@ export const generateRequestMatches = async (
       })),
     );
 
-    // Only process match records created by this operation.
-    const insertedIndexes = new Set(
-      Object.keys(bulkResult.upsertedIds || {}).map(Number),
-    );
+    // Retrieve pending matches for the selected donors.
+    const pendingMatches = await RequestMatch.find({
+      bloodRequest: bloodRequest._id,
+      donor: {
+        $in: selectedDonors.map((donor) => donor.donorId),
+      },
+      status: "pending",
+    }).populate({
+      path: "donor",
+      populate: {
+        path: "user",
+        match: {
+          role: "donor",
+          isActive: true,
+        },
+        select: "_id",
+      },
+    });
 
-    const newlyMatchedDonors = selectedDonors.filter((_, index) =>
-      insertedIndexes.has(index),
-    );
-
-    // Recheck availability immediately before notification delivery.
     const notificationResults = await Promise.all(
-      newlyMatchedDonors.map(async (donor) => {
-        const currentDonor = await Donor.findOne({
-          _id: donor.donorId,
-          isAvailable: true,
-        }).populate({
-          path: "user",
-          match: {
-            role: "donor",
-            isActive: true,
-          },
-          select: "_id",
+      pendingMatches.map(async (match) => {
+        const donor = match.donor;
+        const recipientId = donor?.user?._id;
+
+        if (!donor || !recipientId || !donor.isAvailable) {
+          return false;
+        }
+
+        // Check whether this donor already has a saved notification.
+        const existingNotification = await Notification.exists({
+          recipient: recipientId,
+          type: "NEW_MATCH",
+          relatedId: bloodRequest._id,
+          relatedModel: "BloodRequest",
         });
 
-        // If the donor is now unavailable or inactive, expire the
-        // newly created pending match instead of leaving it actionable.
-        if (!currentDonor?.user) {
-          await RequestMatch.updateOne(
-            {
-              bloodRequest: bloodRequest._id,
-              donor: donor.donorId,
-              status: "pending",
-              notifiedAt: now,
-            },
-            {
-              $set: {
-                status: "expired",
-                responseDeadlineAt: new Date(),
-              },
-            },
-          );
+        if (existingNotification) {
+          // Repair notifiedAt for notifications saved previously.
+          if (!match.notifiedAt) {
+            await RequestMatch.updateOne(
+              { _id: match._id, notifiedAt: null },
+              { $set: { notifiedAt: new Date() } },
+            );
+          }
 
+          return true;
+        }
+
+        // Recheck availability immediately before notification.
+        const stillAvailable = await Donor.exists({
+          _id: donor._id,
+          isAvailable: true,
+        });
+
+        if (!stillAvailable) {
           return false;
         }
 
         const notification = await createNotification({
-          recipient: currentDonor.user._id,
+          recipient: recipientId,
           type: "NEW_MATCH",
           title: "New Blood Request Match",
           message: `You have been matched with a ${bloodRequest.urgency} blood request for ${bloodRequest.bloodGroup} blood in ${bloodRequest.city}. Please review and respond before the deadline.`,
@@ -316,7 +328,20 @@ export const generateRequestMatches = async (
           relatedModel: "BloodRequest",
         });
 
-        return Boolean(notification);
+        if (!notification) {
+          console.error(
+            `Failed to notify donor ${donor._id} for request ${bloodRequest._id}`,
+          );
+          return false;
+        }
+
+        // Mark the match as notified only after notification is saved.
+        await RequestMatch.updateOne(
+          { _id: match._id },
+          { $set: { notifiedAt: new Date() } },
+        );
+
+        return true;
       }),
     );
 
