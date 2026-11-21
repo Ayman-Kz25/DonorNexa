@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Clock, MapPin, RefreshCw, Droplet } from "lucide-react";
+import { RefreshCw, Droplet, ClockFading, Timer } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { formatDateTime } from "../../utils/dateTime";
 
 function getCountdown(date, now) {
   const difference = new Date(date).getTime() - now;
@@ -161,13 +162,16 @@ function ActiveEmergencies() {
                     </span>
                   </div>
 
-                  <div className="mt-6 flex items-center gap-2 text-sm text-[#66594D]">
-                    <MapPin size={16} className="text-[#963D54]" />
-                    {item.city || item.hospital?.city || "City unavailable"}
+                  <div className="mt-4 flex items-center gap-2 text-sm text-[#66594D]">
+                    <ClockFading size={16} className="text-[#963D54]" />
+                    <span className="text-[#81756A]">Required by:</span>
+                    <span className="font-medium text-[#493D34]">
+                      {formatDateTime(item.requiredBy)}
+                    </span>
                   </div>
 
                   <div className="mt-4 flex items-center gap-2 border-t border-[#EEE5DD] pt-4 text-sm">
-                    <Clock size={16} className="text-[#963D54]" />
+                    <Timer size={16} className="text-[#963D54]" />
                     <span className="text-[#81756A]">Time remaining:</span>
                     <span
                       className={`font-semibold ${

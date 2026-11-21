@@ -19,7 +19,7 @@
 - [x] Displays blood group.
 - [x] Displays city.
 - [x] Displays urgency (Critical, Urgent, Normal).
-- [ ] Displays required-by date/time.
+- [x] Displays required-by date/time.
 - [x] Displays a live countdown timer.
 - [x] Countdown updates without refreshing the page.
 - [x] Expired requests are not presented as active emergencies.
@@ -40,18 +40,18 @@
 - [x] Clear validation errors are displayed.
 - [x] Successful registration leads to the correct onboarding/dashboard flow.
 2. Authentication and Account Management
-- [ ] User can register/sign up.
-- [ ] User can log in.
-- [ ] User can log out.
-- [ ] Authentication state persists appropriately.
-- [ ] Authenticated routes are protected.
-- [ ] Unauthenticated users cannot access protected pages.
-- [ ] Donor routes are restricted to donors.
-- [ ] Hospital routes are restricted to hospitals.
-- [ ] Admin routes are restricted to administrators.
-- [ ] Backend authorization is enforced independently of frontend route protection.
-- [ ] Users cannot assign themselves an unauthorized role.
-- [ ] User profile/account information is synchronized correctly.
+- [x] User can register/sign up.
+- [x] User can log in.
+- [x] User can log out.
+- [x] Authentication state persists appropriately.
+- [x] Authenticated routes are protected.
+- [x] Unauthenticated users cannot access protected pages.
+- [x] Donor routes are restricted to donors.
+- [x] Hospital routes are restricted to hospitals.
+- [x] Admin routes are restricted to administrators.
+- [x] Backend authorization is enforced independently of frontend route protection.
+- [x] Users cannot assign themselves an unauthorized role.
+- [x] User profile/account information is synchronized correctly.
 - [ ] Inactive or blocked users cannot perform restricted operations.
 - [ ] Invalid or expired authentication tokens are rejected.
 - [ ] Authentication errors are handled gracefully.
