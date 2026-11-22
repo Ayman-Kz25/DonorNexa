@@ -468,11 +468,12 @@ export const getHospitalLicenseDocument = async (req, res) => {
 
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("Content-Type", "application/pdf");
-
-    return res.download(
-      filePath,
-      hospital.licenseDocument.fileName || "hospital-license.pdf",
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="hospital-license.pdf"',
     );
+
+    return res.sendFile(filePath);
   } catch (error) {
     if (error.code === "ENOENT") {
       return res.status(404).json({

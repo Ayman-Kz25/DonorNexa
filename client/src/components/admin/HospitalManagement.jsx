@@ -198,9 +198,28 @@ function HospitalManagement() {
       setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
     } catch (err) {
       newTab.close();
-      setError(
-        err.response?.data?.message || "Unable to open the license document.",
-      );
+
+      let errorMessage = "Unable to open the license document.";
+
+      if (err.response?.data instanceof Blob) {
+        try {
+          const errorData = JSON.parse(await err.response.data.text());
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = `Server error (${err.response.status}).`;
+        }
+      } else {
+        errorMessage =
+          err.response?.data?.message || err.message || errorMessage;
+      }
+
+      console.error("License viewing error:", {
+        status: err.response?.status,
+        data: err.response?.data,
+        error: err,
+      });
+
+      setError(errorMessage);
     }
   };
 

@@ -223,26 +223,26 @@
 - [x] Requests per week chart is implemented.
 - [x] Chart displays weekly request counts.
 - [x] Blood-group demand versus supply chart is implemented.
-- [ ] Demand is calculated using outstanding request requirements.
-- [ ] Supply is calculated using relevant blood inventory.
+- [x] Demand is calculated using outstanding request requirements.
+- [x] Supply is calculated using relevant blood inventory.
 - [x] Fulfilment rate chart is implemented.
 - [x] Fulfilment rate is calculated correctly.
-- [ ] Charts use real database data.
-- [ ] Charts update when the underlying data changes.
+- [x] Charts use real database data.
+- [x] Charts update when the underlying data changes.
 - [x] Charts display useful labels and values.
 - [x] Empty chart data is handled correctly.
 
 5.3 Hospital management
-- [ ] Admin can view hospitals.
-- [ ] Admin can search hospitals.
-- [ ] Admin can filter hospitals.
+- [x] Admin can view hospitals.
+- [x] Admin can search hospitals.
+- [x] Admin can filter hospitals.
 - [ ] Admin can view hospital licence information.
-- [ ] Admin can verify hospitals.
-- [ ] Admin can reject hospitals.
-- [ ] Admin can change verification status where authorized.
-- [ ] Admin can deactivate/block hospitals.
-- [ ] Admin can reactivate/unblock hospitals.
-- [ ] Hospital status changes are recorded in the audit log.
+- [x] Admin can verify hospitals.
+- [x] Admin can reject hospitals.
+- [x] Admin can change verification status where authorized.
+- [x] Admin can deactivate/block hospitals.
+- [x] Admin can reactivate/unblock hospitals.
+- [x] Hospital status changes are recorded in the audit log.
 
 5.4 User management
 - [ ] Admin can view users.
