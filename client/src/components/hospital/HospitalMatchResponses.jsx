@@ -50,9 +50,6 @@ export default function HospitalMatchResponses({
 
       const matchResponses = response.data?.responses || [];
 
-      // Keep the rest of your existing merging logic here.
-
-      // Index existing responses by donor ID.
       const responsesByDonorId = new Map();
 
       matchResponses.forEach((match) => {
@@ -63,7 +60,6 @@ export default function HospitalMatchResponses({
         }
       });
 
-      // Merge response information into the ranked donor list.
       const rankedWithResponses = rankedDonors.map((donor, index) => {
         const donorId = String(donor.donorId || donor._id);
         const match = responsesByDonorId.get(donorId);
@@ -82,8 +78,6 @@ export default function HospitalMatchResponses({
         };
       });
 
-      // Preserve existing match records even if a donor is no longer
-      // present in the current eligible/ranked list.
       const rankedIds = new Set(
         rankedWithResponses.map((donor) => donor.donorId),
       );
@@ -91,7 +85,6 @@ export default function HospitalMatchResponses({
       const previousMatchesNotInRanking = matchResponses
         .filter((match) => {
           const donorId = String(match.donorId || match.donor?._id || "");
-
           return donorId && !rankedIds.has(donorId);
         })
         .map((match) => ({
@@ -153,7 +146,7 @@ export default function HospitalMatchResponses({
       case "accepted":
         return "bg-[#F2E2DC] text-[#782B40]";
       case "completed":
-        return "bg-[#E5EFE8] text-[#456B50]";
+        return "bg-[#F2E2DC] text-[#782B40]";
       case "declined":
         return "bg-[#F1EDE7] text-[#81756A]";
       case "expired":
@@ -173,17 +166,18 @@ export default function HospitalMatchResponses({
   };
 
   return (
-    <div className="border-t border-[#EFE6DF] pt-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="w-full min-w-0 border-t border-[#EFE6DF] pt-3 sm:pt-4">
+      {/* Toggle and Refresh */}
+      <div className="flex min-w-0 flex-col gap-2 min-[400px]:flex-row min-[400px]:flex-wrap min-[400px]:items-center min-[400px]:justify-between">
         <button
           type="button"
           onClick={toggleDonors}
           aria-expanded={open}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#642235]"
+          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#782B40] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-[#642235] min-[400px]:w-auto sm:px-4 sm:text-sm"
         >
-          <Users size={17} />
+          <Users size={16} />
           Find Matching Donors
-          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
         </button>
 
         {open && (
@@ -191,73 +185,89 @@ export default function HospitalMatchResponses({
             type="button"
             onClick={fetchDonors}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#E8DDD4] px-3 py-2 text-sm font-medium text-[#782B40] hover:bg-[#F8F5EF] disabled:opacity-50"
+            className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-[#E8DDD4] bg-white px-3 py-2 text-xs font-medium text-[#782B40] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-50 min-[400px]:w-auto sm:text-sm"
           >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Refresh
           </button>
         )}
       </div>
 
+      {/* Donor Responses */}
       {open && (
-        <div className="mt-5 space-y-4">
+        <div className="mt-4 min-w-0 space-y-3 sm:mt-5 sm:space-y-4">
+          {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              <AlertCircle size={17} className="mt-0.5 shrink-0" />
-              {error}
+            <div className="flex min-w-0 items-start gap-2 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] p-3 text-xs leading-5 text-[#963D54] sm:p-4 sm:text-sm">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span className="min-w-0 break-words">{error}</span>
             </div>
           )}
 
+          {/* Loading */}
           {loading ? (
-            <div className="flex items-center gap-2 rounded-xl bg-[#F8F5EF] p-5 text-sm text-[#81756A]">
-              <RefreshCw size={17} className="animate-spin" />
+            <div
+              className="flex min-h-24 items-center gap-2 rounded-xl bg-[#F8F5EF] p-4 text-xs leading-5 text-[#81756A] sm:min-h-28 sm:p-5 sm:text-sm"
+              role="status"
+            >
+              <RefreshCw
+                size={16}
+                className="shrink-0 animate-spin text-[#963D54]"
+              />
               Finding and ranking compatible donors...
             </div>
           ) : donors.length === 0 && !error ? (
-            <div className="rounded-xl border border-dashed border-[#E8DDD4] bg-[#F8F5EF] px-4 py-8 text-center">
-              <Users size={25} className="mx-auto text-[#A45B6D]" />
-              <p className="mt-3 text-sm font-semibold text-[#302923]">
+            /* Empty State */
+            <div className="rounded-xl border border-dashed border-[#E8DDD4] bg-[#F8F5EF] px-4 py-7 text-center sm:py-8">
+              <Users size={23} className="mx-auto text-[#A45B6D]" />
+
+              <p className="mt-3 text-xs font-semibold text-[#302923] sm:text-sm">
                 No Matching Donors Found
               </p>
-              <p className="mt-1 text-xs text-[#81756A]">
+
+              <p className="mx-auto mt-1 max-w-sm text-[11px] leading-5 text-[#81756A] sm:text-xs">
                 No currently eligible and available donors match this request.
               </p>
             </div>
           ) : !loading && donors.length > 0 ? (
             <>
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-serif text-lg font-semibold text-[#302923]">
+              {/* Results Heading */}
+              <div className="flex min-w-0 flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="min-w-0">
+                  <h3 className="font-serif text-base font-semibold text-[#302923] sm:text-lg">
                     Ranked Compatible Donors
                   </h3>
-                  <p className="mt-1 text-xs text-[#81756A]">
+
+                  <p className="mt-1 text-[11px] leading-5 text-[#81756A] sm:text-xs">
                     Ordered by matching score, eligibility and donation history.
                   </p>
                 </div>
 
-                <span className="shrink-0 rounded-full bg-[#F2E2DC] px-3 py-1 text-xs font-semibold text-[#782B40]">
+                <span className="self-start shrink-0 rounded-full bg-[#F2E2DC] px-3 py-1 text-[10px] font-semibold text-[#782B40] sm:text-xs">
                   {donors.length} Found
                 </span>
               </div>
 
-              <div className="space-y-3">
+              {/* Donor Cards */}
+              <div className="min-w-0 space-y-3">
                 {donors.map((donor) => (
                   <article
                     key={donor.donorId || donor.matchId}
-                    className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-4"
+                    className="min-w-0 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-3 sm:p-4"
                   >
-                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex min-w-0 flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
+                      {/* Donor Information */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
                           {donor.rank && (
-                            <span className="inline-flex items-center gap-1 rounded-lg bg-[#F2E2DC] px-2.5 py-1.5 text-xs font-bold text-[#782B40]">
-                              <Trophy size={13} />
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-[#F2E2DC] px-2 py-1.5 text-[10px] font-bold text-[#782B40] sm:px-2.5 sm:text-xs">
+                              <Trophy size={12} />
                               Rank #{donor.rank}
                             </span>
                           )}
 
                           <span
-                            className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize ${getStatusStyle(
+                            className={`rounded-full px-2.5 py-1.5 text-[10px] font-semibold capitalize sm:text-xs ${getStatusStyle(
                               donor.status,
                             )}`}
                           >
@@ -265,51 +275,68 @@ export default function HospitalMatchResponses({
                           </span>
                         </div>
 
-                        <h4 className="mt-3 font-semibold text-[#302923]">
+                        <h4 className="mt-2.5 break-words text-sm font-semibold text-[#302923] sm:mt-3 sm:text-base">
                           {donor.donorName || donor.name || "Donor"}
                         </h4>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#81756A]">
-                          <span className="inline-flex items-center gap-1.5">
-                            <Droplet size={15} className="text-[#963D54]" />
-                            {donor.bloodGroup}
+                        {/* Blood Group and City */}
+                        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[#81756A] sm:gap-x-4 sm:text-sm">
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <Droplet
+                              size={14}
+                              className="shrink-0 text-[#963D54]"
+                            />
+                            <span>{donor.bloodGroup}</span>
                           </span>
 
-                          <span className="inline-flex items-center gap-1.5">
-                            <MapPin size={15} className="text-[#963D54]" />
-                            {donor.city || "Not specified"}
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <MapPin
+                              size={14}
+                              className="shrink-0 text-[#963D54]"
+                            />
+                            <span className="break-words">
+                              {donor.city || "Not specified"}
+                            </span>
                           </span>
                         </div>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#81756A]">
+                        {/* Donation History and Score */}
+                        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-[#81756A] sm:gap-x-4 sm:text-xs">
                           <span className="inline-flex items-center gap-1.5">
-                            <Award size={14} className="text-[#A45B6D]" />
+                            <Award
+                              size={13}
+                              className="shrink-0 text-[#A45B6D]"
+                            />
                             Previous donations: {donor.totalDonations ?? 0}
                           </span>
 
                           {donor.matchScore !== null &&
                             donor.matchScore !== undefined && (
-                              <span>Match score: {donor.matchScore}</span>
+                              <span className="break-words">
+                                Match score: {donor.matchScore}
+                              </span>
                             )}
                         </div>
 
+                        {/* Phone */}
                         {donor.phone && (
                           <a
                             href={`tel:${donor.phone}`}
-                            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-[#963D54] hover:text-[#782B40]"
+                            className="mt-2.5 inline-flex min-h-8 max-w-full items-center gap-2 break-all text-xs font-medium text-[#963D54] transition hover:text-[#782B40] sm:text-sm"
                           >
-                            <Phone size={15} />
+                            <Phone size={14} className="shrink-0" />
                             {donor.phone}
                           </a>
                         )}
 
+                        {/* Decline Reason */}
                         {donor.status === "declined" && (
-                          <div className="mt-4 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] p-4">
-                            <p className="text-xs font-semibold uppercase tracking-wide text-[#782B40]">
+                          <div className="mt-3 min-w-0 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] p-3 sm:mt-4 sm:p-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#782B40] sm:text-xs">
                               Donor's Decline Reason
                             </p>
 
-                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#655A51]">
+                            <p className="mt-1.5 whitespace-pre-wrap break-words text-xs leading-5 text-[#655A51] sm:mt-2 sm:text-sm sm:leading-6">
                               {donor.declineReason?.trim() ||
                                 "No reason provided."}
                             </p>
@@ -317,23 +344,26 @@ export default function HospitalMatchResponses({
                         )}
                       </div>
 
+                      {/* Confirm Donation */}
                       {donor.status === "accepted" && donor.matchId && (
-                        <button
-                          type="button"
-                          onClick={() => handleConfirmDonation(donor.matchId)}
-                          disabled={confirmingMatchId !== null}
-                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#642235] disabled:opacity-50"
-                        >
-                          {confirmingMatchId === donor.matchId ? (
-                            <RefreshCw size={15} className="animate-spin" />
-                          ) : (
-                            <CheckCircle2 size={15} />
-                          )}
+                        <div className="w-full shrink-0 lg:w-auto lg:self-center">
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmDonation(donor.matchId)}
+                            disabled={confirmingMatchId !== null}
+                            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#642235] disabled:cursor-not-allowed disabled:opacity-50 lg:w-auto sm:text-sm"
+                          >
+                            {confirmingMatchId === donor.matchId ? (
+                              <RefreshCw size={14} className="animate-spin" />
+                            ) : (
+                              <CheckCircle2 size={15} />
+                            )}
 
-                          {confirmingMatchId === donor.matchId
-                            ? "Confirming..."
-                            : "Confirm Donation"}
-                        </button>
+                            {confirmingMatchId === donor.matchId
+                              ? "Confirming..."
+                              : "Confirm Donation"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </article>
