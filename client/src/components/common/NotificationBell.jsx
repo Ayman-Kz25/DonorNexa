@@ -13,6 +13,7 @@ function NotificationBell() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const containerRef = useRef(null);
   const notificationIds = useRef(new Set());
   const realtimeNotifications = useRef([]);
 
@@ -49,7 +50,6 @@ function NotificationBell() {
       ).length;
 
       setUnreadCount((response.data.unreadCount || 0) + additionalUnread);
-
       setError("");
     } catch (err) {
       console.error("Fetch notifications error:", err);
@@ -60,7 +60,6 @@ function NotificationBell() {
   }, [request]);
 
   // Fetch notifications on mount and periodically refresh them.
-  // This also works when Socket.IO is unavailable in serverless deployment.
   useEffect(() => {
     fetchNotifications();
 
@@ -68,10 +67,38 @@ function NotificationBell() {
       fetchNotifications();
     }, 5000);
 
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [fetchNotifications]);
+
+  // Close dropdown when clicking outside or pressing Escape.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOutsideClick = (event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
 
   // Listen for new notifications through Socket.IO.
   useEffect(() => {
@@ -153,19 +180,20 @@ function NotificationBell() {
   };
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       {/* Notification Bell */}
       <button
         type="button"
         onClick={() => setIsOpen((previous) => !previous)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] shadow-sm transition hover:bg-[#F2E2DC]"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] shadow-sm transition hover:bg-[#F2E2DC] sm:h-10 sm:w-10 sm:rounded-xl"
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
       >
-        <Bell size={21} />
+        <Bell size={20} className="sm:h-[21px] sm:w-[21px]" />
 
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#963D54] px-1 text-[10px] font-bold text-white ring-2 ring-[#FFFDF9]">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#963D54] px-1 text-[9px] font-bold text-white ring-2 ring-[#FFFDF9] sm:text-[10px]">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -173,22 +201,31 @@ function NotificationBell() {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 z-[100] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] shadow-[0_12px_40px_rgba(80,45,45,0.16)]">
+        <div
+          role="dialog"
+          aria-label="Notifications"
+          className="fixed left-3 right-3 top-[4.5rem] z-[100] mx-auto w-auto max-w-[420px] overflow-hidden rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] shadow-[0_12px_40px_rgba(80,45,45,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:mx-0 sm:w-[min(380px,calc(100vw-32px))] md:w-[400px]"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#E8DDD4] px-4 py-3.5">
-            <div>
-              <h3 className="font-semibold text-[#302923]">Notifications</h3>
-              <p className="text-xs text-[#81756A]">
-                {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
+          <div className="flex items-center justify-between gap-2 border-b border-[#E8DDD4] px-3 py-3 sm:px-4 sm:py-3.5">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-[#302923] sm:text-base">
+                Notifications
+              </h3>
+
+              <p className="mt-0.5 text-[11px] text-[#81756A] sm:text-xs">
+                {unreadCount} unread notification
+                {unreadCount !== 1 ? "s" : ""}
               </p>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={markAllAsRead}
                   title="Mark all as read"
+                  aria-label="Mark all notifications as read"
                   className="rounded-lg p-2 text-[#963D54] transition hover:bg-[#F2E2DC]"
                 >
                   <CheckCheck size={18} />
@@ -207,30 +244,33 @@ function NotificationBell() {
           </div>
 
           {/* Notification List */}
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[min(65dvh,420px)] overflow-y-auto overscroll-contain sm:max-h-[420px]">
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#81756A]">
-                <LoaderCircle size={18} className="animate-spin" />
+              <div className="flex items-center justify-center gap-2 px-4 py-10 text-xs text-[#81756A] sm:text-sm">
+                <LoaderCircle size={18} className="shrink-0 animate-spin" />
                 Loading notifications...
               </div>
             ) : error ? (
-              <div className="px-5 py-10 text-center">
-                <p className="text-sm text-[#963D54]">{error}</p>
+              <div className="px-4 py-9 text-center sm:px-5 sm:py-10">
+                <p className="text-xs text-[#963D54] sm:text-sm">{error}</p>
+
                 <button
                   type="button"
                   onClick={fetchNotifications}
-                  className="mt-3 text-sm font-semibold text-[#782B40] hover:underline"
+                  className="mt-3 text-xs font-semibold text-[#782B40] hover:underline sm:text-sm"
                 >
                   Try again
                 </button>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <Bell size={30} className="mx-auto mb-3 text-[#C7A9A0]" />
-                <p className="text-sm font-medium text-[#302923]">
+              <div className="px-4 py-9 text-center sm:px-5 sm:py-10">
+                <Bell size={28} className="mx-auto mb-3 text-[#C7A9A0]" />
+
+                <p className="text-xs font-medium text-[#302923] sm:text-sm">
                   No notifications yet
                 </p>
-                <p className="mt-1 text-xs text-[#81756A]">
+
+                <p className="mt-1 text-[11px] text-[#81756A] sm:text-xs">
                   Updates and alerts will appear here.
                 </p>
               </div>
@@ -238,27 +278,27 @@ function NotificationBell() {
               notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`border-b border-[#E8DDD4]/70 px-4 py-3.5 transition last:border-b-0 ${
+                  className={`border-b border-[#E8DDD4]/70 px-3 py-3 transition last:border-b-0 sm:px-4 sm:py-3.5 ${
                     notification.isRead ? "bg-[#FFFDF9]" : "bg-[#F9EFEC]"
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
                     <div
-                      className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5 ${
                         notification.isRead ? "bg-[#D8C9C0]" : "bg-[#963D54]"
                       }`}
                     />
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[#302923]">
+                      <p className="break-words text-xs font-semibold leading-5 text-[#302923] sm:text-sm">
                         {notification.title}
                       </p>
 
-                      <p className="mt-1 text-xs leading-relaxed text-[#6F6258]">
+                      <p className="mt-1 break-words text-[11px] leading-relaxed text-[#6F6258] sm:text-xs">
                         {notification.message}
                       </p>
 
-                      <p className="mt-2 text-[10px] text-[#A09286]">
+                      <p className="mt-2 text-[10px] text-[#A09286] sm:text-[11px]">
                         {formatDateTime(notification.createdAt)}
                       </p>
                     </div>

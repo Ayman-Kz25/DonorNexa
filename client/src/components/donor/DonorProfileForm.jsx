@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import { useUser } from "@clerk/react";
+import { formatDate } from "../../utils/dateTime";
 
 const TOAST_DURATION = 4000;
 const MAX_PHOTO_SIZE = 2 * 1024 * 1024;
@@ -75,7 +76,6 @@ function DonorProfileForm({ onRegistered }) {
     if (!message) return;
 
     const timer = setTimeout(() => setMessage(""), TOAST_DURATION);
-
     return () => clearTimeout(timer);
   }, [message, messageType]);
 
@@ -160,17 +160,15 @@ function DonorProfileForm({ onRegistered }) {
     return () => URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
 
-  // Profile photo selection and validation
+  // Profile photo selection
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     const extension = file.name
       .substring(file.name.lastIndexOf(".") + 1)
       .toLowerCase();
 
-    // Validate extension
     if (!ALLOWED_PHOTO_EXTENSIONS.includes(extension)) {
       setPhotoFile(null);
       setPhotoPreview("");
@@ -180,7 +178,6 @@ function DonorProfileForm({ onRegistered }) {
       return;
     }
 
-    // Validate file size
     if (file.size > MAX_PHOTO_SIZE) {
       setPhotoFile(null);
       setPhotoPreview("");
@@ -190,7 +187,6 @@ function DonorProfileForm({ onRegistered }) {
       return;
     }
 
-    // Accept the file
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
     setMessage("");
@@ -207,7 +203,6 @@ function DonorProfileForm({ onRegistered }) {
       setIsUploadingPhoto(true);
       setMessage("");
 
-      // Upload photo to DonorNexa backend
       const response = await request({
         method: "POST",
         url: "/api/donors/profile/photo",
@@ -215,19 +210,14 @@ function DonorProfileForm({ onRegistered }) {
       });
 
       const uploadedPhotoUrl = response.data.profilePhoto.url;
-
-      // Update DonorNexa profile photo
       setProfilePhoto(uploadedPhotoUrl);
 
-      // Update Clerk profile image
       try {
         if (!user) {
           throw new Error("Clerk user is not available.");
         }
 
-        await user.setProfileImage({
-          file: photoFile,
-        });
+        await user.setProfileImage({ file: photoFile });
 
         setMessage("Profile photo updated successfully.");
         setMessageType("success");
@@ -240,7 +230,6 @@ function DonorProfileForm({ onRegistered }) {
         setMessageType("error");
       }
 
-      // Clear selected photo
       setPhotoFile(null);
       setPhotoPreview("");
 
@@ -265,7 +254,6 @@ function DonorProfileForm({ onRegistered }) {
     setMessage("");
 
     const fileInput = document.getElementById("donorProfilePhoto");
-
     if (fileInput) fileInput.value = "";
   };
 
@@ -386,7 +374,6 @@ function DonorProfileForm({ onRegistered }) {
     ["bloodGroup", "city", "weight", "dateOfBirth", "phone"].forEach(
       (field) => {
         const error = validateField(field, formData[field]);
-
         if (error) errors[field] = error;
       },
     );
@@ -486,17 +473,7 @@ function DonorProfileForm({ onRegistered }) {
     setIsEditing(false);
   };
 
-  // Formatting
-  const formatDate = (date) => {
-    if (!date) return "Not provided";
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString("en-PK", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
+  // Date limits
   const calculateDateLimits = () => {
     const today = new Date();
 
@@ -524,7 +501,7 @@ function DonorProfileForm({ onRegistered }) {
 
   const renderFieldError = (field) =>
     fieldErrors[field] ? (
-      <p className="mt-2 text-xs font-medium text-[#A33E4E]">
+      <p className="mt-1.5 break-words text-[11px] font-medium leading-5 text-[#A33E4E] sm:mt-2 sm:text-xs">
         {fieldErrors[field]}
       </p>
     ) : null;
@@ -535,21 +512,22 @@ function DonorProfileForm({ onRegistered }) {
   if (isLoading) {
     return (
       <div
-        className="flex min-h-[360px] items-center justify-center gap-3 border border-[#E3D5C8] bg-[#F8F5EF]"
+        className="flex min-h-[220px] items-center justify-center gap-2.5 rounded-lg border border-[#E3D5C8] bg-[#F8F5EF] px-3 sm:min-h-[280px] sm:gap-3 sm:rounded-xl"
         role="status"
       >
-        <Loader2 size={22} className="animate-spin text-[#963D54]" />
-        <p className="text-sm text-[#81756A]">Loading your profile...</p>
+        <Loader2 size={19} className="animate-spin text-[#963D54]" />
+        <p className="text-xs text-[#81756A] sm:text-sm">
+          Loading your profile...
+        </p>
       </div>
     );
   }
 
-  // Reusable field styling
   const inputClass =
-    "w-full rounded-none border-0 border-b border-[#DCCFC2] bg-transparent py-3 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:ring-0";
+    "w-full min-w-0 rounded-none border-0 border-b border-[#DCCFC2] bg-transparent py-2.5 text-xs text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:ring-0 sm:py-3 sm:text-sm";
 
   return (
-    <div className="w-full space-y-10 text-[#302923]">
+    <div className="w-full min-w-0 space-y-6 text-[#302923] sm:space-y-8 lg:space-y-10">
       <style>{`
         @keyframes donor-toast-in {
           from { opacity: 0; transform: translateY(-10px); }
@@ -567,27 +545,27 @@ function DonorProfileForm({ onRegistered }) {
         <div
           role="status"
           style={{ animation: "donor-toast-in 0.3s ease-out" }}
-          className={`fixed right-4 top-24 z-[60] w-[calc(100%-2rem)] max-w-sm overflow-hidden border bg-[#FFFDF9] shadow-xl sm:right-6 ${
+          className={`fixed right-3 top-20 z-[60] w-[calc(100%-1.5rem)] max-w-sm overflow-hidden rounded-lg border bg-[#FFFDF9] shadow-xl sm:right-6 sm:top-24 ${
             messageType === "error" ? "border-[#E8C9C9]" : "border-[#E5C8C0]"
           }`}
         >
-          <div className="flex items-start gap-3 p-4">
+          <div className="flex min-w-0 items-start gap-2.5 p-3 sm:gap-3 sm:p-4">
             <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center ${
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${
                 messageType === "error"
                   ? "bg-[#FBEEEE] text-[#A33E4E]"
                   : "bg-[#F2E2DC] text-[#963D54]"
               }`}
             >
               {messageType === "error" ? (
-                <AlertCircle size={19} />
+                <AlertCircle size={17} />
               ) : (
-                <CheckCircle2 size={19} />
+                <CheckCircle2 size={17} />
               )}
             </span>
 
             <p
-              className={`flex-1 pt-1.5 text-sm font-medium ${
+              className={`min-w-0 flex-1 break-words pt-1 text-xs font-medium leading-5 sm:text-sm ${
                 messageType === "error" ? "text-[#A33E4E]" : "text-[#963D54]"
               }`}
             >
@@ -598,9 +576,9 @@ function DonorProfileForm({ onRegistered }) {
               type="button"
               onClick={() => setMessage("")}
               aria-label="Dismiss notification"
-              className="p-1.5 text-[#9B8D83] transition hover:bg-[#F2E2DC]"
+              className="shrink-0 rounded-md p-1.5 text-[#9B8D83] transition hover:bg-[#F2E2DC]"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
 
@@ -616,16 +594,18 @@ function DonorProfileForm({ onRegistered }) {
         </div>
       )}
 
-      {/* Profile introduction */}
-      <section className="flex flex-col justify-between gap-4 border-b border-[#F0DDE3] pb-6 sm:flex-row sm:items-center">
-        <div>
-          <p className="text-xs font-medium text-[#BE4565]">Account details</p>
+      {/* Profile Introduction */}
+      <section className="flex min-w-0 flex-col justify-between gap-3 border-b border-[#E8DDD4] pb-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium text-[#963D54] sm:text-xs">
+            Account details
+          </p>
 
-          <h2 className="mt-1 text-xl font-semibold tracking-tight text-[#29232A]">
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-[#302923] sm:text-lg">
             Donor profile
           </h2>
 
-          <p className="mt-1 text-sm text-[#817780]">
+          <p className="mt-1 text-xs leading-5 text-[#81756A] sm:text-sm">
             View and manage your personal information.
           </p>
         </div>
@@ -634,19 +614,19 @@ function DonorProfileForm({ onRegistered }) {
           <button
             type="button"
             onClick={handleStartEdit}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-[#96334F] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#7D3045] sm:self-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#963D54] px-4 py-2.5 text-xs font-medium text-white transition hover:bg-[#7D3045] sm:w-auto sm:shrink-0 sm:px-5 sm:text-sm"
           >
-            <Pencil size={15} />
+            <Pencil size={14} />
             Edit profile
           </button>
         )}
       </section>
 
-      <form onSubmit={handleSubmit} className="space-y-12">
-        {/* Profile identity composition */}
-        <section className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
-          {/* Photo area */}
-          <div className="relative flex min-h-[330px] items-center justify-center overflow-hidden rounded-xl bg-[#F0EAE0] p-8">
+      <form onSubmit={handleSubmit} className="min-w-0 space-y-7 sm:space-y-9">
+        {/* Profile Identity */}
+        <section className="grid min-w-0 gap-5 sm:gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:gap-9">
+          {/* Photo Area */}
+          <div className="relative flex min-h-[230px] items-center justify-center overflow-hidden rounded-lg bg-[#F0EAE0] p-5 sm:min-h-[290px] sm:rounded-xl sm:p-7 lg:min-h-[330px]">
             <div
               className="pointer-events-none absolute inset-0 opacity-40"
               style={{
@@ -656,11 +636,11 @@ function DonorProfileForm({ onRegistered }) {
               }}
             />
 
-            <div className="pointer-events-none absolute h-[290px] w-[290px] rounded-full border border-[#D5C2B3] sm:h-[340px] sm:w-[340px]" />
-            <div className="pointer-events-none absolute h-[230px] w-[230px] rounded-full border border-[#D5C2B3] sm:h-[275px] sm:w-[275px]" />
+            <div className="pointer-events-none absolute h-[210px] w-[210px] rounded-full border border-[#D5C2B3] sm:h-[280px] sm:w-[280px] lg:h-[340px] lg:w-[340px]" />
+            <div className="pointer-events-none absolute h-[170px] w-[170px] rounded-full border border-[#D5C2B3] sm:h-[220px] sm:w-[220px] lg:h-[275px] lg:w-[275px]" />
 
             <div className="relative z-10">
-              <div className="flex h-48 w-48 items-center justify-center overflow-hidden rounded-full border-[7px] border-[#FFFDF9] bg-[#E8D8CC] shadow-[0_15px_45px_rgba(80,48,40,0.12)] sm:h-56 sm:w-56">
+              <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-[5px] border-[#FFFDF9] bg-[#E8D8CC] shadow-[0_15px_45px_rgba(80,48,40,0.12)] sm:h-48 sm:w-48 sm:border-[7px] lg:h-56 lg:w-56">
                 {displayPhoto ? (
                   <img
                     src={displayPhoto}
@@ -669,9 +649,9 @@ function DonorProfileForm({ onRegistered }) {
                   />
                 ) : (
                   <UserRound
-                    size={76}
+                    size={58}
                     strokeWidth={1.1}
-                    className="text-[#963D54]"
+                    className="text-[#963D54] sm:h-[76px] sm:w-[76px]"
                   />
                 )}
               </div>
@@ -680,65 +660,75 @@ function DonorProfileForm({ onRegistered }) {
                 <label
                   htmlFor="donorProfilePhoto"
                   title="Change profile photo"
-                  className={`absolute bottom-3 right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-[3px] border-[#F0EAE0] bg-[#963D54] text-white shadow-md transition hover:bg-[#7D3045] ${
+                  className={`absolute bottom-1 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-[3px] border-[#F0EAE0] bg-[#963D54] text-white shadow-md transition hover:bg-[#7D3045] sm:bottom-2 sm:right-1 sm:h-11 sm:w-11 ${
                     isUploadingPhoto ? "pointer-events-none opacity-50" : ""
                   }`}
                 >
-                  <Camera size={18} />
+                  <Camera size={16} className="sm:h-[18px] sm:w-[18px]" />
                 </label>
               )}
             </div>
 
-            <span className="absolute left-6 top-6 text-[#B27A70]">
-              <Sparkle size={23} strokeWidth={1.2} />
+            <span className="absolute left-3 top-3 text-[#B27A70] sm:left-6 sm:top-6">
+              <Sparkle
+                size={17}
+                className="sm:h-[23px] sm:w-[23px]"
+                strokeWidth={1.2}
+              />
             </span>
 
-            <span className="absolute bottom-7 right-7 text-[#B27A70]">
-              <Sparkle size={18} strokeWidth={1.2} />
+            <span className="absolute bottom-4 right-4 text-[#B27A70] sm:bottom-7 sm:right-7">
+              <Sparkle
+                size={15}
+                className="sm:h-[18px] sm:w-[18px]"
+                strokeWidth={1.2}
+              />
             </span>
           </div>
 
-          {/* Identity details */}
-          <div className="flex flex-col justify-center py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+          {/* Identity Details */}
+          <div className="flex min-w-0 flex-col justify-center py-1 sm:py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#963D54] sm:text-[11px] sm:tracking-[0.2em]">
               {hasProfile ? "Donor identity" : "Your donor journey"}
             </p>
 
-            <h3 className="mt-2 text-lg font-semibold text-[#29232A]">
+            <h3 className="mt-1.5 text-base font-semibold text-[#302923] sm:mt-2 sm:text-lg">
               Profile overview
             </h3>
 
-            <p className="mt-1 text-sm leading-6 text-[#817780]">
+            <p className="mt-1 text-xs leading-5 text-[#81756A] sm:text-sm sm:leading-6">
               Your donor details and profile photo.
             </p>
 
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border-l-2 border-[#963D54] bg-[#F0EAE0] px-4 py-4">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
+            <div className="mt-5 grid min-w-0 grid-cols-2 gap-2.5 sm:mt-7 sm:gap-3">
+              <div className="min-w-0 rounded-lg border-l-2 border-[#963D54] bg-[#F0EAE0] px-3 py-3 sm:rounded-xl sm:px-4 sm:py-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#81756A] sm:text-[10px] sm:tracking-[0.16em]">
                   Blood group
                 </p>
-                <p className="mt-2 font-serif text-4xl text-[#963D54]">
+
+                <p className="mt-1.5 font-serif text-2xl text-[#963D54] sm:mt-2 sm:text-4xl">
                   {hasProfile && formData.bloodGroup
                     ? formData.bloodGroup
                     : "—"}
                 </p>
               </div>
 
-              <div className="rounded-xl border-l-2 border-[#C9A99B] bg-[#F0EAE0] px-4 py-4">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
+              <div className="min-w-0 rounded-lg border-l-2 border-[#C9A99B] bg-[#F0EAE0] px-3 py-3 sm:rounded-xl sm:px-4 sm:py-4">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#81756A] sm:text-[10px] sm:tracking-[0.16em]">
                   Location
                 </p>
-                <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-[#302923]">
-                  <MapPin size={15} className="shrink-0 text-[#963D54]" />
-                  <span className="truncate">
+
+                <p className="mt-2 flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[#302923] sm:gap-2 sm:text-sm">
+                  <MapPin size={14} className="shrink-0 text-[#963D54]" />
+                  <span className="min-w-0 truncate">
                     {hasProfile && formData.city ? formData.city : "Not set"}
                   </span>
                 </p>
               </div>
             </div>
 
-            {/* Photo upload controls */}
-            <div className="mt-7 border-t border-[#E3D5C8] pt-5">
+            {/* Photo Upload Controls */}
+            <div className="mt-5 min-w-0 border-t border-[#E3D5C8] pt-4 sm:mt-7 sm:pt-5">
               <input
                 id="donorProfilePhoto"
                 type="file"
@@ -748,8 +738,8 @@ function DonorProfileForm({ onRegistered }) {
                 className="sr-only"
               />
 
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="mr-auto text-xs text-[#81756A]">
+              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                <p className="mr-auto min-w-0 text-[10px] leading-5 text-[#81756A] sm:text-xs">
                   Profile image · JPG or PNG · Maximum 2 MB
                 </p>
 
@@ -759,12 +749,12 @@ function DonorProfileForm({ onRegistered }) {
                       type="button"
                       onClick={handlePhotoUpload}
                       disabled={isUploadingPhoto}
-                      className="inline-flex items-center gap-2 rounded-lg bg-[#963D54] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#963D54] px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-50 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-xs"
                     >
                       {isUploadingPhoto ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={13} className="animate-spin" />
                       ) : (
-                        <Save size={14} />
+                        <Save size={13} />
                       )}
                       {isUploadingPhoto ? "Uploading..." : "Upload photo"}
                     </button>
@@ -774,16 +764,16 @@ function DonorProfileForm({ onRegistered }) {
                       onClick={handleCancelPhoto}
                       disabled={isUploadingPhoto}
                       aria-label="Cancel photo selection"
-                      className="rounded-lg border border-[#DCCFC2] p-2.5 text-[#81756A] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                      className="rounded-lg border border-[#DCCFC2] p-2 text-[#81756A] transition hover:bg-[#F0EAE0] disabled:opacity-50 sm:p-2.5"
                     >
-                      <X size={15} />
+                      <X size={14} />
                     </button>
                   </>
                 )}
               </div>
 
               {!hasProfile && (
-                <p className="mt-3 text-xs text-[#98602F]">
+                <p className="mt-2 text-[11px] leading-5 text-[#98602F] sm:text-xs">
                   Save your donor profile before uploading a photo.
                 </p>
               )}
@@ -791,38 +781,40 @@ function DonorProfileForm({ onRegistered }) {
           </div>
         </section>
 
-        {/* Personal information */}
-        <section className="border-t border-[#E3D5C8] pt-8">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        {/* Personal Information */}
+        <section className="min-w-0 border-t border-[#E3D5C8] pt-6 sm:pt-8">
+          <div className="flex min-w-0 flex-col justify-between gap-2.5 sm:flex-row sm:items-end sm:gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#963D54] sm:text-[11px] sm:tracking-[0.2em]">
                 The essentials
               </p>
-              <h3 className="mt-2 text-lg font-semibold text-[#29232A]">
+
+              <h3 className="mt-1.5 text-base font-semibold text-[#302923] sm:mt-2 sm:text-lg">
                 Personal information
               </h3>
             </div>
 
-            <p className="max-w-xs text-xs leading-6 text-[#81756A]">
+            <p className="max-w-xs text-[11px] leading-5 text-[#81756A] sm:text-xs sm:leading-6">
               Your details are used for donor eligibility and matching. Keep
               them correct.
             </p>
           </div>
 
-          {/* Blood group */}
-          <div className="mt-9 border-y border-[#E3D5C8] py-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Blood Group */}
+          <div className="border-y border-[#E3D5C8] py-5 sm:py-6">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div>
-                <label className="text-sm font-semibold text-[#302923]">
+                <label className="text-xs font-semibold text-[#302923] sm:text-sm">
                   Your blood group
                 </label>
-                <p className="mt-1 text-xs text-[#81756A]">
+
+                <p className="mt-1 text-[11px] leading-5 text-[#81756A] sm:text-xs">
                   Select the blood group shown in your medical records.
                 </p>
               </div>
 
               {hasProfile && !isEditing && (
-                <span className="text-xs font-semibold text-[#963D54]">
+                <span className="text-[10px] font-semibold text-[#963D54] sm:text-xs">
                   Saved information
                 </span>
               )}
@@ -831,7 +823,7 @@ function DonorProfileForm({ onRegistered }) {
             <div
               role="radiogroup"
               aria-label="Blood group"
-              className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-8"
+              className="mt-4 grid grid-cols-4 gap-2 sm:mt-5 sm:grid-cols-8"
             >
               {BLOOD_GROUPS.map((group) => {
                 const selected = formData.bloodGroup === group;
@@ -844,7 +836,7 @@ function DonorProfileForm({ onRegistered }) {
                     aria-checked={selected}
                     disabled={!isEditing}
                     onClick={() => handleBloodGroupSelect(group)}
-                    className={`flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-semibold transition ${
+                    className={`flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg border text-xs font-semibold transition sm:h-12 sm:gap-1.5 sm:text-sm ${
                       selected
                         ? "border-[#963D54] bg-[#963D54] text-white"
                         : isEditing
@@ -852,7 +844,7 @@ function DonorProfileForm({ onRegistered }) {
                           : "border-[#E3D5C8] bg-[#F0EAE0] text-[#655A51]"
                     } disabled:cursor-default`}
                   >
-                    {selected && <Droplet size={14} />}
+                    {selected && <Droplet size={13} className="shrink-0" />}
                     {group}
                   </button>
                 );
@@ -862,15 +854,15 @@ function DonorProfileForm({ onRegistered }) {
             {renderFieldError("bloodGroup")}
           </div>
 
-          {/* Personal details */}
-          <div className="grid gap-x-12 gap-y-8 py-8 sm:grid-cols-2">
+          {/* Personal Detail Fields */}
+          <div className="grid min-w-0 gap-x-8 gap-y-6 py-6 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-8 sm:py-8 lg:gap-x-12">
             {/* City */}
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="city"
-                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+                className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#81756A] sm:mb-3 sm:text-xs sm:tracking-[0.12em]"
               >
-                <MapPin size={15} className="text-[#963D54]" />
+                <MapPin size={14} className="text-[#963D54]" />
                 City
               </label>
 
@@ -895,7 +887,7 @@ function DonorProfileForm({ onRegistered }) {
                   ))}
                 </select>
               ) : (
-                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                <p className="break-words border-b border-[#DCCFC2] py-2.5 text-xs font-medium sm:py-3 sm:text-sm">
                   {formData.city || "Not provided"}
                 </p>
               )}
@@ -904,17 +896,17 @@ function DonorProfileForm({ onRegistered }) {
             </div>
 
             {/* Weight */}
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="weight"
-                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+                className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#81756A] sm:mb-3 sm:text-xs sm:tracking-[0.12em]"
               >
-                <Scale size={15} className="text-[#963D54]" />
+                <Scale size={14} className="text-[#963D54]" />
                 Weight
               </label>
 
               {isEditing ? (
-                <div className="relative">
+                <div className="relative min-w-0">
                   <input
                     id="weight"
                     type="number"
@@ -928,12 +920,12 @@ function DonorProfileForm({ onRegistered }) {
                     className={inputClass}
                   />
 
-                  <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-xs text-[#81756A]">
+                  <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[11px] text-[#81756A] sm:text-xs">
                     kg
                   </span>
                 </div>
               ) : (
-                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                <p className="border-b border-[#DCCFC2] py-2.5 text-xs font-medium sm:py-3 sm:text-sm">
                   {formData.weight ? `${formData.weight} kg` : "Not provided"}
                 </p>
               )}
@@ -941,13 +933,13 @@ function DonorProfileForm({ onRegistered }) {
               {renderFieldError("weight")}
             </div>
 
-            {/* Date of birth */}
-            <div>
+            {/* Date of Birth */}
+            <div className="min-w-0">
               <label
                 htmlFor="dateOfBirth"
-                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+                className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#81756A] sm:mb-3 sm:text-xs sm:tracking-[0.12em]"
               >
-                <CalendarDays size={15} className="text-[#963D54]" />
+                <CalendarDays size={14} className="text-[#963D54]" />
                 Date of birth
               </label>
 
@@ -964,7 +956,7 @@ function DonorProfileForm({ onRegistered }) {
                   className={inputClass}
                 />
               ) : (
-                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                <p className="break-words border-b border-[#DCCFC2] py-2.5 text-xs font-medium sm:py-3 sm:text-sm">
                   {formatDate(formData.dateOfBirth)}
                 </p>
               )}
@@ -973,12 +965,12 @@ function DonorProfileForm({ onRegistered }) {
             </div>
 
             {/* Phone */}
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="phone"
-                className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#81756A]"
+                className="mb-2.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#81756A] sm:mb-3 sm:text-xs sm:tracking-[0.12em]"
               >
-                <Phone size={15} className="text-[#963D54]" />
+                <Phone size={14} className="text-[#963D54]" />
                 Phone number
               </label>
 
@@ -997,7 +989,7 @@ function DonorProfileForm({ onRegistered }) {
                   className={inputClass}
                 />
               ) : (
-                <p className="border-b border-[#DCCFC2] py-3 text-sm font-medium">
+                <p className="break-words border-b border-[#DCCFC2] py-2.5 text-xs font-medium sm:py-3 sm:text-sm">
                   {formData.phone || "Not provided"}
                 </p>
               )}
@@ -1007,18 +999,18 @@ function DonorProfileForm({ onRegistered }) {
           </div>
         </section>
 
-        {/* Privacy note */}
-        <section className="flex flex-col gap-4 border-y border-[#E3D5C8] py-6 sm:flex-row sm:items-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F0E2DA] text-[#963D54]">
-            <ShieldCheck size={21} />
+        {/* Privacy Note */}
+        <section className="flex min-w-0 flex-col gap-3 border-y border-[#E3D5C8] py-5 sm:flex-row sm:items-center sm:gap-4 sm:py-6">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F0E2DA] text-[#963D54] sm:h-11 sm:w-11">
+            <ShieldCheck size={19} className="sm:h-[21px] sm:w-[21px]" />
           </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-[#302923]">
+          <div className="min-w-0">
+            <h4 className="text-xs font-semibold text-[#302923] sm:text-sm">
               Your information matters.
             </h4>
 
-            <p className="mt-1 max-w-2xl text-xs leading-6 text-[#81756A]">
+            <p className="mt-1 max-w-2xl text-[11px] leading-5 text-[#81756A] sm:text-xs sm:leading-6">
               Your contact details are not displayed on public emergency
               listings. Hospitals can access your phone number only after you
               accept a matched donation request.
@@ -1026,30 +1018,30 @@ function DonorProfileForm({ onRegistered }) {
           </div>
         </section>
 
-        {/* Edit actions */}
+        {/* Edit Actions */}
         {isEditing && (
-          <section className="flex flex-col gap-4 border-t border-[#E3D5C8] pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-serif text-xl">
+          <section className="flex min-w-0 flex-col gap-4 border-t border-[#E3D5C8] pt-5 sm:flex-row sm:items-center sm:justify-between sm:pt-6">
+            <div className="min-w-0">
+              <p className="font-serif text-lg sm:text-xl">
                 {hasProfile ? "Ready to update?" : "Ready to get started?"}
               </p>
 
-              <p className="mt-1 text-xs text-[#81756A]">
+              <p className="mt-1 text-[11px] leading-5 text-[#81756A] sm:text-xs">
                 {isDirty
                   ? "You have unsaved changes."
                   : "Complete all required information before saving."}
               </p>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <div className="flex w-full flex-col-reverse gap-2.5 sm:w-auto sm:flex-row sm:gap-3">
               {hasProfile && (
                 <button
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCCFC2] px-5 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#DCCFC2] px-4 py-2.5 text-xs font-semibold text-[#655A51] transition hover:bg-[#F0EAE0] disabled:opacity-50 sm:w-auto sm:px-5 sm:py-3 sm:text-sm"
                 >
-                  <X size={16} />
+                  <X size={15} />
                   Cancel
                 </button>
               )}
@@ -1057,12 +1049,12 @@ function DonorProfileForm({ onRegistered }) {
               <button
                 type="submit"
                 disabled={isSaving || (hasProfile && !isDirty)}
-                className="inline-flex items-center justify-center gap-3 rounded-lg bg-[#963D54] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#963D54] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#7D3045] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:gap-3 sm:px-7 sm:py-3 sm:text-sm"
               >
                 {isSaving ? (
-                  <Loader2 size={17} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
-                  <Save size={17} />
+                  <Save size={16} />
                 )}
 
                 {isSaving
@@ -1075,21 +1067,21 @@ function DonorProfileForm({ onRegistered }) {
           </section>
         )}
 
-        {/* View mode footer */}
+        {/* View Mode Footer */}
         {!isEditing && hasProfile && (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-t border-[#E3D5C8] pt-6">
-            <div className="flex items-center gap-2 text-xs text-[#81756A]">
-              <CheckCircle2 size={15} className="text-[#963D54]" />
-              Your profile information is saved.
+          <div className="flex min-w-0 flex-col gap-3 border-t border-[#E3D5C8] pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:pt-6">
+            <div className="flex items-center gap-2 text-[11px] text-[#81756A] sm:text-xs">
+              <CheckCircle2 size={14} className="shrink-0 text-[#963D54]" />
+              <span>Your profile information is saved.</span>
             </div>
 
             <button
               type="button"
               onClick={handleStartEdit}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#963D54] transition hover:text-[#7D3045]"
+              className="inline-flex items-center gap-2 self-start text-xs font-semibold text-[#963D54] transition hover:text-[#7D3045] sm:self-auto sm:text-sm"
             >
               Update information
-              <ArrowUpRight size={16} />
+              <ArrowUpRight size={15} />
             </button>
           </div>
         )}

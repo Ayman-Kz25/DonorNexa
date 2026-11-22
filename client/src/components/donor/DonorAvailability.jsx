@@ -101,28 +101,31 @@ function DonorAvailability() {
   if (loading) {
     return (
       <div
-        className="flex items-center justify-center gap-3 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] py-12 text-[#782B40]"
+        className="flex min-h-32 items-center justify-center gap-2.5 rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] px-3 py-8 text-[#782B40] sm:gap-3 sm:rounded-xl sm:py-10"
         role="status"
       >
-        <Loader2 size={20} className="animate-spin" />
-        <p className="font-medium">Loading availability...</p>
+        <Loader2 size={19} className="shrink-0 animate-spin sm:h-5 sm:w-5" />
+        <p className="text-xs font-medium sm:text-sm">
+          Loading availability...
+        </p>
       </div>
     );
   }
 
   if (!donor) {
     return (
-      <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-5">
-        <p className="text-sm font-medium text-[#782B40]">
+      <div className="rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] p-3.5 sm:rounded-xl sm:p-5">
+        <p className="break-words text-xs leading-5 text-[#782B40] sm:text-sm sm:leading-6">
           {message || "Donor profile is not available."}
         </p>
 
         <button
           type="button"
           onClick={loadDonor}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#612033]"
+          disabled={loading}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#782B40] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#612033] disabled:opacity-60 sm:w-auto sm:text-sm"
         >
-          <RefreshCw size={15} />
+          <RefreshCw size={14} />
           Check Again
         </button>
       </div>
@@ -138,32 +141,34 @@ function DonorAvailability() {
     new Date(eligibleAgainDate).getTime() > Date.now();
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full min-w-0 space-y-3.5 text-[#302923] sm:space-y-4">
       {/* Availability toggle */}
       <div
-        className={`flex items-center justify-between gap-5 rounded-xl border p-5 transition-colors duration-300 sm:p-6 ${
+        className={`flex min-w-0 items-center justify-between gap-3 rounded-lg border p-3.5 transition-colors duration-300 sm:gap-5 sm:rounded-xl sm:p-5 lg:p-6 ${
           donor.isAvailable
             ? "border-[#E8C9CE] bg-[#F7E9E7]"
             : "border-[#E8DDD4] bg-[#F1EDE6]"
         }`}
       >
-        <div>
-          <p className="font-semibold text-[#302923]">Availability Status</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#302923] sm:text-base">
+            Availability Status
+          </p>
 
           <p
-            className={`mt-1 flex items-center gap-2 text-sm font-medium ${
+            className={`mt-1.5 flex items-center gap-2 text-xs font-medium sm:text-sm ${
               donor.isAvailable ? "text-[#782B40]" : "text-[#81756A]"
             }`}
           >
             <span
-              className={`h-2 w-2 rounded-full ${
+              className={`h-2 w-2 shrink-0 rounded-full ${
                 donor.isAvailable ? "bg-[#963D54]" : "bg-[#A79B91]"
               }`}
             />
             {donor.isAvailable ? "Available" : "Unavailable"}
           </p>
 
-          <p className="mt-2 text-xs text-[#81756A]">
+          <p className="mt-1.5 max-w-md text-[11px] leading-5 text-[#81756A] sm:mt-2 sm:text-xs sm:leading-5">
             {updating
               ? "Updating..."
               : donor.isAvailable
@@ -172,9 +177,9 @@ function DonorAvailability() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <span
-            className={`text-xs font-bold tracking-wider ${
+            className={`text-[10px] font-bold tracking-wider sm:text-xs ${
               donor.isAvailable ? "text-[#782B40]" : "text-[#81756A]"
             }`}
           >
@@ -188,17 +193,19 @@ function DonorAvailability() {
             aria-label="Toggle donor availability"
             onClick={handleAvailability}
             disabled={updating}
-            className={`relative inline-flex h-9 w-16 shrink-0 items-center rounded-full p-1 shadow-inner outline-none transition-colors duration-300 focus-visible:ring-4 focus-visible:ring-[#E8C9CE] disabled:cursor-not-allowed disabled:opacity-70 ${
+            className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full p-1 shadow-inner outline-none transition-colors duration-300 focus-visible:ring-4 focus-visible:ring-[#E8C9CE] disabled:cursor-not-allowed disabled:opacity-70 sm:h-9 sm:w-16 ${
               donor.isAvailable ? "bg-[#782B40]" : "bg-[#B8AEA5]"
             }`}
           >
             <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ease-out ${
-                donor.isAvailable ? "translate-x-7" : "translate-x-0"
+              className={`flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ease-out sm:h-7 sm:w-7 ${
+                donor.isAvailable
+                  ? "translate-x-6 sm:translate-x-7"
+                  : "translate-x-0"
               }`}
             >
               {updating && (
-                <Loader2 size={15} className="animate-spin text-[#782B40]" />
+                <Loader2 size={14} className="animate-spin text-[#782B40]" />
               )}
             </span>
           </button>
@@ -206,47 +213,49 @@ function DonorAvailability() {
       </div>
 
       {/* Donation dates */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {!donor.isAvailable && lastDonationDate && (
-          <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-4">
-            <div className="flex items-center gap-2 text-[#81756A]">
-              <CalendarDays size={17} />
-              <p className="text-xs font-semibold uppercase tracking-wide">
-                Last Donation Date
+      {(lastDonationDate && !donor.isAvailable) || isCoolingDown ? (
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          {!donor.isAvailable && lastDonationDate && (
+            <div className="min-w-0 rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] p-3.5 sm:rounded-xl sm:p-4">
+              <div className="flex items-center gap-2 text-[#81756A]">
+                <CalendarDays size={16} className="shrink-0 text-[#963D54]" />
+                <p className="text-[10px] font-semibold uppercase tracking-wide sm:text-xs">
+                  Last Donation Date
+                </p>
+              </div>
+
+              <p className="mt-2.5 break-words text-sm font-semibold text-[#302923] sm:mt-3 sm:text-base">
+                {formatDate(lastDonationDate)}
               </p>
             </div>
+          )}
 
-            <p className="mt-3 text-base font-semibold text-[#302923]">
-              {formatDate(lastDonationDate)}
-            </p>
-          </div>
-        )}
+          {isCoolingDown && (
+            <div className="min-w-0 rounded-lg border border-[#E8C9CE] bg-[#F7E9E7] p-3.5 sm:rounded-xl sm:p-4">
+              <div className="flex items-center gap-2 text-[#782B40]">
+                <Clock size={16} className="shrink-0" />
+                <p className="text-[10px] font-semibold uppercase tracking-wide sm:text-xs">
+                  Eligible Again On
+                </p>
+              </div>
 
-        {isCoolingDown && (
-          <div className="rounded-xl border border-[#E8C9CE] bg-[#F7E9E7] p-4">
-            <div className="flex items-center gap-2 text-[#782B40]">
-              <Clock size={17} />
-              <p className="text-xs font-semibold uppercase tracking-wide">
-                Eligible Again On
+              <p className="mt-2.5 break-words text-sm font-semibold text-[#782B40] sm:mt-3 sm:text-base">
+                {formatDate(eligibleAgainDate)}
+              </p>
+
+              <p className="mt-1.5 text-[11px] leading-5 text-[#81756A] sm:text-xs">
+                Your donation cooldown period is still active.
               </p>
             </div>
-
-            <p className="mt-3 text-base font-semibold text-[#782B40]">
-              {formatDate(eligibleAgainDate)}
-            </p>
-
-            <p className="mt-1 text-xs text-[#81756A]">
-              Your donation cooldown period is still active.
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      ) : null}
 
       {/* Status message */}
       {message && (
         <div
           role="status"
-          className="rounded-xl border border-[#E8C9CE] bg-[#F7E9E7] px-4 py-3 text-sm font-medium text-[#782B40]"
+          className="break-words rounded-lg border border-[#E8C9CE] bg-[#F7E9E7] px-3.5 py-3 text-xs font-medium leading-5 text-[#782B40] sm:rounded-xl sm:px-4 sm:text-sm"
         >
           {message}
         </div>
@@ -254,13 +263,13 @@ function DonorAvailability() {
 
       {/* Eligibility reasons */}
       {reasons.length > 0 && (
-        <div className="rounded-xl border border-[#E8D5B9] bg-[#FBF3E8] p-5">
-          <p className="mb-3 flex items-center gap-2 font-semibold text-[#895B2D]">
-            <AlertTriangle size={18} />
+        <div className="rounded-lg border border-[#E8D5B9] bg-[#FBF3E8] p-3.5 sm:rounded-xl sm:p-5">
+          <p className="mb-2.5 flex items-start gap-2 text-xs font-semibold leading-5 text-[#895B2D] sm:mb-3 sm:text-sm">
+            <AlertTriangle size={17} className="mt-0.5 shrink-0" />
             Eligibility requirements not met:
           </p>
 
-          <ul className="list-inside list-disc space-y-1.5 text-sm leading-6 text-[#62564C]">
+          <ul className="list-inside list-disc space-y-1.5 break-words text-xs leading-5 text-[#62564C] sm:text-sm sm:leading-6">
             {reasons.map((reason, index) => (
               <li key={index}>{reason}</li>
             ))}
