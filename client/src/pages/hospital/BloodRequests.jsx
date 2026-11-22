@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { formatDateTime, getMinDateTimeLocal } from "../../utils/dateTime";
 import {
   ClipboardList,
   Droplet,
@@ -11,9 +12,10 @@ import {
   CalendarDays,
   FileText,
   Activity,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
-import { formatDateTime } from "../../utils/dateTime";
-
 import { useApi } from "../../hooks/useApi";
 import HospitalMatchResponses from "../../components/hospital/HospitalMatchResponses";
 
@@ -24,6 +26,17 @@ const BloodRequests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const [editForm, setEditForm] = useState({
+    unitsRequired: "",
+    urgency: "normal",
+    requiredBy: "",
+    ward: "",
+    hospitalNotes: "",
+  });
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -95,6 +108,64 @@ const BloodRequests = () => {
         return "bg-[#F1EDE7] text-[#81756A]";
       default:
         return "bg-[#F1EDE7] text-[#81756A]";
+    }
+  };
+
+  const handleEditClick = (item) => {
+    setEditingId(item._id);
+    setEditError("");
+
+    setEditForm({
+      unitsRequired: item.unitsRequired ?? "",
+      urgency: item.urgency ?? "normal",
+      requiredBy: item.requiredBy
+        ? (() => {
+            const date = new Date(item.requiredBy);
+            const pad = (value) => String(value).padStart(2, "0");
+
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+              date.getDate(),
+            )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+          })()
+        : "",
+      ward: item.ward ?? "",
+      hospitalNotes: item.hospitalNotes ?? "",
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleUpdateRequest = async (requestId) => {
+    try {
+      setEditLoading(true);
+      setEditError("");
+      setError("");
+
+      await request({
+        method: "PATCH",
+        url: `/api/blood-requests/${requestId}`,
+        data: {
+          ...editForm,
+          unitsRequired: Number(editForm.unitsRequired),
+          requiredBy: new Date(editForm.requiredBy).toISOString(),
+        },
+      });
+
+      setEditingId(null);
+      await fetchRequests();
+    } catch (err) {
+      setEditError(
+        err.response?.data?.message || "Unable to update blood request.",
+      );
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -389,9 +460,168 @@ const BloodRequests = () => {
                     </div>
                   )}
 
+                  {editingId === item._id && (
+                    <div className="mt-5 rounded-xl border border-[#D9BFC5] bg-[#FFF9F7] p-5 sm:p-6">
+                      <div className="mb-5 flex items-center justify-between gap-3">
+                        <h3 className="font-serif text-lg font-semibold text-[#302923]">
+                          Edit Blood Request
+                        </h3>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditError("");
+                          }}
+                          disabled={editLoading}
+                          className="rounded-lg p-2 text-[#81756A] transition hover:bg-[#F2E2DC] hover:text-[#782B40]"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      {editError && (
+                        <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                          <AlertCircle size={17} className="mt-0.5 shrink-0" />
+                          {editError}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-[#51463F]">
+                            Units Required
+                          </label>
+
+                          <input
+                            type="number"
+                            name="unitsRequired"
+                            min={Math.max(
+                              1,
+                              (item.unitsReserved || 0) +
+                                (item.unitsFulfilled || 0),
+                            )}
+                            value={editForm.unitsRequired}
+                            onChange={handleEditChange}
+                            required
+                            className="w-full rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54]"
+                          />
+
+                          <p className="mt-1 text-xs text-[#81756A]">
+                            Reserved: {item.unitsReserved || 0} · Fulfilled:{" "}
+                            {item.unitsFulfilled || 0}
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-[#51463F]">
+                            Urgency
+                          </label>
+
+                          <select
+                            name="urgency"
+                            value={editForm.urgency}
+                            onChange={handleEditChange}
+                            className="w-full rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54]"
+                          >
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="critical">Critical</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-[#51463F]">
+                            Required By
+                          </label>
+
+                          <input
+                            type="datetime-local"
+                            name="requiredBy"
+                            value={editForm.requiredBy}
+                            min={getMinDateTimeLocal()}
+                            onChange={handleEditChange}
+                            required
+                            className="w-full min-w-0 rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-[#51463F]">
+                            Ward / Department
+                          </label>
+
+                          <input
+                            type="text"
+                            name="ward"
+                            maxLength={100}
+                            value={editForm.ward}
+                            onChange={handleEditChange}
+                            placeholder="e.g. Emergency Ward"
+                            className="w-full rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="mb-2 block text-sm font-medium text-[#51463F]">
+                            Additional Notes
+                          </label>
+
+                          <textarea
+                            name="hospitalNotes"
+                            rows={3}
+                            maxLength={500}
+                            value={editForm.hospitalNotes}
+                            onChange={handleEditChange}
+                            placeholder="Additional information for donors..."
+                            className="w-full resize-y rounded-xl border border-[#E8DDD4] bg-white px-4 py-3 text-sm text-[#302923] outline-none focus:border-[#963D54]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditError("");
+                          }}
+                          disabled={editLoading}
+                          className="rounded-xl border border-[#E8DDD4] bg-white px-5 py-2.5 text-sm font-semibold text-[#81756A] hover:bg-[#F8F5EF] disabled:opacity-50"
+                        >
+                          Discard
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateRequest(item._id)}
+                          disabled={editLoading}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#612235] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {editLoading ? (
+                            <RefreshCw size={16} className="animate-spin" />
+                          ) : (
+                            <Save size={16} />
+                          )}
+
+                          {editLoading ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Request Actions */}
                   {isOpen && (
                     <div className="mt-5 flex flex-col gap-3 border-t border-[#EFE6DF] pt-5 sm:flex-row">
+                      <button
+                        onClick={() => handleEditClick(item)}
+                        disabled={isActionLoading || editLoading}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D9BFC5] bg-white px-5 py-2.5 text-sm font-semibold text-[#782B40] transition hover:bg-[#F8F5EF] disabled:opacity-50"
+                      >
+                        <Pencil size={16} />
+                        Edit Request
+                      </button>
+
                       <button
                         onClick={() => handleRequestAction(item._id, "fulfill")}
                         disabled={isActionLoading}

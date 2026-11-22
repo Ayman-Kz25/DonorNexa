@@ -188,6 +188,14 @@ export const getHospitalBloodRequests = async (req, res) => {
 
 export const updateBloodRequest = async (req, res) => {
   try {
+    // Validate request ID.
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid blood request ID.",
+      });
+    }
+
     const bloodRequest = await BloodRequest.findOne({
       _id: req.params.id,
       hospital: req.hospital._id,
@@ -200,6 +208,7 @@ export const updateBloodRequest = async (req, res) => {
       });
     }
 
+    // Only open requests can be updated.
     if (bloodRequest.status !== "open") {
       return res.status(400).json({
         success: false,
@@ -207,9 +216,75 @@ export const updateBloodRequest = async (req, res) => {
       });
     }
 
-    const { unitsRequired, urgency, requiredBy, ward, hospitalNotes } =
-      req.body;
+    const {
+      unitsRequired,
+      urgency,
+      requiredBy,
+      ward,
+      hospitalNotes,
+      bloodGroup,
+    } = req.body;
 
+    // Blood group cannot be changed after donor matching starts.
+    if (bloodGroup !== undefined) {
+      const existingMatches = await RequestMatch.exists({
+        bloodRequest: bloodRequest._id,
+      });
+
+      if (existingMatches) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Blood group cannot be changed after donor matching has started.",
+        });
+      }
+
+      if (!VALID_BLOOD_GROUPS.includes(bloodGroup)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid blood group.",
+        });
+      }
+    }
+
+    const allowedFields = [
+      "unitsRequired",
+      "urgency",
+      "requiredBy",
+      "ward",
+      "hospitalNotes",
+      "bloodGroup",
+    ];
+
+    const hasUpdate = allowedFields.some((field) =>
+      Object.prototype.hasOwnProperty.call(req.body, field),
+    );
+
+    if (!hasUpdate) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide at least one field to update.",
+      });
+    }
+
+    // Validate units.
+    if (unitsRequired !== undefined) {
+      const units = Number(unitsRequired);
+
+      if (
+        !Number.isSafeInteger(units) ||
+        units < 1 ||
+        units < bloodRequest.unitsReserved + bloodRequest.unitsFulfilled
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Units required must be a positive whole number and cannot be less than reserved and fulfilled units.",
+        });
+      }
+    }
+
+    // Validate urgency.
     if (urgency !== undefined && !VALID_URGENCIES.includes(urgency)) {
       return res.status(400).json({
         success: false,
@@ -217,27 +292,8 @@ export const updateBloodRequest = async (req, res) => {
       });
     }
 
-    if (
-      unitsRequired !== undefined &&
-      (!Number.isInteger(Number(unitsRequired)) ||
-        Number(unitsRequired) < 1 ||
-        Number(unitsRequired) <
-          bloodRequest.unitsFulfilled + bloodRequest.unitsReserved)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Units required must be positive and cannot be less than fulfilled and reserved units.",
-      });
-    }
-
-    const oldValue = {
-      unitsRequired: bloodRequest.unitsRequired,
-      urgency: bloodRequest.urgency,
-      requiredBy: bloodRequest.requiredBy,
-      ward: bloodRequest.ward,
-      hospitalNotes: bloodRequest.hospitalNotes,
-    };
+    // Validate required-by date.
+    let deadline;
 
     if (requiredBy !== undefined) {
       if (!hasValidTimezone(requiredBy)) {
@@ -247,7 +303,7 @@ export const updateBloodRequest = async (req, res) => {
         });
       }
 
-      const deadline = new Date(requiredBy);
+      deadline = new Date(requiredBy);
 
       if (deadline <= new Date()) {
         return res.status(400).json({
@@ -255,11 +311,31 @@ export const updateBloodRequest = async (req, res) => {
           message: "Required-by date and time must be in the future.",
         });
       }
-
-      bloodRequest.requiredBy = deadline;
-      bloodRequest.expiresAt = deadline;
     }
 
+    // Validate ward.
+    if (
+      ward !== undefined &&
+      (typeof ward !== "string" || ward.trim().length > 100)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Ward cannot exceed 100 characters.",
+      });
+    }
+
+    // Validate hospital notes.
+    if (
+      hospitalNotes !== undefined &&
+      (typeof hospitalNotes !== "string" || hospitalNotes.trim().length > 500)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Hospital notes cannot exceed 500 characters.",
+      });
+    }
+
+    // Enforce the maximum of 3 open Critical requests.
     if (urgency === "critical" && bloodRequest.urgency !== "critical") {
       const criticalRequestCount = await BloodRequest.countDocuments({
         hospital: req.hospital._id,
@@ -277,6 +353,22 @@ export const updateBloodRequest = async (req, res) => {
       }
     }
 
+    // Capture old values before updating.
+    const oldValue = {
+      bloodGroup: bloodRequest.bloodGroup,
+      unitsRequired: bloodRequest.unitsRequired,
+      urgency: bloodRequest.urgency,
+      requiredBy: bloodRequest.requiredBy,
+      expiresAt: bloodRequest.expiresAt,
+      ward: bloodRequest.ward,
+      hospitalNotes: bloodRequest.hospitalNotes,
+    };
+
+    // Apply permitted changes.
+    if (bloodGroup !== undefined) {
+      bloodRequest.bloodGroup = bloodGroup;
+    }
+
     if (unitsRequired !== undefined) {
       bloodRequest.unitsRequired = Number(unitsRequired);
     }
@@ -285,33 +377,22 @@ export const updateBloodRequest = async (req, res) => {
       bloodRequest.urgency = urgency;
     }
 
-    if (ward !== undefined) {
-      if (typeof ward !== "string" || ward.trim().length > 100) {
-        return res.status(400).json({
-          success: false,
-          message: "Ward cannot exceed 100 characters.",
-        });
-      }
+    if (deadline !== undefined) {
+      bloodRequest.requiredBy = deadline;
+      bloodRequest.expiresAt = deadline;
+    }
 
+    if (ward !== undefined) {
       bloodRequest.ward = ward.trim();
     }
 
     if (hospitalNotes !== undefined) {
-      if (
-        typeof hospitalNotes !== "string" ||
-        hospitalNotes.trim().length > 500
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Hospital notes cannot exceed 500 characters.",
-        });
-      }
-
       bloodRequest.hospitalNotes = hospitalNotes.trim();
     }
 
     await bloodRequest.save();
 
+    // Audit log.
     await logAdminAction({
       userId: req.user._id,
       action: "BLOOD_REQUEST_UPDATED",
@@ -319,9 +400,11 @@ export const updateBloodRequest = async (req, res) => {
       targetId: bloodRequest._id,
       oldValue,
       newValue: {
+        bloodGroup: bloodRequest.bloodGroup,
         unitsRequired: bloodRequest.unitsRequired,
         urgency: bloodRequest.urgency,
         requiredBy: bloodRequest.requiredBy,
+        expiresAt: bloodRequest.expiresAt,
         ward: bloodRequest.ward,
         hospitalNotes: bloodRequest.hospitalNotes,
       },
@@ -329,7 +412,7 @@ export const updateBloodRequest = async (req, res) => {
       description: `Updated blood request for ${bloodRequest.bloodGroup}.`,
     });
 
-    // Notify donors with pending matches.
+    // Notify donors who still have pending matches.
     const pendingMatches = await RequestMatch.find({
       bloodRequest: bloodRequest._id,
       status: "pending",
@@ -347,7 +430,9 @@ export const updateBloodRequest = async (req, res) => {
       pendingMatches.map((match) => {
         const recipientId = match.donor?.user?._id?.toString();
 
-        if (!recipientId || notifiedUsers.has(recipientId)) return null;
+        if (!recipientId || notifiedUsers.has(recipientId)) {
+          return null;
+        }
 
         notifiedUsers.add(recipientId);
 
@@ -355,7 +440,7 @@ export const updateBloodRequest = async (req, res) => {
           recipient: recipientId,
           type: "REQUEST_UPDATED",
           title: "Blood Request Updated",
-          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been updated by the hospital. Ward: ${bloodRequest.ward || "Not specified"}. Please review the latest details.`,
+          message: `The ${bloodRequest.bloodGroup} blood request in ${bloodRequest.city} has been updated by the hospital. Please review the latest request details.`,
           relatedId: bloodRequest._id,
           relatedModel: "BloodRequest",
         });
