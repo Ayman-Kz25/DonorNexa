@@ -698,6 +698,13 @@ export const getHospitalMatchResponses = async (req, res) => {
             },
           );
 
+          console.log("PHONE REVEAL AUDIT:", {
+            hospital: req.hospital._id,
+            user: req.user?._id,
+            donor: match.donor.user.name,
+            matchId: match._id,
+          });
+
           if (revealUpdate) {
             await logAdminAction({
               userId: req.user._id,

@@ -29,7 +29,7 @@ const logAdminAction = async ({
       ipAddress,
     });
   } catch (error) {
-    console.error("Audit logging error:", error.message);
+    console.error("Audit logging error:", error);
   }
 };
 

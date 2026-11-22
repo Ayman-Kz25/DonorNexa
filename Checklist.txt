@@ -161,7 +161,7 @@
 4.3 Blood request management
 - [x] Hospital can view its own blood requests.
 - [x] Hospital can view request details.
-- [ ] Hospital can update permitted request fields.
+- [x] Hospital can update permitted request fields.
 - [x] Hospital can cancel a request.
 - [x] Hospital can close/fulfil a request.
 - [x] Hospital can view fulfilled units.
@@ -174,21 +174,21 @@
 - [x] Expired requests release outstanding reservations appropriately.
 
 4.4 Matched donor list
-- [ ] Hospital can view matched donors.
-- [ ] Donors are ranked by matching score.
-- [ ] Blood compatibility is considered.
-- [ ] Same-city donors receive the appropriate ranking bonus.
-- [ ] Donation history contributes to ranking.
-- [ ] Donor response rate contributes to ranking.
-- [ ] Donor eligibility is checked before matching.
-- [ ] Ineligible donors are excluded.
-- [ ] Unavailable donors are excluded.
-- [ ] Inactive donors are excluded.
-- [ ] Hospital can view donor name and permitted profile information.
-- [ ] Donor phone number remains masked before acceptance.
-- [ ] Donor phone number becomes visible after acceptance.
+- [x] Hospital can view matched donors.
+- [x] Donors are ranked by matching score.
+- [x] Blood compatibility is considered.
+- [x] Same-city donors receive the appropriate ranking bonus.
+- [x] Donation history contributes to ranking.
+- [x] Donor response rate contributes to ranking.
+- [x] Donor eligibility is checked before matching.
+- [x] Ineligible donors are excluded.
+- [x] Unavailable donors are excluded.
+- [x] Inactive donors are excluded.
+- [x] Hospital can view donor name and permitted profile information.
+- [x] Donor phone number remains masked before acceptance.
+- [x] Donor phone number becomes visible after acceptance.
 - [ ] Phone reveal is recorded in the audit log.
-- [ ] Hospital cannot reveal contact information through an unauthorized API call.
+- [x] Hospital cannot reveal contact information through an unauthorized API call.
 
 4.5 Donation completion and inventory
 - [ ] Hospital can view accepted donor responses.
