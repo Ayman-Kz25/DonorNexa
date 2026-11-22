@@ -8,10 +8,12 @@ import {
   getPendingHospitals,
   getVerifiedHospitals,
   getHospitalLicenseDocument,
+  getMyHospitalLicenseDocument,
 } from "../controllers/hospitalController.js";
 
 import requireAdmin from "../middleware/requireAdmin.js";
 import uploadHospitalLicense from "../middleware/uploadHospitalLicense.js";
+import requireAuth from "../middleware/requireAuth.js";
 
 const router = express.Router();
 
@@ -19,6 +21,8 @@ const router = express.Router();
 router.post("/register", uploadHospitalLicense, registerHospital);
 router.get("/profile", getHospitalProfile);
 router.get("/verified", getVerifiedHospitals);
+
+router.get("/my-license", requireAuth, getMyHospitalLicenseDocument);
 
 // Admin-only routes
 router.get("/pending", requireAdmin, getPendingHospitals);

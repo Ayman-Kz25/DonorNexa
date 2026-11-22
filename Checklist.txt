@@ -411,65 +411,65 @@ Mandatory Programming Concept Coverage
 The CEP explicitly asks students to demonstrate concepts and identify the file/class where each is implemented. Your report should include a concept-to-file mapping.
 
 7.1 Variables, data types, arrays and functions
-- [ ] Variables are used meaningfully.
-- [ ] Appropriate data types are used.
-- [ ] Arrays are used meaningfully.
-- [ ] Functions are used for reusable operations.
-- [ ] Loops are implemented.
-- [ ] Conditional statements are implemented.
-- [ ] Blood compatibility is represented through a data-driven structure.
-- [ ] Ranking algorithm uses reusable functions.
-- [ ] Helper functions are separated appropriately.
+- [x] Variables are used meaningfully.
+- [x] Appropriate data types are used.
+- [x] Arrays are used meaningfully.
+- [x] Functions are used for reusable operations.
+- [x] Loops are implemented.
+- [x] Conditional statements are implemented.
+- [x] Blood compatibility is represented through a data-driven structure.
+- [x] Ranking algorithm uses reusable functions.
+- [x] Helper functions are separated appropriately.
 
 7.2 Object-oriented programming
-- [ ] Models/classes represent important system entities.
-- [ ] User, Donor and Request entities are represented.
-- [ ] Services contain reusable business logic.
-- [ ] Controllers handle application requests.
-- [ ] Repository/data-access responsibilities are appropriately separated where applicable.
-- [ ] Inheritance or an appropriate equivalent is demonstrated.
-- [ ] Interfaces/contracts or an appropriate equivalent are demonstrated.
-- [ ] Composition is demonstrated where appropriate.
-- [ ] Namespaces/modules are used.
-- [ ] Dependency management/imports are structured.
-- [ ] Reusable code is not unnecessarily duplicated.
-- [ ] The report identifies files/classes demonstrating OOP concepts.
+- [x] Models/classes represent important system entities.
+- [x] User, Donor and Request entities are represented.
+- [x] Services contain reusable business logic.
+- [x] Controllers handle application requests.
+- [x] Repository/data-access responsibilities are appropriately separated where applicable.
+- [x] Inheritance or an appropriate equivalent is demonstrated.
+- [x] Interfaces/contracts or an appropriate equivalent are demonstrated.
+- [x] Composition is demonstrated where appropriate.
+- [x] Namespaces/modules are used.
+- [x] Dependency management/imports are structured.
+- [x] Reusable code is not unnecessarily duplicated.
+- [x] The report identifies files/classes demonstrating OOP concepts.
 
 7.3 Forms and request handling
-- [ ] Registration forms are implemented.
-- [ ] Profile forms are implemented.
-- [ ] Blood request forms are implemented.
-- [ ] Search/filter forms are implemented.
-- [ ] Request body parameters are handled.
-- [ ] Query parameters are handled.
-- [ ] File uploads are handled.
-- [ ] Server request information is handled where needed.
-- [ ] Inputs are validated before database operations.
+- [x] Registration forms are implemented.
+- [x] Profile forms are implemented.
+- [x] Blood request forms are implemented.
+- [x] Search/filter forms are implemented.
+- [x] Request body parameters are handled.
+- [x] Query parameters are handled.
+- [x] File uploads are handled.
+- [x] Server request information is handled where needed.
+- [x] Inputs are validated before database operations.
 
 7.4 Sessions, cookies and authentication
-- [ ] Authentication state is maintained securely.
-- [ ] Tokens/session credentials are handled securely.
-- [ ] Secure cookie settings are configured where applicable.
-- [ ] Role-based access is implemented.
-- [ ] Protected routes are implemented.
-- [ ] Logout invalidates the relevant authentication state.
+- [x] Authentication state is maintained securely.
+- [x] Tokens/session credentials are handled securely.
+- [x] Secure cookie settings are configured where applicable.
+- [x] Role-based access is implemented.
+- [x] Protected routes are implemented.
+- [x] Logout invalidates the relevant authentication state.
 
 7.5 Reusable templates and modules
-- [ ] Shared layouts are implemented.
-- [ ] Shared navigation components are implemented.
-- [ ] Shared UI components are reused.
-- [ ] Reusable components are separated into modules.
-- [ ] Frontend and backend responsibilities are separated.
-- [ ] Application routing is organized.
+- [x] Shared layouts are implemented.
+- [x] Shared navigation components are implemented.
+- [x] Shared UI components are reused.
+- [x] Reusable components are separated into modules.
+- [x] Frontend and backend responsibilities are separated.
+- [x] Application routing is organized.
 
 7.6 File handling
-- [ ] Donor photo upload is implemented.
-- [ ] Hospital licence upload is implemented.
-- [ ] CSV export is implemented.
-- [ ] File validation is implemented.
-- [ ] Error logging is implemented.
-- [ ] File access is controlled appropriately.
-- [ ] Uploaded files are stored using a suitable storage solution.
+- [x] Donor photo upload is implemented.
+- [x] Hospital licence upload is implemented.
+- [x] CSV export is implemented.
+- [x] File validation is implemented.
+- [x] Error logging is implemented.
+- [x] File access is controlled appropriately.
+- [x] Uploaded files are stored using a suitable storage solution.
 
 7.7 Date and time functions
 - [ ] Cooldown calculation is implemented.

@@ -554,3 +554,122 @@ export const getHospitalLicenseDocument = async (req, res) => {
     res.destroy(error);
   }
 };
+
+// Allow a hospital to view its own license document
+export const getMyHospitalLicenseDocument = async (req, res) => {
+  try {
+    const { isAuthenticated, userId } = getAuth(req);
+
+    if (!isAuthenticated) {
+      return res.status(401).json({
+        success: false,
+        message: "Please sign in first.",
+      });
+    }
+
+    const user = await User.findOne({
+      clerkUserId: userId,
+      isActive: true,
+    });
+
+    if (!user || user.role !== "hospital") {
+      return res.status(403).json({
+        success: false,
+        message: "Only hospital accounts can access this document.",
+      });
+    }
+
+    const hospital = await Hospital.findOne({
+      user: user._id,
+    }).select("licenseDocument");
+
+    if (!hospital?.licenseDocument?.fileUrl) {
+      return res.status(404).json({
+        success: false,
+        message: "License document not found.",
+      });
+    }
+
+    const license = hospital.licenseDocument;
+
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="hospital-license.pdf"',
+    );
+
+    // Cloudinary document
+    if (license.storageType === "cloudinary" && license.publicId) {
+      const cloudinary = getCloudinary();
+
+      const signedUrl = cloudinary.url(license.publicId, {
+        resource_type: "raw",
+        type: "authenticated",
+        sign_url: true,
+        secure: true,
+      });
+
+      const cloudinaryResponse = await axios.get(signedUrl, {
+        responseType: "stream",
+        timeout: 30000,
+      });
+
+      if (cloudinaryResponse.headers["content-length"]) {
+        res.setHeader(
+          "Content-Length",
+          cloudinaryResponse.headers["content-length"],
+        );
+      }
+
+      cloudinaryResponse.data.on("error", (error) => {
+        console.error("Cloudinary license stream error:", error);
+
+        if (!res.headersSent) {
+          res.status(502).end();
+        } else {
+          res.destroy(error);
+        }
+      });
+
+      return cloudinaryResponse.data.pipe(res);
+    }
+
+    // Legacy local document
+    const filename = license.fileUrl;
+
+    if (
+      path.basename(filename) !== filename ||
+      !filename.toLowerCase().endsWith(".pdf")
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid license document reference.",
+      });
+    }
+
+    const filePath = path.join(licenseDirectory, filename);
+
+    await fs.promises.access(filePath, fs.constants.R_OK);
+
+    return res.sendFile(filePath);
+  } catch (error) {
+    if (error.code === "ENOENT" || error.response?.status === 404) {
+      return res.status(404).json({
+        success: false,
+        message: "License file is no longer available.",
+      });
+    }
+
+    console.error("Hospital license viewing error:", error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to retrieve license document.",
+      });
+    }
+
+    res.destroy(error);
+  }
+};
