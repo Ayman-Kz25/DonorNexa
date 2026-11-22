@@ -187,50 +187,50 @@
 - [x] Hospital can view donor name and permitted profile information.
 - [x] Donor phone number remains masked before acceptance.
 - [x] Donor phone number becomes visible after acceptance.
-- [ ] Phone reveal is recorded in the audit log.
+- [x] Phone reveal is recorded in the audit log.
 - [x] Hospital cannot reveal contact information through an unauthorized API call.
 
 4.5 Donation completion and inventory
-- [ ] Hospital can view accepted donor responses.
-- [ ] Hospital can confirm a donation as completed.
-- [ ] Donation record is saved.
-- [ ] Donation is linked to the correct match.
-- [ ] Donation is linked to the correct request.
-- [ ] Donation units are validated.
-- [ ] Donor donation history is updated.
-- [ ] Donor's last donation date is updated.
-- [ ] Donor's next eligible date is recalculated.
-- [ ] Blood inventory is updated after a completed donation.
-- [ ] Request fulfilled units are updated.
-- [ ] Request closes when its required units are fulfilled.
-- [ ] Duplicate donation completion is prevented.
-- [ ] Inventory cannot become negative.
+- [x] Hospital can view accepted donor responses.
+- [x] Hospital can confirm a donation as completed.
+- [x] Donation record is saved.
+- [x] Donation is linked to the correct match.
+- [x] Donation is linked to the correct request.
+- [x] Donation units are validated.
+- [x] Donor donation history is updated.
+- [x] Donor's last donation date is updated.
+- [x] Donor's next eligible date is recalculated.
+- [x] Blood inventory is updated after a completed donation.
+- [x] Request fulfilled units are updated.
+- [x] Request closes when its required units are fulfilled.
+- [x] Duplicate donation completion is prevented.
+- [x] Inventory cannot become negative.
 
 6. Administrator Module
 
 5.1 Admin dashboard
-- [ ] Admin dashboard is accessible only to administrators.
-- [ ] Dashboard displays total donors.
-- [ ] Dashboard displays total hospitals.
-- [ ] Dashboard displays total blood requests.
-- [ ] Dashboard displays active requests.
-- [ ] Dashboard displays fulfilled units.
-- [ ] Dashboard displays relevant summary statistics.
-- [ ] Dashboard statistics are fetched from actual database data.
-- [ ] Dashboard handles empty datasets.
+- [x] Admin dashboard is accessible only to administrators.
+- [x] Dashboard displays total donors.
+- [x] Dashboard displays total hospitals.
+- [x] Dashboard displays total blood requests.
+- [x] Dashboard displays active requests.
+- [x] Dashboard displays fulfilled units.
+- [x] Dashboard displays relevant summary statistics.
+- [x] Dashboard statistics are fetched from actual database data.
+- [x] Dashboard handles empty datasets.
 
 5.2 Mandatory charts
-- [ ] Requests per week chart is implemented.
-- [ ] Chart displays weekly request counts.
-- [ ] Blood-group demand versus supply chart is implemented.
+- [x] Requests per week chart is implemented.
+- [x] Chart displays weekly request counts.
+- [x] Blood-group demand versus supply chart is implemented.
 - [ ] Demand is calculated using outstanding request requirements.
 - [ ] Supply is calculated using relevant blood inventory.
-- [ ] Fulfilment rate chart is implemented.
-- [ ] Fulfilment rate is calculated correctly.
+- [x] Fulfilment rate chart is implemented.
+- [x] Fulfilment rate is calculated correctly.
 - [ ] Charts use real database data.
 - [ ] Charts update when the underlying data changes.
-- [ ] Charts display useful labels and values.
-- [ ] Empty chart data is handled correctly.
+- [x] Charts display useful labels and values.
+- [x] Empty chart data is handled correctly.
 
 5.3 Hospital management
 - [ ] Admin can view hospitals.
