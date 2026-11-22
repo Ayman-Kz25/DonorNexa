@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Settings, Save, Loader2, Clock3 } from "lucide-react";
+import {
+  Settings,
+  Save,
+  Loader2,
+  Clock3,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 
 function AdminSettings() {
@@ -14,6 +21,8 @@ function AdminSettings() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+        setError("");
+
         const response = await request({
           method: "GET",
           url: "/api/admin/settings",
@@ -65,103 +74,128 @@ function AdminSettings() {
   };
 
   return (
-    <div className="space-y-7">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#963D54]">
+    <div className="min-w-0 w-full space-y-4 sm:space-y-5 lg:space-y-6">
+      {/* Page Header */}
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#963D54] sm:text-xs sm:tracking-[0.16em]">
           Administration
         </p>
-        <h1 className="mt-2 font-serif text-3xl font-semibold text-[#302923]">
+
+        <h1 className="mt-1 font-serif text-2xl font-semibold text-[#302923] sm:mt-2 sm:text-3xl">
           Settings
         </h1>
-        <p className="mt-2 text-sm text-[#81756A]">
+
+        <p className="mt-1 max-w-2xl text-xs leading-5 text-[#81756A] sm:mt-2 sm:text-sm">
           Manage system-wide donation and eligibility settings.
         </p>
       </div>
 
-      <div className="max-w-2xl rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-6 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#963D54]">
-            <Settings size={21} />
+      {/* Settings Card */}
+      <div className="w-full max-w-2xl rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-4 shadow-sm sm:p-6 lg:p-8">
+        {/* Card Header */}
+        <div className="mb-5 flex min-w-0 items-start gap-3 sm:mb-6">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#963D54] sm:size-11">
+            <Settings size={20} />
           </div>
-          <div>
-            <h2 className="font-semibold text-[#302923]">
+
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-[#302923] sm:text-base">
               Donation Eligibility
             </h2>
-            <p className="mt-1 text-xs text-[#81756A]">
+
+            <p className="mt-1 text-xs leading-5 text-[#81756A]">
               Configure the minimum waiting period between donations.
             </p>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center gap-2 py-8 text-sm text-[#81756A]">
-            <Loader2 size={17} className="animate-spin" />
-            Loading settings...
-          </div>
-        ) : (
-          <form onSubmit={handleSave} className="space-y-5">
-            <div>
-              <label
-                htmlFor="cooldownDays"
-                className="mb-2 block text-sm font-medium text-[#302923]"
-              >
-                Donation Cooldown Period (Days)
-              </label>
+        <div className="border-t border-[#E8DDD4] pt-5">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-sm text-[#81756A] sm:justify-start">
+              <Loader2 size={18} className="animate-spin text-[#963D54]" />
+              Loading settings...
+            </div>
+          ) : (
+            <form onSubmit={handleSave} className="space-y-5">
+              {/* Cooldown Input */}
+              <div className="min-w-0">
+                <label
+                  htmlFor="cooldownDays"
+                  className="mb-2 block text-xs font-semibold text-[#302923] sm:text-sm"
+                >
+                  Donation Cooldown Period (Days)
+                </label>
 
-              <div className="relative">
-                <Clock3
-                  size={17}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A3978C]"
-                />
-                <input
-                  id="cooldownDays"
-                  type="number"
-                  min="1"
-                  max="365"
-                  step="1"
-                  value={cooldownDays}
-                  onChange={(e) => {
-                    setCooldownDays(e.target.value);
-                    setError("");
-                    setSuccess("");
-                  }}
-                  className="w-full rounded-xl border border-[#E8DDD4] bg-white py-3 pl-10 pr-4 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:ring-2 focus:ring-[#963D54]/10"
-                  required
-                />
+                <div className="relative">
+                  <Clock3
+                    size={17}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3978C] sm:left-4"
+                  />
+
+                  <input
+                    id="cooldownDays"
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    value={cooldownDays}
+                    onChange={(e) => {
+                      setCooldownDays(e.target.value);
+                      setError("");
+                      setSuccess("");
+                    }}
+                    className="w-full rounded-xl border border-[#E8DDD4] bg-white py-3 pl-10 pr-4 text-sm text-[#302923] outline-none transition focus:border-[#963D54] focus:ring-2 focus:ring-[#963D54]/10"
+                    required
+                  />
+                </div>
+
+                <p className="mt-2 text-[11px] leading-5 text-[#81756A] sm:text-xs">
+                  Donors must wait this many days after their last donation
+                  before becoming eligible again. Allowed range: 1–365 days.
+                </p>
               </div>
 
-              <p className="mt-2 text-xs text-[#81756A]">
-                Donors must wait this many days after their last donation before
-                becoming eligible again. Allowed range: 1–365 days.
-              </p>
-            </div>
-
-            {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            )}
-
-            {success && (
-              <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-                {success}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#963D54] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#782B40] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Save size={16} />
+              {/* Error Message */}
+              {error && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700 sm:text-sm"
+                >
+                  <AlertCircle size={17} className="mt-0.5 shrink-0" />
+                  <p className="min-w-0 break-words">{error}</p>
+                </div>
               )}
-              {saving ? "Saving..." : "Save Settings"}
-            </button>
-          </form>
-        )}
+
+              {/* Success Message */}
+              {success && (
+                <div
+                  role="status"
+                  className="flex items-start gap-2 rounded-xl border border-[#E8DDD4] bg-[#F2E2DC] p-3 text-xs leading-5 text-[#782B40] sm:text-sm"
+                >
+                  <CheckCircle2 size={17} className="mt-0.5 shrink-0" />
+                  <p>{success}</p>
+                </div>
+              )}
+
+              {/* Save Button */}
+              <div className="border-t border-[#E8DDD4] pt-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#963D54] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#782B40] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                >
+                  {saving ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Save size={16} />
+                  )}
+
+                  {saving ? "Saving..." : "Save Settings"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

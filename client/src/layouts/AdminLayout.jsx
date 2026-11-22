@@ -8,22 +8,27 @@ function AdminLayout() {
   const { user } = useCurrentUser();
 
   return (
-    <div className="flex min-h-screen bg-[#F8F5EF]">
+    <div className="flex min-h-screen min-w-0 bg-[#F8F5EF]">
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[76px] items-center justify-between border-b border-[#E8DDD4] bg-[#F8F5EF] px-8">
-          <div>
-            <p className="text-xs text-[#81756A]">Admin Portal</p>
-            <h2 className="font-serif text-xl text-[#302923]">
+        <header className="flex min-h-[60px] items-center justify-between gap-3 border-b border-[#E8DDD4] bg-[#F8F5EF] px-3 py-2.5 min-[400px]:px-4 sm:min-h-[72px] sm:px-6 lg:px-8">
+          <div className="min-w-0">
+            <p className="text-[9px] text-[#81756A] min-[400px]:text-[10px] sm:text-xs">
+              Admin Portal
+            </p>
+
+            <h2 className="truncate font-serif text-sm text-[#302923] min-[400px]:text-base sm:text-lg lg:text-xl">
               Welcome{user?.name ? `, ${user.name}` : " back"}
             </h2>
           </div>
 
-          <UserButton />
+          <div className="flex shrink-0 items-center justify-center [&_.cl-avatarBox]:!h-7 [&_.cl-avatarBox]:!w-7 min-[400px]:[&_.cl-avatarBox]:!h-8 min-[400px]:[&_.cl-avatarBox]:!w-8 sm:[&_.cl-avatarBox]:!h-9 sm:[&_.cl-avatarBox]:!w-9">
+            <UserButton />
+          </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8">
+        <main className="min-w-0 flex-1 p-3 min-[400px]:p-4 sm:p-5 md:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

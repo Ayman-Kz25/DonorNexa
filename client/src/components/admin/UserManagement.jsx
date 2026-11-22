@@ -218,8 +218,8 @@ function UserManagement() {
 
     if (!user.hospital) {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F0ECE6] px-3 py-1 text-xs font-semibold text-[#81756A] ring-1 ring-[#E8DDD4]">
-          <Building2 size={12} />
+        <span className="inline-flex items-center gap-1 rounded-full bg-[#F0ECE6] px-2 py-1 text-[10px] font-semibold text-[#81756A] ring-1 ring-[#E8DDD4] sm:gap-1.5 sm:px-3 sm:text-xs">
+          <Building2 size={11} />
           Profile not found
         </span>
       );
@@ -227,8 +227,8 @@ function UserManagement() {
 
     if (user.hospital.verificationStatus !== "verified") {
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold capitalize text-amber-700 ring-1 ring-amber-200">
-          <Building2 size={12} />
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold capitalize text-amber-700 ring-1 ring-amber-200 sm:gap-1.5 sm:px-3 sm:text-xs">
+          <Building2 size={11} />
           {user.hospital.verificationStatus}
         </span>
       );
@@ -238,13 +238,13 @@ function UserManagement() {
 
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold ring-1 sm:gap-1.5 sm:px-3 sm:text-xs ${
           inactive
             ? "bg-[#F0ECE6] text-[#81756A] ring-[#E8DDD4]"
             : "bg-[#F2E2DC] text-[#87364D] ring-[#D8B9BE]"
         }`}
       >
-        <Building2 size={12} />
+        <Building2 size={11} />
         Hospital {inactive ? "inactive" : "active"}
       </span>
     );
@@ -254,66 +254,72 @@ function UserManagement() {
   const lastItem = Math.min(page * 10, pagination.totalUsers || 0);
 
   return (
-    <section className="rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-5 sm:p-7">
+    <section className="min-w-0 w-full rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-3 min-[400px]:p-3.5 sm:rounded-2xl sm:p-5 lg:p-6">
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-[#EAE2DB] pb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F2E2DC] text-[#87364D]">
-            <Users size={22} />
+      <div className="mb-4 flex min-w-0 flex-col gap-3 border-b border-[#EAE2DB] pb-4 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:pb-6">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F2E2DC] text-[#87364D] sm:h-11 sm:w-11 sm:rounded-xl">
+            <Users size={18} className="sm:hidden" />
+            <Users size={22} className="hidden sm:block" />
           </div>
 
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-serif text-2xl font-semibold text-[#302923]">
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+              <h2 className="font-serif text-base font-semibold text-[#302923] min-[400px]:text-lg sm:text-2xl">
                 User Management
               </h2>
 
-              <span className="rounded-full bg-[#F2E2DC] px-2.5 py-1 text-xs font-semibold text-[#87364D]">
+              <span className="rounded-full bg-[#F2E2DC] px-2 py-0.5 text-[10px] font-semibold text-[#87364D] sm:px-2.5 sm:py-1 sm:text-xs">
                 {pagination.totalUsers || 0} users
               </span>
             </div>
 
-            <p className="mt-1 text-sm text-[#81756A]">
+            <p className="mt-0.5 text-[10px] leading-4 text-[#81756A] min-[400px]:text-[11px] sm:mt-1 sm:text-sm">
               View, search, and manage registered accounts.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <button
             onClick={handleExportCSV}
             disabled={exporting || loading || pagination.totalUsers === 0}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#782B40] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#963D54] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg bg-[#782B40] px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#963D54] disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
           >
             {exporting ? (
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={13} className="shrink-0 animate-spin" />
             ) : (
-              <Download size={15} />
+              <Download size={13} className="shrink-0" />
             )}
-            {exporting ? "Exporting..." : "Export CSV"}
+            <span className="truncate">
+              {exporting ? "Exporting..." : "Export CSV"}
+            </span>
           </button>
 
           <button
             onClick={fetchUsers}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-2.5 text-sm font-semibold text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] px-2.5 py-2 text-[11px] font-semibold text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
           >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+            <RefreshCw
+              size={13}
+              className={`shrink-0 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-6 space-y-4">
+      {/* Search and filters */}
+      <div className="mb-4 space-y-3 sm:mb-6 sm:space-y-4">
         <form
           onSubmit={handleSearch}
-          className="flex flex-col gap-2 sm:flex-row"
+          className="flex min-w-0 flex-col gap-2 sm:flex-row"
         >
-          <div className="relative flex-1">
+          <div className="relative min-w-0 flex-1">
             <Search
-              size={17}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#A45B6D]"
+              size={15}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A45B6D] sm:left-4 sm:size-[17px]"
             />
 
             <input
@@ -321,23 +327,22 @@ function UserManagement() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or email..."
-              className="w-full rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] py-3 pl-11 pr-4 text-sm text-[#302923] outline-none transition placeholder:text-[#A3978C] focus:border-[#A45B6D] focus:bg-white focus:ring-2 focus:ring-[#F2E2DC]"
+              className="w-full min-w-0 rounded-lg border border-[#E8DDD4] bg-[#F8F5EF] py-2.5 pl-9 pr-3 text-xs text-[#302923] outline-none transition placeholder:text-[#A3978C] focus:border-[#A45B6D] focus:bg-white focus:ring-2 focus:ring-[#F2E2DC] sm:rounded-xl sm:py-3 sm:pl-11 sm:pr-4 sm:text-sm"
             />
           </div>
 
           <button
             type="submit"
-            className="rounded-xl bg-[#782B40] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#963D54]"
+            className="rounded-lg bg-[#782B40] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#963D54] sm:rounded-xl sm:px-6 sm:py-3 sm:text-sm"
           >
             Search
           </button>
         </form>
 
-        {/* Role Filters */}
         <div
           role="tablist"
           aria-label="Filter by role"
-          className="flex flex-wrap gap-2"
+          className="grid grid-cols-2 gap-2 min-[480px]:flex min-[480px]:flex-wrap"
         >
           {ROLE_FILTERS.map((filter) => {
             const Icon = filter.icon;
@@ -350,13 +355,13 @@ function UserManagement() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => handleRoleChange(filter.value)}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                className={`inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[11px] font-semibold transition sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2 sm:text-sm ${
                   selected
                     ? "bg-[#782B40] text-white"
                     : "border border-[#E8DDD4] bg-[#FFFDF9] text-[#71665F] hover:border-[#D8B9BE] hover:bg-[#F2E2DC] hover:text-[#782B40]"
                 }`}
               >
-                <Icon size={15} />
+                <Icon size={13} className="shrink-0 sm:size-[15px]" />
                 {filter.label}
               </button>
             );
@@ -365,10 +370,10 @@ function UserManagement() {
       </div>
 
       {/* Sorting */}
-      <div className="flex flex-wrap justify-end mb-3 items-center gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
         <label
           htmlFor="user-sort"
-          className="text-sm font-semibold text-[#71665F]"
+          className="text-[11px] font-semibold text-[#71665F] sm:text-sm"
         >
           Sort by:
         </label>
@@ -380,7 +385,7 @@ function UserManagement() {
             setSortBy(e.target.value);
             setPage(1);
           }}
-          className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-2.5 text-sm text-[#302923] outline-none transition focus:border-[#A45B6D] focus:ring-2 focus:ring-[#F2E2DC]"
+          className="max-w-full rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] px-2.5 py-2 text-[11px] text-[#302923] outline-none transition focus:border-[#A45B6D] focus:ring-2 focus:ring-[#F2E2DC] sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
         >
           <option value="newest">Newest joined</option>
           <option value="oldest">Oldest joined</option>
@@ -393,49 +398,49 @@ function UserManagement() {
       {error && (
         <div
           role="alert"
-          className="mb-5 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-4 flex min-w-0 items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 sm:mb-5 sm:gap-3 sm:rounded-xl sm:px-4 sm:py-3 sm:text-sm"
         >
-          <AlertCircle size={18} className="shrink-0" />
-          <span className="flex-1">{error}</span>
+          <AlertCircle size={16} className="mt-0.5 shrink-0 sm:size-[18px]" />
+          <span className="min-w-0 flex-1 break-words">{error}</span>
 
           <button
             type="button"
             onClick={() => setError("")}
             aria-label="Dismiss message"
-            className="rounded-lg p-1.5 transition hover:bg-white"
+            className="shrink-0 rounded-lg p-1 transition hover:bg-white sm:p-1.5"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
       )}
 
       {/* Users */}
-      <div className="space-y-3">
+      <div className="min-w-0 space-y-2.5 sm:space-y-3">
         {loading ? (
           <div role="status" aria-label="Loading users" className="space-y-3">
-            <p className="flex items-center justify-center gap-3 py-3 text-sm font-medium text-[#87364D]">
-              <Loader2 size={18} className="animate-spin" />
+            <p className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-[#87364D] sm:gap-3 sm:text-sm">
+              <Loader2 size={16} className="animate-spin sm:size-[18px]" />
               Loading users...
             </p>
 
             {[1, 2, 3].map((item) => (
               <div
                 key={item}
-                className="h-24 animate-pulse rounded-xl border border-[#E8DDD4] bg-[#F8F5EF]"
+                className="h-20 animate-pulse rounded-lg border border-[#E8DDD4] bg-[#F8F5EF] sm:h-24 sm:rounded-xl"
               />
             ))}
           </div>
         ) : users.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#D8C3B5] bg-[#F8F5EF] px-5 py-14 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F2E2DC] text-[#87364D]">
-              <Users size={28} />
+          <div className="rounded-lg border border-dashed border-[#D8C3B5] bg-[#F8F5EF] px-3 py-9 text-center sm:rounded-xl sm:px-5 sm:py-14">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F2E2DC] text-[#87364D] sm:h-16 sm:w-16">
+              <Users size={22} className="sm:size-7" />
             </div>
 
-            <h3 className="mt-4 font-serif text-xl font-semibold text-[#302923]">
+            <h3 className="mt-3 font-serif text-lg font-semibold text-[#302923] sm:mt-4 sm:text-xl">
               No users found
             </h3>
 
-            <p className="mx-auto mt-2 max-w-sm text-sm text-[#81756A]">
+            <p className="mx-auto mt-1.5 max-w-sm text-xs text-[#81756A] sm:mt-2 sm:text-sm">
               Try a different search or role filter.
             </p>
           </div>
@@ -448,7 +453,7 @@ function UserManagement() {
             return (
               <article
                 key={user._id}
-                className={`relative overflow-hidden rounded-xl border p-4 pl-5 transition sm:p-5 sm:pl-6 ${
+                className={`relative min-w-0 overflow-hidden rounded-lg border p-3 pl-4 transition min-[400px]:p-3.5 min-[400px]:pl-4.5 sm:rounded-xl sm:p-5 sm:pl-6 ${
                   blocked
                     ? "border-[#E8DDD4] bg-[#F8F5EF]"
                     : "border-[#E8DDD4] bg-[#FFFDF9] hover:border-[#D8B9BE]"
@@ -460,11 +465,11 @@ function UserManagement() {
                   }`}
                 />
 
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                   {/* Identity */}
-                  <div className="flex min-w-0 items-center gap-3 lg:w-[34%]">
+                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 lg:w-[34%]">
                     <span
-                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-lg font-semibold uppercase ${
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-semibold uppercase min-[400px]:h-10 min-[400px]:w-10 sm:h-12 sm:w-12 sm:text-lg ${
                         blocked
                           ? "from-[#EEE9E2] to-[#DED5CA] text-[#81756A]"
                           : roleStyle.avatar
@@ -473,33 +478,36 @@ function UserManagement() {
                       {user.name?.charAt(0) || "?"}
                     </span>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p
-                        className={`truncate font-semibold ${
+                        className={`truncate text-xs font-semibold min-[400px]:text-sm sm:text-base ${
                           blocked ? "text-[#81756A]" : "text-[#302923]"
                         }`}
                       >
                         {user.name}
                       </p>
 
-                      <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-[#81756A]">
-                        <Mail size={12} className="shrink-0 text-[#A45B6D]" />
+                      <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[10px] text-[#81756A] sm:gap-1.5 sm:text-xs">
+                        <Mail
+                          size={11}
+                          className="shrink-0 text-[#A45B6D] sm:size-3"
+                        />
                         <span className="truncate">{user.email}</span>
                       </p>
                     </div>
                   </div>
 
                   {/* Status and Role */}
-                  <div className="flex flex-1 flex-wrap items-center gap-2">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 sm:gap-2">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ${roleStyle.badge}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold capitalize ring-1 sm:gap-1.5 sm:px-3 sm:text-xs ${roleStyle.badge}`}
                     >
-                      <RoleIcon size={12} />
+                      <RoleIcon size={11} />
                       {user.role}
                     </span>
 
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold ring-1 sm:gap-1.5 sm:px-3 sm:text-xs ${
                         user.isActive
                           ? "bg-[#F2E2DC] text-[#87364D] ring-[#D8B9BE]"
                           : "bg-[#F0ECE6] text-[#81756A] ring-[#E8DDD4]"
@@ -515,35 +523,38 @@ function UserManagement() {
 
                     {renderHospitalStatus(user)}
 
-                    <span className="inline-flex items-center gap-1.5 text-xs text-[#81756A]">
-                      <CalendarDays size={13} className="text-[#A45B6D]" />
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#81756A] sm:gap-1.5 sm:text-xs">
+                      <CalendarDays
+                        size={11}
+                        className="shrink-0 text-[#A45B6D] sm:size-[13px]"
+                      />
                       Joined {formatDate(user.createdAt)}
                     </span>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2 lg:justify-end">
                     {user.role === "admin" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#EEE9E2] px-3 py-2 text-xs font-semibold text-[#62564D] ring-1 ring-[#D8CEC2]">
-                        <ShieldCheck size={14} />
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[#EEE9E2] px-2.5 py-1.5 text-[10px] font-semibold text-[#62564D] ring-1 ring-[#D8CEC2] sm:gap-1.5 sm:rounded-xl sm:px-3 sm:py-2 sm:text-xs">
+                        <ShieldCheck size={12} />
                         Protected
                       </span>
                     ) : (
                       <button
                         onClick={() => handleStatusChange(user)}
                         disabled={processingId === user._id}
-                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[10px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-xs ${
                           user.isActive
                             ? "border border-red-200 bg-[#FFFDF9] text-red-600 hover:bg-red-50"
                             : "bg-[#782B40] text-white hover:bg-[#963D54]"
                         }`}
                       >
                         {processingId === user._id ? (
-                          <Loader2 size={14} className="animate-spin" />
+                          <Loader2 size={12} className="animate-spin" />
                         ) : user.isActive ? (
-                          <Ban size={14} />
+                          <Ban size={12} />
                         ) : (
-                          <Unlock size={14} />
+                          <Unlock size={12} />
                         )}
 
                         {processingId === user._id
@@ -559,16 +570,16 @@ function UserManagement() {
                         <button
                           onClick={() => handleHospitalStatusChange(user)}
                           disabled={processingHospitalId === user.hospital._id}
-                          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-2 text-[10px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-xs ${
                             user.hospital.isActive === false
                               ? "bg-[#F2E2DC] text-[#87364D] hover:bg-[#E8CDD0]"
                               : "border border-red-200 bg-[#FFFDF9] text-red-600 hover:bg-red-50"
                           }`}
                         >
                           {processingHospitalId === user.hospital._id ? (
-                            <Loader2 size={14} className="animate-spin" />
+                            <Loader2 size={12} className="animate-spin" />
                           ) : (
-                            <Power size={14} />
+                            <Power size={12} />
                           )}
 
                           {processingHospitalId === user.hospital._id
@@ -588,33 +599,33 @@ function UserManagement() {
 
       {/* Pagination */}
       {!loading && pagination.totalUsers > 0 && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[#EAE2DB] pt-5">
-          <div>
-            <p className="text-sm font-semibold text-[#302923]">
+        <div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-[#EAE2DB] pt-4 sm:mt-6 sm:pt-5">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#302923] sm:text-sm">
               Page {pagination.currentPage} of {pagination.totalPages}
             </p>
-            <p className="mt-1 text-xs text-[#81756A]">
+            <p className="mt-1 text-[10px] text-[#81756A] sm:text-xs">
               Showing {firstItem}–{lastItem} of {pagination.totalUsers} users
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-1.5 sm:gap-2">
             <button
               onClick={() => setPage((previous) => previous - 1)}
               disabled={page <= 1 || loading}
               aria-label="Previous page"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10 sm:rounded-xl"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} className="sm:size-[18px]" />
             </button>
 
             <button
               onClick={() => setPage((previous) => previous + 1)}
               disabled={page >= pagination.totalPages || loading}
               aria-label="Next page"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] text-[#782B40] transition hover:border-[#D8B9BE] hover:bg-[#F2E2DC] disabled:cursor-not-allowed disabled:opacity-40 sm:h-10 sm:w-10 sm:rounded-xl"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} className="sm:size-[18px]" />
             </button>
           </div>
         </div>

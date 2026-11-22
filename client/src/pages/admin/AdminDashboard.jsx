@@ -14,23 +14,16 @@ import {
   TrendingUp,
   Hospital,
   ClipboardCheck,
-  BarChart3,
-  Package,
 } from "lucide-react";
 
 import { useApi } from "../../hooks/useApi";
 import AdminDashboardCharts from "../../components/admin/AdminDashboardCharts";
-
-// --------------------------------------------------
-// ADMIN DASHBOARD
-// --------------------------------------------------
 
 const AdminDashboard = () => {
   const { request } = useApi();
 
   const [overview, setOverview] = useState(null);
   const [analytics, setAnalytics] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [analyticsError, setAnalyticsError] = useState("");
@@ -76,7 +69,6 @@ const AdminDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // STATISTICS
   const stats = [
     {
       label: "Total Users",
@@ -155,19 +147,19 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="space-y-9">
+    <div className="w-full min-w-0 space-y-5 sm:space-y-6 lg:space-y-8">
       {/* HEADER */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#963D54]">
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#963D54] sm:text-[10px] sm:tracking-[0.18em] md:text-xs">
             Administration
           </p>
 
-          <h1 className="font-serif text-3xl font-semibold text-[#302923]">
+          <h1 className="break-words font-serif text-xl font-semibold leading-tight text-[#302923] min-[400px]:text-2xl sm:text-3xl lg:text-4xl">
             Dashboard Overview
           </h1>
 
-          <p className="mt-2 text-sm text-[#81756A]">
+          <p className="mt-1.5 max-w-2xl text-[11px] leading-5 text-[#81756A] sm:text-xs md:text-sm">
             Monitor users, hospitals, donors, and blood request activity.
           </p>
         </div>
@@ -175,26 +167,25 @@ const AdminDashboard = () => {
         <button
           onClick={fetchDashboardData}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-2.5 text-sm font-medium text-[#782B40] transition hover:border-[#D8B7BC] hover:bg-[#F8F0ED] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-2.5 text-xs font-medium text-[#782B40] transition hover:border-[#D8B7BC] hover:bg-[#F8F0ED] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:self-start sm:text-sm md:self-center"
         >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
           Refresh Data
         </button>
       </div>
 
       {/* WELCOME BANNER */}
-
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#782B40] via-[#87364D] to-[#963D54] px-7 py-8 text-white sm:px-9">
+      <div className="relative min-w-0 overflow-hidden rounded-xl bg-gradient-to-br from-[#782B40] via-[#87364D] to-[#963D54] px-4 py-5 text-white min-[400px]:px-5 sm:px-7 sm:py-7 lg:px-9 lg:py-8">
         <div className="relative z-10 max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/65 sm:text-[10px] sm:tracking-[0.2em] md:text-xs">
             DonorNexa Administration
           </p>
 
-          <h2 className="mt-3 font-serif text-2xl font-semibold sm:text-3xl">
+          <h2 className="mt-2 font-serif text-lg font-semibold leading-tight min-[400px]:text-xl sm:mt-2.5 sm:text-2xl lg:text-3xl">
             Platform at a Glance
           </h2>
 
-          <p className="mt-3 text-sm leading-6 text-white/75">
+          <p className="mt-2 text-[11px] leading-5 text-white/75 sm:mt-2.5 sm:text-xs sm:leading-6 md:text-sm">
             Manage platform operations, monitor hospital verification, and track
             blood donation requests from one place.
           </p>
@@ -211,15 +202,14 @@ const AdminDashboard = () => {
       </div>
 
       {/* OVERVIEW ERROR */}
-
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle size={18} />
-          <span>{error}</span>
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-[11px] text-red-700 sm:gap-3 sm:px-4 sm:text-sm">
+          <AlertCircle size={17} className="shrink-0" />
+          <span className="min-w-0 flex-1 break-words">{error}</span>
 
           <button
             onClick={fetchDashboardData}
-            className="ml-auto font-semibold underline"
+            className="shrink-0 text-xs font-semibold underline sm:text-sm"
           >
             Retry
           </button>
@@ -227,60 +217,68 @@ const AdminDashboard = () => {
       )}
 
       {/* PLATFORM STATISTICS */}
-
-      <section>
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <h2 className="font-serif text-xl font-semibold text-[#302923]">
+      <section className="min-w-0">
+        <div className="mb-3 flex min-w-0 items-center justify-between gap-2 sm:mb-5">
+          <div className="min-w-0">
+            <h2 className="font-serif text-base font-semibold text-[#302923] min-[400px]:text-lg sm:text-xl">
               Platform Statistics
             </h2>
 
-            <p className="mt-1 text-sm text-[#A0968D]">
+            <p className="mt-1 text-[10px] leading-4 text-[#A0968D] sm:text-xs md:text-sm">
               Current registration and activity figures
             </p>
           </div>
 
-          <TrendingUp size={21} className="text-[#963D54]" />
+          <TrendingUp
+            size={18}
+            className="shrink-0 text-[#963D54] sm:size-[21px]"
+          />
         </div>
 
         {loading && !overview ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-2 gap-2 min-[480px]:gap-3 lg:gap-4 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 key={index}
-                className="h-36 animate-pulse rounded-xl border border-[#E8DDD4] bg-[#FFFDF9]"
+                className="h-[112px] animate-pulse rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] min-[400px]:h-[120px] sm:h-[132px] lg:h-[145px]"
               />
             ))}
           </div>
         ) : overview ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid min-w-0 grid-cols-2 gap-2 min-[480px]:gap-3 lg:gap-4 xl:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
 
               return (
                 <div
                   key={stat.label}
-                  className="group rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-5 transition duration-200 hover:-translate-y-1 hover:border-[#D8B7BC] hover:shadow-lg hover:shadow-[#782B40]/5"
+                  className="group flex min-w-0 flex-col rounded-lg border border-[#E8DDD4] bg-[#FFFDF9] p-2.5 transition duration-200 hover:border-[#D8B7BC] hover:shadow-md hover:shadow-[#782B40]/5 min-[400px]:p-3 sm:rounded-xl sm:p-4 lg:p-4 xl:hover:-translate-y-1"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className={`rounded-xl p-3 ${stat.accent}`}>
-                      <Icon size={21} strokeWidth={1.8} />
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div
+                      className={`shrink-0 rounded-md p-1.5 min-[400px]:p-2 sm:rounded-lg sm:p-2.5 ${stat.accent}`}
+                    >
+                      <Icon
+                        size={15}
+                        strokeWidth={1.8}
+                        className="min-[400px]:size-4 sm:size-[18px]"
+                      />
                     </div>
 
-                    <span className="text-xs font-medium text-[#B0A49A]">
+                    <span className="truncate text-[8px] font-medium text-[#B0A49A] min-[400px]:text-[9px] sm:text-[10px]">
                       DonorNexa
                     </span>
                   </div>
 
-                  <p className="mt-5 text-sm font-medium text-[#81756A]">
+                  <p className="mt-2.5 break-words text-[10px] font-medium leading-tight text-[#81756A] min-[400px]:text-[11px] sm:mt-3 sm:text-xs lg:text-[13px]">
                     {stat.label}
                   </p>
 
-                  <p className="mt-1 font-serif text-3xl font-semibold tabular-nums text-[#302923]">
+                  <p className="mt-1 break-all font-serif text-xl font-semibold leading-tight tabular-nums text-[#302923] min-[400px]:text-2xl sm:text-[26px] lg:text-3xl">
                     {stat.value ?? 0}
                   </p>
 
-                  <p className="mt-2 text-xs text-[#A0968D]">
+                  <p className="mt-1 text-[9px] leading-3.5 text-[#A0968D] min-[400px]:text-[10px] sm:mt-1.5 sm:text-[11px] sm:leading-4">
                     {stat.description}
                   </p>
                 </div>
@@ -288,153 +286,150 @@ const AdminDashboard = () => {
             })}
           </div>
         ) : !error ? (
-          <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-5 py-12 text-center text-sm text-[#81756A]">
+          <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] px-4 py-9 text-center text-[11px] text-[#81756A] sm:py-12 sm:text-sm">
             No overview data available.
           </div>
         ) : null}
       </section>
 
       {/* OPERATIONAL OVERVIEW */}
-
       {overview && (
-        <section>
-          <div className="mb-5">
-            <h2 className="font-serif text-xl font-semibold text-[#302923]">
+        <section className="min-w-0">
+          <div className="mb-3 sm:mb-5">
+            <h2 className="font-serif text-base font-semibold text-[#302923] min-[400px]:text-lg sm:text-xl">
               Operational Overview
             </h2>
 
-            <p className="mt-1 text-sm text-[#A0968D]">
+            <p className="mt-1 text-[10px] leading-4 text-[#A0968D] sm:text-xs md:text-sm">
               Hospital verification and blood request progress
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="grid min-w-0 grid-cols-1 gap-3 min-[600px]:grid-cols-2 sm:gap-5">
             {/* HOSPITAL VERIFICATION */}
-
-            <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#F2E2DC] p-3 text-[#87364D]">
-                  <Hospital size={22} />
+            <div className="min-w-0 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-3.5 min-[400px]:p-4 sm:p-6">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                <div className="shrink-0 rounded-lg bg-[#F2E2DC] p-2.5 text-[#87364D] sm:rounded-xl sm:p-3">
+                  <Hospital size={20} />
                 </div>
 
-                <div>
-                  <h3 className="font-semibold text-[#302923]">
+                <div className="min-w-0">
+                  <h3 className="break-words text-xs font-semibold text-[#302923] sm:text-sm md:text-base">
                     Hospital Verification
                   </h3>
 
-                  <p className="text-xs text-[#A0968D]">
+                  <p className="mt-0.5 text-[10px] leading-4 text-[#A0968D] sm:text-[11px] md:text-xs">
                     Verification status distribution
                   </p>
                 </div>
               </div>
 
-              <div className="mt-7 flex items-end justify-between">
-                <div>
-                  <p className="font-serif text-3xl font-semibold text-[#302923]">
+              <div className="mt-5 flex min-w-0 items-end justify-between gap-2 sm:mt-7 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="font-serif text-2xl font-semibold text-[#302923] sm:text-3xl">
                     {hospitalPercentage}%
                   </p>
 
-                  <p className="mt-1 text-xs text-[#81756A]">
+                  <p className="mt-1 text-[10px] text-[#81756A] sm:text-xs">
                     Verified hospitals
                   </p>
                 </div>
 
-                <p className="text-sm text-[#81756A]">
+                <p className="shrink-0 text-right text-[10px] text-[#81756A] sm:text-xs md:text-sm">
                   {overview.verifiedHospitals || 0} of{" "}
                   {overview.totalHospitals || 0}
                 </p>
               </div>
 
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#F0E8E2]">
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#F0E8E2] sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-[#963D54] transition-all duration-500"
                   style={{ width: `${hospitalPercentage}%` }}
                 />
               </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-[#EFE7E0] pt-4">
-                <div className="flex items-center gap-2 text-sm text-[#81756A]">
-                  <span className="size-2 rounded-full bg-[#963D54]" />
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#EFE7E0] pt-3 sm:mt-5 sm:pt-4">
+                <div className="flex items-center gap-2 text-[11px] text-[#81756A] sm:text-xs md:text-sm">
+                  <span className="size-2 shrink-0 rounded-full bg-[#963D54]" />
                   Verified
                 </div>
 
-                <span className="font-semibold text-[#302923]">
+                <span className="text-xs font-semibold tabular-nums text-[#302923] sm:text-sm">
                   {overview.verifiedHospitals || 0}
                 </span>
               </div>
 
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-[#81756A]">
-                  <span className="size-2 rounded-full bg-[#C49A58]" />
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-[11px] text-[#81756A] sm:text-xs md:text-sm">
+                  <span className="size-2 shrink-0 rounded-full bg-[#C49A58]" />
                   Pending
                 </div>
 
-                <span className="font-semibold text-[#302923]">
+                <span className="text-xs font-semibold tabular-nums text-[#302923] sm:text-sm">
                   {overview.pendingHospitals || 0}
                 </span>
               </div>
             </div>
 
             {/* BLOOD REQUEST STATUS */}
-
-            <div className="rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-[#F8E8E9] p-3 text-[#963D54]">
-                  <ClipboardCheck size={22} />
+            <div className="min-w-0 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-3.5 min-[400px]:p-4 sm:p-6">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                <div className="shrink-0 rounded-lg bg-[#F8E8E9] p-2.5 text-[#963D54] sm:rounded-xl sm:p-3">
+                  <ClipboardCheck size={20} />
                 </div>
 
-                <div>
-                  <h3 className="font-semibold text-[#302923]">
+                <div className="min-w-0">
+                  <h3 className="break-words text-xs font-semibold text-[#302923] sm:text-sm md:text-base">
                     Blood Request Status
                   </h3>
 
-                  <p className="text-xs text-[#A0968D]">
+                  <p className="mt-0.5 text-[10px] leading-4 text-[#A0968D] sm:text-[11px] md:text-xs">
                     Active and fulfilled requests
                   </p>
                 </div>
               </div>
 
-              <div className="mt-7 flex items-end justify-between">
-                <div>
-                  <p className="font-serif text-3xl font-semibold text-[#302923]">
+              <div className="mt-5 flex min-w-0 items-end justify-between gap-2 sm:mt-7 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="font-serif text-2xl font-semibold text-[#302923] sm:text-3xl">
                     {fulfilledPercentage}%
                   </p>
 
-                  <p className="mt-1 text-xs text-[#81756A]">
+                  <p className="mt-1 text-[10px] text-[#81756A] sm:text-xs">
                     Fulfilled requests
                   </p>
                 </div>
 
-                <p className="text-sm text-[#81756A]">
+                <p className="shrink-0 text-right text-[10px] text-[#81756A] sm:text-xs md:text-sm">
                   {overview.fulfilledRequests || 0} of {requestTotal}
                 </p>
               </div>
 
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#F0E8E2]">
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#F0E8E2] sm:h-2.5">
                 <div
                   className="h-full rounded-full bg-[#963D54] transition-all duration-500"
                   style={{ width: `${fulfilledPercentage}%` }}
                 />
               </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-[#EFE7E0] pt-4">
-                <div className="flex items-center gap-2 text-sm text-[#81756A]">
-                  <span className="size-2 rounded-full bg-[#C49A58]" />
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#EFE7E0] pt-3 sm:mt-5 sm:pt-4">
+                <div className="flex items-center gap-2 text-[11px] text-[#81756A] sm:text-xs md:text-sm">
+                  <span className="size-2 shrink-0 rounded-full bg-[#C49A58]" />
                   Active
                 </div>
 
-                <span className="font-semibold text-[#302923]">
+                <span className="text-xs font-semibold tabular-nums text-[#302923] sm:text-sm">
                   {overview.activeRequests || 0}
                 </span>
               </div>
 
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-[#81756A]">
-                  <span className="size-2 rounded-full bg-[#963D54]" />
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-[11px] text-[#81756A] sm:text-xs md:text-sm">
+                  <span className="size-2 shrink-0 rounded-full bg-[#963D54]" />
                   Fulfilled
                 </div>
 
-                <span className="font-semibold text-[#302923]">
+                <span className="text-xs font-semibold tabular-nums text-[#302923] sm:text-sm">
                   {overview.fulfilledRequests || 0}
                 </span>
               </div>
@@ -444,18 +439,21 @@ const AdminDashboard = () => {
       )}
 
       {/* BLOOD DONATION ANALYTICS */}
-      <AdminDashboardCharts
-        analytics={analytics}
-        loading={loading}
-        error={analyticsError}
-        onRetry={fetchDashboardData}
-      />
+      <div className="w-full min-w-0">
+        <AdminDashboardCharts
+          analytics={analytics}
+          loading={loading}
+          error={analyticsError}
+          onRetry={fetchDashboardData}
+        />
+      </div>
 
       {/* FOOTER */}
-
-      <div className="flex items-center gap-2 border-t border-[#E8DDD4] pt-5 text-xs text-[#A0968D]">
-        <Activity size={15} />
-        Dashboard figures are based on the latest available platform data.
+      <div className="flex min-w-0 items-start gap-2 border-t border-[#E8DDD4] pt-4 text-[10px] leading-5 text-[#A0968D] sm:items-center sm:pt-5 sm:text-xs">
+        <Activity size={14} className="mt-0.5 shrink-0 sm:mt-0" />
+        <span className="min-w-0">
+          Dashboard figures are based on the latest available platform data.
+        </span>
       </div>
     </div>
   );
