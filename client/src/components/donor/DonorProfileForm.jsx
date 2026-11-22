@@ -15,15 +15,16 @@ import {
   ShieldCheck,
   Phone,
   ArrowUpRight,
-  HeartHandshake,
-  Plus,
   Sparkle,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
+import { useUser } from "@clerk/react";
 
 const TOAST_DURATION = 4000;
+const MAX_PHOTO_SIZE = 2 * 1024 * 1024;
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const ALLOWED_PHOTO_EXTENSIONS = ["jpg", "jpeg", "png"];
 
 const initialFormData = {
   bloodGroup: "",
@@ -43,6 +44,7 @@ const toComparable = (data) => ({
 
 function DonorProfileForm({ onRegistered }) {
   const { request } = useApi();
+  const { user } = useUser();
 
   const [formData, setFormData] = useState(initialFormData);
   const [savedData, setSavedData] = useState(initialFormData);
@@ -68,10 +70,7 @@ function DonorProfileForm({ onRegistered }) {
     JSON.stringify(toComparable(formData)) !==
     JSON.stringify(toComparable(savedData));
 
-  // --------------------------------------------------
   // Notifications
-  // --------------------------------------------------
-
   useEffect(() => {
     if (!message) return;
 
@@ -80,10 +79,7 @@ function DonorProfileForm({ onRegistered }) {
     return () => clearTimeout(timer);
   }, [message, messageType]);
 
-  // --------------------------------------------------
   // Load donor profile
-  // --------------------------------------------------
-
   const loadProfile = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -157,40 +153,52 @@ function DonorProfileForm({ onRegistered }) {
     loadCities();
   }, [request]);
 
-  // Temporary photo preview cleanup
+  // Cleanup temporary photo previews
   useEffect(() => {
     if (!photoPreview || !photoPreview.startsWith("blob:")) return;
 
     return () => URL.revokeObjectURL(photoPreview);
   }, [photoPreview]);
 
-  // Profile photo
+  // Profile photo selection and validation
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
 
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setMessage("Only JPG and PNG images are allowed.");
+    const extension = file.name
+      .substring(file.name.lastIndexOf(".") + 1)
+      .toLowerCase();
+
+    // Validate extension
+    if (!ALLOWED_PHOTO_EXTENSIONS.includes(extension)) {
+      setPhotoFile(null);
+      setPhotoPreview("");
+      setMessage("Only JPG, JPEG and PNG images are allowed.");
       setMessageType("error");
       e.target.value = "";
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size
+    if (file.size > MAX_PHOTO_SIZE) {
+      setPhotoFile(null);
+      setPhotoPreview("");
       setMessage("Profile photo must not exceed 2 MB.");
       setMessageType("error");
       e.target.value = "";
       return;
     }
 
+    // Accept the file
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
     setMessage("");
   };
 
+  // Upload profile photo
   const handlePhotoUpload = async () => {
-    if (!photoFile || !hasProfile) return;
+    if (!photoFile || !hasProfile || isUploadingPhoto) return;
 
     const uploadData = new FormData();
     uploadData.append("profilePhoto", photoFile);
@@ -199,24 +207,48 @@ function DonorProfileForm({ onRegistered }) {
       setIsUploadingPhoto(true);
       setMessage("");
 
+      // Upload photo to DonorNexa backend
       const response = await request({
         method: "POST",
         url: "/api/donors/profile/photo",
         data: uploadData,
       });
 
-      setProfilePhoto(response.data.profilePhoto.url);
+      const uploadedPhotoUrl = response.data.profilePhoto.url;
+
+      // Update DonorNexa profile photo
+      setProfilePhoto(uploadedPhotoUrl);
+
+      // Update Clerk profile image
+      try {
+        if (!user) {
+          throw new Error("Clerk user is not available.");
+        }
+
+        await user.setProfileImage({
+          file: photoFile,
+        });
+
+        setMessage("Profile photo updated successfully.");
+        setMessageType("success");
+      } catch (clerkError) {
+        console.error("Clerk profile image update error:", clerkError);
+
+        setMessage(
+          "DonorNexa photo saved, but Clerk profile image could not be updated.",
+        );
+        setMessageType("error");
+      }
+
+      // Clear selected photo
       setPhotoFile(null);
       setPhotoPreview("");
 
       const fileInput = document.getElementById("donorProfilePhoto");
       if (fileInput) fileInput.value = "";
-
-      setMessage(
-        response.data.message || "Profile photo uploaded successfully.",
-      );
-      setMessageType("success");
     } catch (error) {
+      console.error("Profile photo upload error:", error);
+
       setMessage(
         error.response?.data?.message || "Unable to upload profile photo.",
       );
@@ -226,11 +258,14 @@ function DonorProfileForm({ onRegistered }) {
     }
   };
 
+  // Cancel selected photo
   const handleCancelPhoto = () => {
     setPhotoFile(null);
     setPhotoPreview("");
+    setMessage("");
 
     const fileInput = document.getElementById("donorProfilePhoto");
+
     if (fileInput) fileInput.value = "";
   };
 
@@ -513,9 +548,6 @@ function DonorProfileForm({ onRegistered }) {
   const inputClass =
     "w-full rounded-none border-0 border-b border-[#DCCFC2] bg-transparent py-3 text-sm text-[#302923] outline-none transition placeholder:text-[#A99B90] focus:border-[#963D54] focus:ring-0";
 
-  const iconClass =
-    "pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[#A45B6D]";
-
   return (
     <div className="w-full space-y-10 text-[#302923]">
       <style>{`
@@ -609,11 +641,12 @@ function DonorProfileForm({ onRegistered }) {
           </button>
         )}
       </section>
+
       <form onSubmit={handleSubmit} className="space-y-12">
         {/* Profile identity composition */}
         <section className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
           {/* Photo area */}
-          <div className="relative flex min-h-[330px] items-center justify-center overflow-hidden rounded-xl bg-[#F0EAE0] p-8 sm:min-h-[390px]">
+          <div className="relative flex min-h-[330px] items-center justify-center overflow-hidden rounded-xl bg-[#F0EAE0] p-8">
             <div
               className="pointer-events-none absolute inset-0 opacity-40"
               style={{
@@ -680,7 +713,7 @@ function DonorProfileForm({ onRegistered }) {
             </p>
 
             <div className="mt-8 grid grid-cols-2 gap-3">
-              <div className="border-l-2 border-[#963D54] rounded-xl bg-[#F0EAE0] px-4 py-4">
+              <div className="rounded-xl border-l-2 border-[#963D54] bg-[#F0EAE0] px-4 py-4">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
                   Blood group
                 </p>
@@ -691,7 +724,7 @@ function DonorProfileForm({ onRegistered }) {
                 </p>
               </div>
 
-              <div className="border-l-2 border-[#C9A99B] rounded-xl bg-[#F0EAE0] px-4 py-4">
+              <div className="rounded-xl border-l-2 border-[#C9A99B] bg-[#F0EAE0] px-4 py-4">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#81756A]">
                   Location
                 </p>
@@ -726,7 +759,7 @@ function DonorProfileForm({ onRegistered }) {
                       type="button"
                       onClick={handlePhotoUpload}
                       disabled={isUploadingPhoto}
-                      className="inline-flex items-center gap-2 bg-[#963D54] px-4 py-2.5 text-xs font-semibold rounded-lg text-white transition hover:bg-[#7D3045] disabled:opacity-50"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#963D54] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-50"
                     >
                       {isUploadingPhoto ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -741,7 +774,7 @@ function DonorProfileForm({ onRegistered }) {
                       onClick={handleCancelPhoto}
                       disabled={isUploadingPhoto}
                       aria-label="Cancel photo selection"
-                      className="border border-[#DCCFC2] rounded-lg p-2.5 text-[#81756A] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                      className="rounded-lg border border-[#DCCFC2] p-2.5 text-[#81756A] transition hover:bg-[#F0EAE0] disabled:opacity-50"
                     >
                       <X size={15} />
                     </button>
@@ -758,7 +791,7 @@ function DonorProfileForm({ onRegistered }) {
           </div>
         </section>
 
-        {/* Information heading */}
+        {/* Personal information */}
         <section className="border-t border-[#E3D5C8] pt-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
@@ -776,7 +809,7 @@ function DonorProfileForm({ onRegistered }) {
             </p>
           </div>
 
-          {/* Blood group selector */}
+          {/* Blood group */}
           <div className="mt-9 border-y border-[#E3D5C8] py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -811,7 +844,7 @@ function DonorProfileForm({ onRegistered }) {
                     aria-checked={selected}
                     disabled={!isEditing}
                     onClick={() => handleBloodGroupSelect(group)}
-                    className={`flex h-12 items-center justify-center gap-1.5 border rounded-lg text-sm font-semibold transition ${
+                    className={`flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-semibold transition ${
                       selected
                         ? "border-[#963D54] bg-[#963D54] text-white"
                         : isEditing
@@ -854,6 +887,7 @@ function DonorProfileForm({ onRegistered }) {
                   <option value="">
                     {isCitiesLoading ? "Loading cities..." : "Select city"}
                   </option>
+
                   {cities.map((city) => (
                     <option key={city._id} value={city.name}>
                       {city.name}
@@ -893,6 +927,7 @@ function DonorProfileForm({ onRegistered }) {
                     required
                     className={inputClass}
                   />
+
                   <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-xs text-[#81756A]">
                     kg
                   </span>
@@ -982,6 +1017,7 @@ function DonorProfileForm({ onRegistered }) {
             <h4 className="text-sm font-semibold text-[#302923]">
               Your information matters.
             </h4>
+
             <p className="mt-1 max-w-2xl text-xs leading-6 text-[#81756A]">
               Your contact details are not displayed on public emergency
               listings. Hospitals can access your phone number only after you
@@ -997,6 +1033,7 @@ function DonorProfileForm({ onRegistered }) {
               <p className="font-serif text-xl">
                 {hasProfile ? "Ready to update?" : "Ready to get started?"}
               </p>
+
               <p className="mt-1 text-xs text-[#81756A]">
                 {isDirty
                   ? "You have unsaved changes."
@@ -1010,7 +1047,7 @@ function DonorProfileForm({ onRegistered }) {
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center gap-2 border border-[#DCCFC2] rounded-lg px-5 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F0EAE0] disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DCCFC2] px-5 py-3 text-sm font-semibold text-[#655A51] transition hover:bg-[#F0EAE0] disabled:opacity-50"
                 >
                   <X size={16} />
                   Cancel
@@ -1020,7 +1057,7 @@ function DonorProfileForm({ onRegistered }) {
               <button
                 type="submit"
                 disabled={isSaving || (hasProfile && !isDirty)}
-                className="inline-flex items-center justify-center gap-3 bg-[#963D54] rounded-lg px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-3 rounded-lg bg-[#963D54] px-7 py-3 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? (
                   <Loader2 size={17} className="animate-spin" />
@@ -1040,7 +1077,7 @@ function DonorProfileForm({ onRegistered }) {
 
         {/* View mode footer */}
         {!isEditing && hasProfile && (
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#E3D5C8] rounded-lg pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border-t border-[#E3D5C8] pt-6">
             <div className="flex items-center gap-2 text-xs text-[#81756A]">
               <CheckCircle2 size={15} className="text-[#963D54]" />
               Your profile information is saved.

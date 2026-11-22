@@ -422,6 +422,7 @@ export const uploadDonorProfilePhoto = async (req, res) => {
           folder: "donornexa/donor-profiles",
           public_id: publicId,
           resource_type: "image",
+          format: req.file.mimetype === "image/png" ? "png" : "jpg",
           allowed_formats: ["jpg", "png"],
           overwrite: false,
         },

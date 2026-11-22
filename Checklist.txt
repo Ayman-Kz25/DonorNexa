@@ -73,17 +73,17 @@
 
 3.2 Donor profile photo upload
 - [x] Donor can upload a profile photo.
-- [ ] JPG images are accepted.
-- [ ] PNG images are accepted.
-- [ ] Maximum file size is 2 MB.
-- [ ] Files larger than 2 MB are rejected.
-- [ ] Invalid file formats are rejected.
-- [ ] File MIME type is checked on the server.
-- [ ] Uploaded filenames are renamed or stored using unique identifiers.
-- [ ] File upload errors are handled.
-- [ ] Uploaded image is displayed in the donor profile.
-- [ ] Existing profile photo can be replaced.
-- [ ] Upload is protected against malicious files and unsafe paths.
+- [x] JPG images are accepted.
+- [x] PNG images are accepted.
+- [x] Maximum file size is 2 MB.
+- [x] Files larger than 2 MB are rejected.
+- [x] Invalid file formats are rejected.
+- [x] File MIME type is checked on the server.
+- [x] Uploaded filenames are renamed or stored using unique identifiers.
+- [x] File upload errors are handled.
+- [x] Uploaded image is displayed in the donor profile.
+- [x] Existing profile photo can be replaced.
+- [x] Upload is protected against malicious files and unsafe paths.
 
 3.3 Donor availability
 - [ ] Donor can turn availability ON.

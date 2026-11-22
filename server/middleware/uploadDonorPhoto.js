@@ -1,5 +1,6 @@
 import multer from "multer";
 import path from "path";
+import sharp from "sharp";
 
 const storage = multer.memoryStorage();
 
@@ -8,18 +9,15 @@ const upload = multer({
   limits: {
     fileSize: 2 * 1024 * 1024,
     files: 1,
+    fields: 0,
   },
   fileFilter: (req, file, cb) => {
     const extension = path.extname(file.originalname).toLowerCase();
 
-    const validTypes = {
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-    };
+    const validExtensions = [".jpg", ".jpeg", ".png"];
 
-    if (!validTypes[extension] || validTypes[extension] !== file.mimetype) {
-      return cb(new Error("Only JPG, JPEG, and PNG images are allowed."));
+    if (!validExtensions.includes(extension)) {
+      return cb(new Error("Only JPG and PNG images are allowed."));
     }
 
     cb(null, true);
@@ -27,7 +25,7 @@ const upload = multer({
 });
 
 const uploadDonorPhoto = (req, res, next) => {
-  upload.single("profilePhoto")(req, res, (error) => {
+  upload.single("profilePhoto")(req, res, async (error) => {
     if (error) {
       return res.status(400).json({
         success: false,
@@ -45,28 +43,55 @@ const uploadDonorPhoto = (req, res, next) => {
       });
     }
 
-    const buffer = req.file.buffer;
+    try {
+      // Read actual image metadata instead of trusting the file extension.
+      const metadata = await sharp(req.file.buffer, {
+        limitInputPixels: 25_000_000,
+        failOn: "error",
+      }).metadata();
 
-    const isJpeg =
-      buffer.length >= 3 &&
-      buffer[0] === 0xff &&
-      buffer[1] === 0xd8 &&
-      buffer[2] === 0xff;
+      // Validate the actual image format.
+      if (!["jpeg", "png"].includes(metadata.format)) {
+        return res.status(400).json({
+          success: false,
+          message: "Only valid JPG and PNG images are allowed.",
+        });
+      }
 
-    const isPng =
-      buffer.length >= 8 &&
-      buffer
-        .subarray(0, 8)
-        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+      // Decode and re-encode the image.
+      let processedBuffer;
 
-    if (!isJpeg && !isPng) {
+      if (metadata.format === "jpeg") {
+        processedBuffer = await sharp(req.file.buffer, {
+          limitInputPixels: 25_000_000,
+          failOn: "error",
+        })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+      } else {
+        processedBuffer = await sharp(req.file.buffer, {
+          limitInputPixels: 25_000_000,
+          failOn: "error",
+        })
+          .png()
+          .toBuffer();
+      }
+
+      // Replace the original buffer with the validated image.
+      req.file.buffer = processedBuffer;
+
+      req.file.mimetype =
+        metadata.format === "jpeg" ? "image/jpeg" : "image/png";
+
+      next();
+    } catch (validationError) {
+      console.error("Donor image validation error:", validationError);
+
       return res.status(400).json({
         success: false,
-        message: "The uploaded file is not a valid JPG or PNG image.",
+        message: "The uploaded file is not a valid image.",
       });
     }
-
-    next();
   });
 };
 
