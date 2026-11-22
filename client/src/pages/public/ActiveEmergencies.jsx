@@ -77,13 +77,13 @@ function ActiveEmergencies() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#963D54]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54] sm:text-xs">
               Community Emergency Board
             </p>
-            <h1 className="mt-3 font-serif text-3xl font-semibold text-[#302923] sm:text-4xl">
+            <h1 className="mt-3 font-serif text-2xl font-semibold text-[#302923] sm:text-3xl">
               Active Emergencies
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[#81756A]">
+            <p className="mt-3 max-w-xl text-xs leading-6 text-[#81756A] sm:text-sm">
               View current blood requirements from hospitals and help connect
               patients with eligible donors.
             </p>
@@ -92,31 +92,31 @@ function ActiveEmergencies() {
           <button
             onClick={fetchRequests}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-[#D9C5B8] px-5 py-3 text-sm font-medium text-[#963D54] transition hover:bg-[#F0E7DF] disabled:opacity-50 sm:self-auto"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-[#D9C5B8] px-5 py-3 text-xs font-medium text-[#963D54] transition hover:bg-[#F0E7DF] disabled:opacity-50 sm:self-auto sm:text-sm"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             Refresh
           </button>
         </div>
 
-        <div className="mt-8 flex items-center gap-2 text-sm text-[#81756A]">
+        <div className="mt-8 flex items-center gap-2 text-xs text-[#81756A] sm:text-sm">
           <span className="h-2.5 w-2.5 rounded-full bg-[#963D54]" />
           {requests.length} active{" "}
           {requests.length === 1 ? "request" : "requests"}
         </div>
 
         {loading ? (
-          <div className="py-24 text-center text-sm text-[#81756A]">
+          <div className="py-24 text-center text-xs text-[#81756A] sm:text-sm">
             Loading active emergencies...
           </div>
         ) : error ? (
           <div className="mt-8 rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] p-10 text-center">
-            <p className="text-sm text-[#963D54]">
+            <p className="text-xs text-[#963D54] sm:text-sm">
               Unable to load emergency requests.
             </p>
             <button
               onClick={fetchRequests}
-              className="mt-4 text-sm font-semibold text-[#963D54] underline"
+              className="mt-4 text-xs font-semibold text-[#963D54] underline sm:text-sm"
             >
               Try again
             </button>
@@ -124,10 +124,10 @@ function ActiveEmergencies() {
         ) : requests.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-[#E8DDD4] bg-[#FFFDF9] px-6 py-16 text-center">
             <Droplet size={30} className="mx-auto text-[#963D54]" />
-            <h2 className="mt-4 font-serif text-xl text-[#302923]">
+            <h2 className="mt-4 font-serif text-lg text-[#302923] sm:text-xl">
               No active emergencies
             </h2>
-            <p className="mt-2 text-sm text-[#81756A]">
+            <p className="mt-2 text-xs text-[#81756A] sm:text-sm">
               There are no active blood requests at the moment.
             </p>
           </div>
@@ -144,16 +144,16 @@ function ActiveEmergencies() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-[#81756A]">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#81756A] sm:text-xs">
                         Blood group
                       </p>
-                      <h2 className="mt-1 font-serif text-4xl font-semibold text-[#963D54]">
+                      <h2 className="mt-1 font-serif text-3xl font-semibold text-[#963D54] sm:text-4xl">
                         {item.bloodGroup}
                       </h2>
                     </div>
 
                     <span
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold sm:text-xs ${
                         urgencyStyles[item.urgency] ||
                         "bg-[#EEE8DF] text-[#66594D]"
                       }`}
@@ -162,7 +162,7 @@ function ActiveEmergencies() {
                     </span>
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2 text-sm text-[#66594D]">
+                  <div className="mt-4 flex items-center gap-2 text-xs text-[#66594D] sm:text-sm">
                     <ClockFading size={16} className="text-[#963D54]" />
                     <span className="text-[#81756A]">Required by:</span>
                     <span className="font-medium text-[#493D34]">
@@ -170,7 +170,7 @@ function ActiveEmergencies() {
                     </span>
                   </div>
 
-                  <div className="mt-4 flex items-center gap-2 border-t border-[#EEE5DD] pt-4 text-sm">
+                  <div className="mt-4 flex items-center gap-2 border-t border-[#EEE5DD] pt-4 text-xs sm:text-sm">
                     <Timer size={16} className="text-[#963D54]" />
                     <span className="text-[#81756A]">Time remaining:</span>
                     <span
@@ -187,7 +187,7 @@ function ActiveEmergencies() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-xs leading-5 text-[#9A8D82]">
+        <p className="mt-8 text-center text-[11px] leading-5 text-[#9A8D82] sm:text-xs">
           For privacy, patient names, contact numbers, and donor details are
           never displayed on this public board.
         </p>

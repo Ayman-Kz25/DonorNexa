@@ -472,75 +472,75 @@ The CEP explicitly asks students to demonstrate concepts and identify the file/c
 - [x] Uploaded files are stored using a suitable storage solution.
 
 7.7 Date and time functions
-- [ ] Cooldown calculation is implemented.
-- [ ] Countdown timer is implemented.
-- [ ] Automatic expiry is implemented.
-- [ ] Required-by dates are validated.
-- [ ] Response deadlines are calculated.
-- [ ] Asia/Karachi timezone is handled correctly.
-- [ ] Date/time display is consistent.
-- [ ] Date calculations are tested around midnight and date boundaries.
+- [x] Cooldown calculation is implemented.
+- [x] Countdown timer is implemented.
+- [x] Automatic expiry is implemented.
+- [x] Required-by dates are validated.
+- [x] Response deadlines are calculated.
+- [x] Asia/Karachi timezone is handled correctly.
+- [x] Date/time display is consistent.
+- [x] Date calculations are tested around midnight and date boundaries.
 
 7.8 Regular expressions and validation
-- [ ] Email validation is implemented.
-- [ ] Pakistani mobile number validation is implemented.
-- [ ] CNIC validation is implemented if applicable to the registration design.
-- [ ] Blood group validation is implemented.
+- [x] Email validation is implemented.
+- [x] Pakistani mobile number validation is implemented.
+- [x] CNIC validation is implemented if applicable to the registration design.
+- [x] Blood group validation is implemented.
 - [ ] Numeric field validation is implemented.
-- [ ] File format and size validation are implemented.
-- [ ] Both client-side and server-side validation are present.
+- [x] File format and size validation are implemented.
+- [x] Both client-side and server-side validation are present.
 
 7.9 Error and exception handling
-- [ ] Database errors are handled.
-- [ ] API errors are handled.
-- [ ] Validation errors are handled.
-- [ ] Authentication errors are handled.
-- [ ] Authorization errors are handled.
-- [ ] File upload errors are handled.
-- [ ] Appropriate error messages are displayed.
-- [ ] Sensitive internal error details are not exposed to users.
-- [ ] Errors are logged appropriately.
+- [x] Database errors are handled.
+- [x] API errors are handled.
+- [x] Validation errors are handled.
+- [x] Authentication errors are handled.
+- [x] Authorization errors are handled.
+- [x] File upload errors are handled.
+- [x] Appropriate error messages are displayed.
+- [x] Sensitive internal error details are not exposed to users.
+- [x] Errors are logged appropriately.
 
 7.10 Database operations
-- [ ] Data is accessed through Mongoose models or an equivalent data-access layer.
-- [ ] Database queries are parameterized/safely constructed.
-- [ ] Transactions are used for operations requiring atomicity.
-- [ ] Aggregation pipelines are used where appropriate.
-- [ ] Relationships between entities are handled correctly.
-- [ ] Population/joins are used where appropriate.
-- [ ] Data integrity is maintained.
+- [x] Data is accessed through Mongoose models or an equivalent data-access layer.
+- [x] Database queries are parameterized/safely constructed.
+- [x] Transactions are used for operations requiring atomicity.
+- [x] Aggregation pipelines are used where appropriate.
+- [x] Relationships between entities are handled correctly.
+- [x] Population/joins are used where appropriate.
+- [x] Data integrity is maintained.
 
 7.11 HTML5, CSS3 and frontend
-- [ ] Semantic HTML elements are used.
-- [ ] Forms use appropriate input types.
-- [ ] Form labels are associated with inputs.
-- [ ] ARIA attributes are used where appropriate.
-- [ ] Flexbox is used.
-- [ ] CSS Grid is used.
-- [ ] Media queries are used.
-- [ ] CSS variables or an equivalent design-token system is used.
-- [ ] At least 30% of styling is hand-written CSS, even if a framework is used.
-- [ ] Responsive design is implemented.
-- [ ] JavaScript events are used.
-- [ ] DOM interactions are implemented where appropriate.
-- [ ] AJAX/API requests are implemented.
-- [ ] Live donor search supports debounce.
-- [ ] Countdown timers work dynamically.
-- [ ] Inline validation is implemented.
-- [ ] Charts are generated dynamically.
+- [x] Semantic HTML elements are used.
+- [x] Forms use appropriate input types.
+- [x] Form labels are associated with inputs.
+- [x] ARIA attributes are used where appropriate.
+- [x] Flexbox is used.
+- [x] CSS Grid is used.
+- [x] Media queries are used.
+- [x] CSS variables or an equivalent design-token system is used.
+- [x] At least 30% of styling is hand-written CSS, even if a framework is used.
+- [x] Responsive design is implemented.
+- [x] JavaScript events are used.
+- [x] DOM interactions are implemented where appropriate.
+- [x] AJAX/API requests are implemented.
+- [x] Live donor search supports debounce.
+- [x] Countdown timers work dynamically.
+- [x] Inline validation is implemented.
+- [x] Charts are generated dynamically.
 
 7.12 Security concepts
-- [ ] Passwords are not stored in plain text.
-- [ ] Password hashing is handled by the authentication provider or a secure hashing implementation.
-- [ ] CSRF protection is considered and implemented where applicable to the authentication architecture.
-- [ ] XSS prevention is implemented.
-- [ ] Database injection protection is implemented.
-- [ ] Role-based access is enforced on every protected backend operation.
-- [ ] File uploads are secured.
-- [ ] Sensitive information is protected.
-- [ ] Authentication tokens are validated.
-- [ ] Security headers are configured.
-- [ ] Rate limiting is implemented where appropriate.
+- [x] Passwords are not stored in plain text.
+- [x] Password hashing is handled by the authentication provider or a secure hashing implementation.
+- [x] CSRF protection is considered and implemented where applicable to the authentication architecture.
+- [x] XSS prevention is implemented.
+- [x] Database injection protection is implemented.
+- [x] Role-based access is enforced on every protected backend operation.
+- [x] File uploads are secured.
+- [x] Sensitive information is protected.
+- [x] Authentication tokens are validated.
+- [x] Security headers are configured.
+- [x] Rate limiting is implemented where appropriate.
 
 7.13 Pagination, sorting and search
 - [ ] Request lists support pagination.

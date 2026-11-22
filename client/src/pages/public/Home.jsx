@@ -215,13 +215,13 @@ function Home() {
               </span>
             </div>
 
-            <h1 className="max-w-2xl font-serif text-[clamp(2.5rem,8vw,5.5rem)] leading-[1.05] tracking-[-0.055em]">
+            <h1 className="max-w-2xl font-serif text-[clamp(2rem,5.5vw,4rem)] leading-[1.05] tracking-[-0.055em]">
               Someone out there
               <br />
               is your <span className="italic text-[#A94452]">match.</span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-base leading-8 text-[#756B61] sm:text-lg">
+            <p className="mt-7 max-w-xl text-sm leading-8 text-[#756B61] sm:text-base">
               When a hospital needs blood, the right donor shouldn’t be hard to
               find. DonorNexa brings verified hospitals and willing donors
               together, right when it matters.
@@ -233,14 +233,14 @@ function Home() {
                   type="button"
                   onClick={() => handleRoleAction("donor")}
                   disabled={!isLoaded || userLoading || !user}
-                  className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-60"
+                  className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-xs font-semibold text-white transition hover:bg-[#7D3045] disabled:opacity-60 sm:text-sm"
                 >
                   I want to donate
                   <ArrowRight size={18} />
                 </button>
               ) : (
                 <SignUpButton mode="modal" forceRedirectUrl="/onboarding/donor">
-                  <button className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045]">
+                  <button className="inline-flex items-center gap-4 rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-xs font-semibold text-white transition hover:bg-[#7D3045] sm:text-sm">
                     I want to donate
                     <ArrowRight size={18} />
                   </button>
@@ -249,7 +249,7 @@ function Home() {
 
               <Link
                 to="/emergencies"
-                className="inline-flex items-center gap-3 rounded-md border border-[#CDBCAF] px-6 py-4 text-sm font-semibold text-[#493D34] transition hover:border-[#963D54] hover:text-[#963D54]"
+                className="inline-flex items-center gap-3 rounded-md border border-[#CDBCAF] px-6 py-4 text-xs font-semibold text-[#493D34] transition hover:border-[#963D54] hover:text-[#963D54] sm:text-sm"
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#CDBCAF]">
                   <ArrowDown size={13} />
@@ -275,10 +275,10 @@ function Home() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold">
+                <p className="text-xs font-semibold sm:text-sm">
                   Verified hospitals. Eligible donors.
                 </p>
-                <p className="mt-1 text-xs text-[#8B7E72]">
+                <p className="mt-1 text-[11px] text-[#8B7E72] sm:text-xs">
                   Better coordination when every moment matters.
                 </p>
               </div>
@@ -345,10 +345,10 @@ function Home() {
                     <Droplet size={21} fill="currentColor" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[#302923]">
+                    <p className="text-[11px] font-semibold text-[#302923] sm:text-xs">
                       Every type matters
                     </p>
-                    <p className="mt-1 text-[9px] text-[#8B7E72]">
+                    <p className="mt-1 text-[9px] text-[#8B7E72] sm:text-[10px]">
                       8 blood groups. One platform.
                     </p>
                   </div>
@@ -360,25 +360,25 @@ function Home() {
                     <ShieldCheck size={19} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[#302923]">
+                    <p className="text-[11px] font-semibold text-[#302923] sm:text-xs">
                       Verified hospital requests
                     </p>
-                    <p className="mt-1 text-[9px] text-[#8B7E72]">
+                    <p className="mt-1 text-[9px] text-[#8B7E72] sm:text-[10px]">
                       Coordinated with care
                     </p>
                   </div>
                 </div>
 
                 <div className="absolute bottom-5 left-3 right-3 z-10 flex items-center justify-between gap-1 sm:bottom-6 sm:left-7 sm:right-7 sm:gap-2">
-                  <span className="min-w-0 text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                  <span className="min-w-0 text-[8px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
                     01 — Connect
                   </span>
 
-                  <span className="min-w-0 text-center text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                  <span className="min-w-0 text-center text-[8px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
                     02 — Respond
                   </span>
 
-                  <span className="min-w-0 text-right text-[7px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
+                  <span className="min-w-0 text-right text-[8px] font-medium uppercase tracking-[0.06em] text-[#806858] sm:text-[9px] sm:tracking-[0.13em]">
                     03 — Make an impact
                   </span>
                 </div>
@@ -394,12 +394,12 @@ function Home() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#963D54]">
                 DonorNexa Live Statistics
               </p>
-              <h2 className="mt-2 font-serif text-2xl text-[#302923]">
+              <h2 className="mt-2 font-serif text-xl text-[#302923] sm:text-2xl">
                 Every number represents a connection.
               </h2>
             </div>
 
-            <p className="text-xs text-[#81756A]">
+            <p className="text-[11px] text-[#81756A] sm:text-xs">
               Explore what our community is making possible.
             </p>
           </div>
@@ -428,15 +428,15 @@ function Home() {
               const content = (
                 <>
                   <div>
-                    <p className="font-serif text-4xl text-[#963D54] transition-transform duration-300 group-hover:-translate-y-1 sm:text-5xl">
+                    <p className="font-serif text-3xl text-[#963D54] transition-transform duration-300 group-hover:-translate-y-1 sm:text-4xl">
                       {stat.value.toLocaleString()}
                     </p>
 
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.13em] text-[#493D34]">
+                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-[#493D34] sm:text-xs">
                       {stat.label}
                     </p>
 
-                    <p className="mt-2 text-xs text-[#81756A]">
+                    <p className="mt-2 text-[11px] text-[#81756A] sm:text-xs">
                       {stat.description}
                     </p>
                   </div>
@@ -472,10 +472,10 @@ function Home() {
           <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <SectionLabel>Every type matters</SectionLabel>
-              <h2 className="mt-3 font-serif text-3xl sm:text-4xl">
+              <h2 className="mt-3 font-serif text-2xl sm:text-3xl">
                 8 blood groups. One community.
               </h2>
-              <p className="mt-3 text-sm leading-7 text-[#81756A]">
+              <p className="mt-3 text-xs leading-7 text-[#81756A] sm:text-sm">
                 Every blood group has a place in helping someone.
               </p>
             </div>
@@ -484,7 +484,7 @@ function Home() {
               {bloodGroups.map((group) => (
                 <div
                   key={group}
-                  className="flex h-14 w-full min-w-0 items-center justify-center rounded-xl border border-[#E2D5C8] bg-[#F2ECE3] font-serif text-xl text-[#963D54] transition hover:border-[#963D54] hover:bg-[#963D54] hover:text-white sm:h-16"
+                  className="flex h-14 w-full min-w-0 items-center justify-center rounded-xl border border-[#E2D5C8] bg-[#F2ECE3] font-serif text-lg text-[#963D54] transition hover:border-[#963D54] hover:bg-[#963D54] hover:text-white sm:h-16 sm:text-xl"
                 >
                   {group}
                 </div>
@@ -503,14 +503,14 @@ function Home() {
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
               <SectionLabel>Less searching. More helping.</SectionLabel>
-              <h2 className="mt-4 max-w-xl font-serif text-4xl leading-tight sm:text-5xl">
+              <h2 className="mt-4 max-w-xl font-serif text-2xl leading-tight sm:text-3xl">
                 Good things happen
                 <br />
                 <span className="italic text-[#963D54]">when we connect.</span>
               </h2>
             </div>
 
-            <p className="max-w-sm text-sm leading-7 text-[#81756A]">
+            <p className="max-w-sm text-xs leading-7 text-[#81756A] sm:text-sm">
               Simple by design. Thoughtful where it counts. A clear process that
               brings donors and hospitals closer.
             </p>
@@ -551,7 +551,7 @@ function Home() {
                   className="border-t border-[#CFC0B1] pt-7"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-serif text-3xl text-[#963D54]">
+                    <span className="font-serif text-2xl text-[#963D54] sm:text-3xl">
                       {step.number}
                     </span>
                     <Icon
@@ -561,11 +561,13 @@ function Home() {
                     />
                   </div>
 
-                  <h3 className="mt-9 font-serif text-2xl">{step.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-[#81756A]">
+                  <h3 className="mt-9 font-serif text-xl sm:text-2xl">
+                    {step.title}
+                  </h3>
+                  <p className="mt-4 text-xs leading-7 text-[#81756A] sm:text-sm">
                     {step.description}
                   </p>
-                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.16em] text-[#963D54]">
+                  <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#963D54] sm:text-xs">
                     {step.note}
                   </p>
                 </div>
@@ -581,14 +583,14 @@ function Home() {
           <div className="grid gap-14 lg:grid-cols-2 lg:items-center">
             <div>
               <SectionLabel>Built for the moments that matter</SectionLabel>
-              <h2 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
+              <h2 className="mt-4 font-serif text-2xl leading-tight sm:text-3xl">
                 A little more trust.
                 <br />
                 <span className="italic text-[#963D54]">
                   A little more hope.
                 </span>
               </h2>
-              <p className="mt-6 max-w-lg text-sm leading-8 text-[#81756A]">
+              <p className="mt-6 max-w-lg text-xs leading-8 text-[#81756A] sm:text-sm">
                 DonorNexa is designed around people. From hospital verification
                 to donor privacy, every part of the platform aims to make
                 coordination more thoughtful.
@@ -629,10 +631,10 @@ function Home() {
                     className="min-h-0 rounded-2xl border border-[#E6DCD0] bg-[#F2ECE3] p-3 sm:min-h-48 sm:p-6"
                   >
                     <Icon size={22} className="text-[#963D54]" />
-                    <h3 className="mt-4 font-serif text-base leading-snug text-[#302923] sm:mt-6 sm:text-xl">
+                    <h3 className="mt-4 font-serif text-sm leading-snug text-[#302923] sm:mt-6 sm:text-xl">
                       {item.title}
                     </h3>
-                    <p className="mt-3 text-xs leading-6 text-[#81756A]">
+                    <p className="mt-3 text-[11px] leading-6 text-[#81756A] sm:text-xs">
                       {item.description}
                     </p>
                   </div>
@@ -648,10 +650,10 @@ function Home() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 md:flex-row md:items-center">
           <div>
             <SectionLabel>Emergency blood requests</SectionLabel>
-            <h2 className="mt-4 font-serif text-4xl sm:text-5xl">
+            <h2 className="mt-4 font-serif text-2xl sm:text-3xl">
               Help that can’t wait.
             </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-[#C2B5A8]">
+            <p className="mt-4 max-w-xl text-xs leading-7 text-[#C2B5A8] sm:text-sm">
               Explore all active blood requirements shared by hospitals. Every
               request displays essential information while keeping patient and
               donor details private.
@@ -660,7 +662,7 @@ function Home() {
 
           <Link
             to="/emergencies"
-            className="inline-flex shrink-0 items-center justify-center gap-4 self-start rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-sm font-semibold text-white transition hover:bg-[#7D3045] md:self-auto"
+            className="inline-flex shrink-0 items-center justify-center gap-4 self-start rounded-md bg-[#963D54] px-4 py-3 sm:px-7 sm:py-4 text-xs font-semibold text-white transition hover:bg-[#7D3045] md:self-auto sm:text-sm"
           >
             View active emergencies
             <ArrowRight size={18} />
@@ -674,7 +676,7 @@ function Home() {
           <div>
             <SectionLabel>Choose your role</SectionLabel>
 
-            <h2 className="mt-5 max-w-xl font-serif text-4xl leading-[1.15] tracking-tight sm:text-5xl lg:text-[64px]">
+            <h2 className="mt-5 max-w-xl font-serif leading-[1.15] tracking-tight text-3xl sm:text-4xl lg:text-5xl">
               One platform.
               <br />
               <span className="italic text-[#A34B60]">Different roles</span>
@@ -682,7 +684,7 @@ function Home() {
               one shared purpose.
             </h2>
 
-            <p className="mt-6 max-w-lg text-sm leading-7 text-[#81756A]">
+            <p className="mt-6 max-w-lg text-xs leading-7 text-[#81756A] sm:text-sm">
               Whether you donate blood, coordinate hospital requirements, or
               manage the platform, choose your role to get started.
             </p>
@@ -705,7 +707,9 @@ function Home() {
                   >
                     <span className="flex items-center gap-4">
                       <Icon size={19} strokeWidth={1.7} />
-                      <span className="text-sm font-medium">{role.label}</span>
+                      <span className="text-xs font-medium sm:text-sm">
+                        {role.label}
+                      </span>
                     </span>
 
                     <ArrowRight
@@ -746,7 +750,7 @@ function Home() {
             </div>
 
             <div className="relative mt-8 max-w-md sm:mt-12">
-              <h3 className="font-serif text-4xl leading-[1.05] sm:text-[46px]">
+              <h3 className="font-serif text-2xl leading-[1.05] sm:text-3xl">
                 {activeRole.heading}
                 <br />
                 <span className="italic text-[#EBC9C4]">
@@ -754,7 +758,7 @@ function Home() {
                 </span>
               </h3>
 
-              <p className="mt-5 max-w-md text-sm leading-7 text-[#F4E1DF]">
+              <p className="mt-5 max-w-md text-xs leading-7 text-[#F4E1DF] sm:text-sm">
                 {activeRole.description}
               </p>
 
@@ -841,10 +845,10 @@ function Home() {
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <SectionLabel>A few good questions</SectionLabel>
-            <h2 className="mt-4 font-serif text-4xl sm:text-5xl">
+            <h2 className="mt-4 font-serif text-3xl sm:text-4xl">
               Good to know.
             </h2>
-            <p className="mt-5 max-w-sm text-sm leading-7 text-[#81756A]">
+            <p className="mt-5 max-w-sm text-xs leading-7 text-[#81756A] sm:text-sm">
               A little clarity goes a long way. Here are a few things people
               often ask about DonorNexa.
             </p>
@@ -856,7 +860,7 @@ function Home() {
                 key={faq.question}
                 className="group border-b border-[#DED3C7] py-5"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-serif text-lg marker:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-serif text-base marker:hidden sm:text-lg">
                   {faq.question}
                   <Plus
                     size={19}
@@ -864,7 +868,7 @@ function Home() {
                   />
                 </summary>
 
-                <p className="max-w-2xl pt-4 text-sm leading-7 text-[#81756A]">
+                <p className="max-w-2xl pt-4 text-xs leading-7 text-[#81756A] sm:text-sm">
                   {faq.answer}
                 </p>
               </details>
@@ -882,17 +886,17 @@ function Home() {
             Your role matters
           </p>
 
-          <h2 className="mx-auto mt-5 max-w-2xl font-serif text-4xl leading-tight sm:text-5xl">
+          <h2 className="mx-auto mt-5 max-w-2xl font-serif text-3xl leading-tight sm:text-4xl">
             Be part of the process.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-lg text-sm leading-7 text-[#F0DDE0]">
+          <p className="mx-auto mt-5 max-w-lg text-xs leading-7 text-[#F0DDE0] sm:text-sm">
             One platform to connect donors, hospitals, and administrators.
           </p>
 
           <a
             href="#roles"
-            className="mt-9 inline-flex items-center gap-3 rounded-full bg-[#F8F5EF] px-8 py-4 text-sm font-semibold text-[#963D54] transition hover:bg-white"
+            className="mt-9 inline-flex items-center gap-3 rounded-full bg-[#F8F5EF] px-8 py-4 text-xs font-semibold text-[#963D54] transition hover:bg-white sm:text-sm"
           >
             Find your place
             <ArrowRight size={17} />
