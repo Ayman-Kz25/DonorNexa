@@ -27,11 +27,15 @@ export default function HospitalMatchResponses({
   const [confirmingMatchId, setConfirmingMatchId] = useState(null);
 
   const fetchDonors = async () => {
+    if (!requestId || !/^[0-9a-fA-F]{24}$/.test(String(requestId))) {
+      setError(`Invalid blood request ID: ${requestId}`);
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      // Get the complete ranked list of eligible donors.
       const rankedResponse = await request({
         method: "GET",
         url: `/api/blood-requests/${requestId}/matches`,
@@ -39,13 +43,14 @@ export default function HospitalMatchResponses({
 
       const rankedDonors = rankedResponse.data?.donors || [];
 
-      // Get notification and response records for this request.
       const response = await request({
         method: "GET",
         url: `/api/blood-requests/${requestId}/matches/responses`,
       });
 
       const matchResponses = response.data?.responses || [];
+
+      // Keep the rest of your existing merging logic here.
 
       // Index existing responses by donor ID.
       const responsesByDonorId = new Map();
@@ -69,6 +74,7 @@ export default function HospitalMatchResponses({
           matchId: match?.matchId || match?._id || null,
           donorName: match?.donorName || donor.name || "Donor",
           status: match?.status || "not_notified",
+          declineReason: match?.declineReason || "",
           phone: match?.phone || null,
           totalDonations: match?.totalDonations ?? donor.totalDonations ?? 0,
           rank: index + 1,
@@ -295,6 +301,19 @@ export default function HospitalMatchResponses({
                             <Phone size={15} />
                             {donor.phone}
                           </a>
+                        )}
+
+                        {donor.status === "declined" && (
+                          <div className="mt-4 rounded-xl border border-[#E8DDD4] bg-[#F8F5EF] p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-[#782B40]">
+                              Donor's Decline Reason
+                            </p>
+
+                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#655A51]">
+                              {donor.declineReason?.trim() ||
+                                "No reason provided."}
+                            </p>
+                          </div>
                         )}
                       </div>
 

@@ -264,6 +264,7 @@ const BloodRequests = () => {
             const status = item.status?.toLowerCase();
             const isOpen = status === "open";
             const isActionLoading = actionLoading === item._id;
+            console.log("Blood request item:", item._id);
 
             return (
               <article

@@ -246,18 +246,31 @@ export const respondToMatch = async (req, res) => {
 
   try {
     const { userId } = getAuth(req);
-    const { status, reason } = req.body;
+    const { status, declineReason: rawDeclineReason } = req.body;
 
-    const declineReason =
-      status === "declined" && typeof reason === "string"
-        ? reason.trim()
-        : null;
+    let declineReason = null;
 
-    if (declineReason && declineReason.length > 500) {
-      return res.status(400).json({
-        success: false,
-        message: "Decline reason cannot exceed 500 characters.",
-      });
+    if (status === "declined") {
+      if (
+        rawDeclineReason !== undefined &&
+        rawDeclineReason !== null &&
+        typeof rawDeclineReason !== "string"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Decline reason must be valid text.",
+        });
+      }
+
+      declineReason =
+        typeof rawDeclineReason === "string" ? rawDeclineReason.trim() : "";
+
+      if (declineReason.length > 500) {
+        return res.status(400).json({
+          success: false,
+          message: "Decline reason cannot exceed 500 characters.",
+        });
+      }
     }
 
     if (!mongoose.isValidObjectId(req.params.matchId)) {
@@ -707,6 +720,7 @@ export const getHospitalMatchResponses = async (req, res) => {
           city: match.donor?.city,
           totalDonations: match.donor?.totalDonations,
           status: match.status,
+          declineReason: match.declineReason || "",
           respondedAt: match.respondedAt,
           phone: phoneRevealed ? match.donor?.user?.phone : null,
         };

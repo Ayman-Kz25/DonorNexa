@@ -168,21 +168,20 @@ export const createBloodRequest = async (req, res) => {
 
 export const getHospitalBloodRequests = async (req, res) => {
   try {
-    const bloodRequests = await BloodRequest.find({
+    const requests = await BloodRequest.find({
       hospital: req.hospital._id,
     }).sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      count: bloodRequests.length,
-      bloodRequests,
+      requests,
     });
   } catch (error) {
-    console.error("Get hospital blood requests error:", error);
+    console.error("Hospital blood requests error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Unable to retrieve blood requests.",
+      message: "Unable to fetch hospital blood requests.",
     });
   }
 };

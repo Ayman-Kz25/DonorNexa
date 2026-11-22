@@ -86,92 +86,92 @@
 - [x] Upload is protected against malicious files and unsafe paths.
 
 3.3 Donor availability
-- [ ] Donor can turn availability ON.
-- [ ] Donor can turn availability OFF.
-- [ ] Availability is saved in the database.
-- [ ] Availability is reflected after refreshing the page.
-- [ ] Ineligible donors cannot become available for matching.
-- [ ] Inactive donors cannot participate in matching.
-- [ ] Availability changes are validated on the backend.
+- [x] Donor can turn availability ON.
+- [x] Donor can turn availability OFF.
+- [x] Availability is saved in the database.
+- [x] Availability is reflected after refreshing the page.
+- [x] Ineligible donors cannot become available for matching.
+- [x] Inactive donors cannot participate in matching.
+- [x] Availability changes are validated on the backend.
 
 3.4 Matched blood requests
-- [ ] Donor can view matched blood requests.
-- [ ] Donor receives a notification when matched.
-- [ ] Donor can view request blood group.
-- [ ] Donor can view required units.
-- [ ] Donor can view urgency.
-- [ ] Donor can view hospital/city information as permitted.
-- [ ] Donor can view the response deadline.
-- [ ] Donor can accept a matched request.
-- [ ] Donor can decline a matched request.
-- [ ] Donor can provide an optional decline reason.
-- [ ] Decline reason is validated.
-- [ ] Donor cannot respond to an expired match.
-- [ ] Donor cannot respond twice in a way that creates conflicting statuses.
-- [ ] Response status is saved correctly.
-- [ ] Hospital can see the donor's response.
+- [x] Donor can view matched blood requests.
+- [x] Donor receives a notification when matched.
+- [x] Donor can view request blood group.
+- [x] Donor can view required units.
+- [x] Donor can view urgency.
+- [x] Donor can view hospital/city information as permitted.
+- [x] Donor can view the response deadline.
+- [x] Donor can accept a matched request.
+- [x] Donor can decline a matched request.
+- [x] Donor can provide an optional decline reason.
+- [x] Decline reason is validated.
+- [x] Donor cannot respond to an expired match.
+- [x] Donor cannot respond twice in a way that creates conflicting statuses.
+- [x] Response status is saved correctly.
+- [x] Hospital can see the donor's response.
 
 3.5 Donation history and badges
-- [ ] Donor can view donation history.
-- [ ] Donation history displays donation date.
-- [ ] Donation history displays relevant hospital/request information.
-- [ ] Completed donations are reflected in the history.
-- [ ] Donor receives a first-donation badge.
-- [ ] Donor receives a fifth-donation badge.
-- [ ] Donor receives a tenth-donation badge.
-- [ ] Badges are calculated from actual completed donations.
-- [ ] Badges do not get awarded incorrectly for pending or declined matches.
+- [x] Donor can view donation history.
+- [x] Donation history displays donation date.
+- [x] Donation history displays relevant hospital/request information.
+- [x] Completed donations are reflected in the history.
+- [x] Donor receives a first-donation badge.
+- [x] Donor receives a fifth-donation badge.
+- [x] Donor receives a tenth-donation badge.
+- [x] Badges are calculated from actual completed donations.
+- [x] Badges do not get awarded incorrectly for pending or declined matches.
 
 1. Hospital Module
 
 4.1 Hospital registration and verification
-- [ ] Hospital can register.
-- [ ] Hospital can provide hospital name and required details.
-- [ ] Hospital can select its city.
-- [ ] Hospital can upload its licence document.
-- [ ] Only PDF licence documents are accepted.
-- [ ] Invalid file formats are rejected.
-- [ ] Hospital registration creates a pending verification status.
-- [ ] Pending hospitals cannot create or manage blood requests.
-- [ ] Admin can view pending hospital applications.
-- [ ] Admin can verify a hospital.
-- [ ] Admin can reject a hospital.
-- [ ] Verification status is saved in the database.
-- [ ] Hospital is notified of verification/rejection where implemented.
-- [ ] Rejected or inactive hospitals cannot access protected hospital operations.
+- [x] Hospital can register.
+- [x] Hospital can provide hospital name and required details.
+- [x] Hospital can select its city.
+- [x] Hospital can upload its licence document.
+- [x] Only PDF licence documents are accepted.
+- [x] Invalid file formats are rejected.
+- [x] Hospital registration creates a pending verification status.
+- [x] Pending hospitals cannot create or manage blood requests.
+- [x] Admin can view pending hospital applications.
+- [x] Admin can verify a hospital.
+- [x] Admin can reject a hospital.
+- [x] Verification status is saved in the database.
+- [x] Hospital is notified of verification/rejection where implemented.
+- [x] Rejected or inactive hospitals cannot access protected hospital operations.
 
 4.2 Blood request creation
-- [ ] Verified hospital can create a blood request.
-- [ ] Hospital can select blood group.
-- [ ] Hospital can enter required units.
-- [ ] Hospital can select urgency.
-- [ ] Hospital can select required-by date and time.
-- [ ] Hospital can enter ward information.
-- [ ] Hospital can enter additional notes.
-- [ ] Required fields are validated.
-- [ ] Units must be valid positive numbers.
-- [ ] Required-by date/time must be valid.
-- [ ] Past deadlines are rejected.
-- [ ] Request is associated with the authenticated hospital.
-- [ ] Request is saved in the database.
-- [ ] Request receives the correct initial status.
-- [ ] Matching engine runs after request creation.
-- [ ] Request creation is recorded in the audit log.
+- [x] Verified hospital can create a blood request.
+- [x] Hospital can select blood group.
+- [x] Hospital can enter required units.
+- [x] Hospital can select urgency.
+- [x] Hospital can select required-by date and time.
+- [x] Hospital can enter ward information.
+- [x] Hospital can enter additional notes.
+- [x] Required fields are validated.
+- [x] Units must be valid positive numbers.
+- [x] Required-by date/time must be valid.
+- [x] Past deadlines are rejected.
+- [x] Request is associated with the authenticated hospital.
+- [x] Request is saved in the database.
+- [x] Request receives the correct initial status.
+- [x] Matching engine runs after request creation.
+- [x] Request creation is recorded in the audit log.
 
 4.3 Blood request management
-- [ ] Hospital can view its own blood requests.
-- [ ] Hospital can view request details.
+- [x] Hospital can view its own blood requests.
+- [x] Hospital can view request details.
 - [ ] Hospital can update permitted request fields.
-- [ ] Hospital can cancel a request.
-- [ ] Hospital can close/fulfil a request.
-- [ ] Hospital can view fulfilled units.
-- [ ] Hospital can view reserved units.
-- [ ] Hospital cannot reduce required units below already reserved/fulfilled units.
-- [ ] Hospital cannot modify another hospital's requests.
-- [ ] Request status updates are reflected in the database.
-- [ ] Relevant donors receive request update notifications.
-- [ ] Cancellation releases reserved units appropriately.
-- [ ] Expired requests release outstanding reservations appropriately.
+- [x] Hospital can cancel a request.
+- [x] Hospital can close/fulfil a request.
+- [x] Hospital can view fulfilled units.
+- [x] Hospital can view reserved units.
+- [x] Hospital cannot reduce required units below already reserved/fulfilled units.
+- [x] Hospital cannot modify another hospital's requests.
+- [x] Request status updates are reflected in the database.
+- [x] Relevant donors receive request update notifications.
+- [x] Cancellation releases reserved units appropriately.
+- [x] Expired requests release outstanding reservations appropriately.
 
 4.4 Matched donor list
 - [ ] Hospital can view matched donors.

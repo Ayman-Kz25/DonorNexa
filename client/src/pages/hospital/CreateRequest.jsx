@@ -18,103 +18,131 @@ const inputClass =
 
 const labelClass = "mb-2 block text-sm font-semibold text-[#40343A]";
 
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+const URGENCY_LEVELS = ["normal", "urgent", "critical"];
+
+const INITIAL_FORM_DATA = {
+  bloodGroup: "",
+  unitsRequired: "",
+  urgency: "normal",
+  requiredBy: "",
+  ward: "",
+  hospitalNotes: "",
+};
+
 const CreateRequest = () => {
   const { request } = useApi();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    bloodGroup: "",
-    unitsRequired: "",
-    urgency: "normal",
-    requiredBy: "",
-    ward: "",
-    hospitalNotes: "",
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  // Update form fields.
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
     }));
+
+    if (error) setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
+  // Validate all form fields before submission.
+  const validateForm = () => {
     if (
       !formData.bloodGroup ||
       !formData.unitsRequired ||
       !formData.requiredBy
     ) {
-      setError("Please complete all required fields.");
-      return;
+      return "Please complete all required fields.";
     }
 
-    if (
-      !Number.isInteger(Number(formData.unitsRequired)) ||
-      Number(formData.unitsRequired) < 1
-    ) {
-      setError("Units required must be a positive whole number.");
-      return;
+    if (!BLOOD_GROUPS.includes(formData.bloodGroup)) {
+      return "Please select a valid blood group.";
+    }
+
+    if (!URGENCY_LEVELS.includes(formData.urgency)) {
+      return "Please select a valid urgency level.";
+    }
+
+    const units = Number(formData.unitsRequired);
+
+    if (!Number.isSafeInteger(units) || units < 1) {
+      return "Units required must be a positive whole number.";
     }
 
     if (formData.ward.trim().length > 100) {
-      setError("Ward name cannot exceed 100 characters.");
-      return;
+      return "Ward name cannot exceed 100 characters.";
     }
 
     if (formData.hospitalNotes.trim().length > 500) {
-      setError("Additional notes cannot exceed 500 characters.");
-      return;
+      return "Additional notes cannot exceed 500 characters.";
     }
 
     const requiredByDate = new Date(formData.requiredBy);
 
     if (
+      !formData.requiredBy ||
       Number.isNaN(requiredByDate.getTime()) ||
       requiredByDate.getTime() <= Date.now()
     ) {
-      setError("Required By must be a future date and time.");
+      return "Required By must be a valid future date and time.";
+    }
+
+    return null;
+  };
+
+  // Submit blood request.
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (loading) return;
+
+    setError("");
+    setSuccess("");
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     try {
       setLoading(true);
 
+      const requiredByDate = new Date(formData.requiredBy);
+
+      const payload = {
+        bloodGroup: formData.bloodGroup,
+        unitsRequired: Number(formData.unitsRequired),
+        urgency: formData.urgency,
+        requiredBy: requiredByDate.toISOString(),
+        ward: formData.ward.trim(),
+        hospitalNotes: formData.hospitalNotes.trim(),
+      };
+
       await request({
         method: "POST",
         url: "/api/blood-requests",
-        data: {
-          ...formData,
-          unitsRequired: Number(formData.unitsRequired),
-          requiredBy: requiredByDate.toISOString(),
-          ward: formData.ward.trim(),
-          hospitalNotes: formData.hospitalNotes.trim(),
-        },
+        data: payload,
       });
 
       setSuccess("Blood request created successfully!");
 
-      setFormData({
-        bloodGroup: "",
-        unitsRequired: "",
-        urgency: "normal",
-        requiredBy: "",
-        ward: "",
-        hospitalNotes: "",
-      });
+      setFormData({ ...INITIAL_FORM_DATA });
 
-      setTimeout(() => {
-        navigate("/hospital/requests");
-      }, 1200);
+      navigate("/hospital/requests", {
+        state: {
+          success: "Blood request created successfully!",
+        },
+      });
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -127,7 +155,7 @@ const CreateRequest = () => {
 
   return (
     <div className="space-y-7">
-      {/* Page heading */}
+      {/* Page Heading */}
       <section className="relative overflow-hidden rounded-xl border border-[#EAD9DE] bg-gradient-to-r from-[#FFF8F8] via-[#FFFDF9] to-[#F8F0EC] p-6 sm:p-7">
         <div className="relative z-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
@@ -154,9 +182,9 @@ const CreateRequest = () => {
         <div className="absolute -right-8 -top-12 size-40 rounded-full border-[20px] border-[#F2E2DC]/50" />
       </section>
 
-      {/* Form card */}
-      <section className="overflow-hidden mx-auto rounded-xl border border-[#E8DDD4] bg-white shadow-sm">
-        {/* Form header */}
+      {/* Form Card */}
+      <section className="mx-auto overflow-hidden rounded-xl border border-[#E8DDD4] bg-white shadow-sm">
+        {/* Form Header */}
         <div className="border-b border-[#EDE2DD] bg-[#FCF8F4] px-5 py-5 sm:px-7">
           <div className="flex items-center gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#782B40] text-white shadow-sm">
@@ -167,6 +195,7 @@ const CreateRequest = () => {
               <h2 className="text-base font-semibold text-[#302923]">
                 Request Information
               </h2>
+
               <p className="mt-0.5 text-xs text-[#81756A]">
                 Enter the details of the required blood donation.
               </p>
@@ -174,23 +203,29 @@ const CreateRequest = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-7">
+        <form onSubmit={handleSubmit} noValidate className="p-5 sm:p-7">
           {/* Feedback */}
           {error && (
-            <div className="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-700">
+            <div
+              role="alert"
+              className="mb-6 flex items-start gap-2 rounded-xl border border-[#E8C9C9] bg-[#FBEEEE] p-3.5 text-sm text-[#963D54]"
+            >
               <AlertCircle size={18} className="mt-0.5 shrink-0" />
               <p>{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="mb-6 flex items-start gap-2 rounded-xl border border-[#EADDE1] bg-[#FFF8FA] p-3.5 text-sm text-[#782B40]">
+            <div
+              role="status"
+              className="mb-6 flex items-start gap-2 rounded-xl border border-[#EADDE1] bg-[#FFF8FA] p-3.5 text-sm text-[#782B40]"
+            >
               <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
               <p>{success}</p>
             </div>
           )}
 
-          {/* Section: Blood requirements */}
+          {/* Blood Requirements */}
           <div className="mb-7">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex size-8 items-center justify-center rounded-xl bg-[#F8E9EC] text-[#963D54]">
@@ -201,6 +236,7 @@ const CreateRequest = () => {
                 <h3 className="text-sm font-semibold text-[#302923]">
                   Blood Requirements
                 </h3>
+
                 <p className="text-xs text-[#91848A]">
                   Specify the blood group, quantity and urgency.
                 </p>
@@ -209,6 +245,7 @@ const CreateRequest = () => {
 
             <div className="rounded-xl border border-[#F0E5E1] bg-[#FFFCFA] p-4 sm:p-5">
               <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2">
+                {/* Blood Group */}
                 <div>
                   <label htmlFor="bloodGroup" className={labelClass}>
                     Blood Group <span className="text-[#963D54]">*</span>
@@ -220,19 +257,20 @@ const CreateRequest = () => {
                     value={formData.bloodGroup}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                     className={inputClass}
                   >
                     <option value="">Select blood group</option>
-                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
-                      (group) => (
-                        <option key={group} value={group}>
-                          {group}
-                        </option>
-                      ),
-                    )}
+
+                    {BLOOD_GROUPS.map((group) => (
+                      <option key={group} value={group}>
+                        {group}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
+                {/* Units Required */}
                 <div>
                   <label htmlFor="unitsRequired" className={labelClass}>
                     Units Required <span className="text-[#963D54]">*</span>
@@ -247,11 +285,13 @@ const CreateRequest = () => {
                     min="1"
                     step="1"
                     required
+                    disabled={loading}
                     placeholder="Enter number of units"
                     className={inputClass}
                   />
                 </div>
 
+                {/* Urgency */}
                 <div>
                   <label htmlFor="urgency" className={labelClass}>
                     Urgency <span className="text-[#963D54]">*</span>
@@ -263,6 +303,7 @@ const CreateRequest = () => {
                     value={formData.urgency}
                     onChange={handleChange}
                     required
+                    disabled={loading}
                     className={inputClass}
                   >
                     <option value="normal">Normal</option>
@@ -271,6 +312,7 @@ const CreateRequest = () => {
                   </select>
                 </div>
 
+                {/* Required By */}
                 <div>
                   <label htmlFor="requiredBy" className={labelClass}>
                     Required By <span className="text-[#963D54]">*</span>
@@ -281,6 +323,7 @@ const CreateRequest = () => {
                       size={16}
                       className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#A18A90]"
                     />
+
                     <input
                       id="requiredBy"
                       type="datetime-local"
@@ -289,6 +332,7 @@ const CreateRequest = () => {
                       onChange={handleChange}
                       min={getMinDateTimeLocal()}
                       required
+                      disabled={loading}
                       className={`${inputClass} pr-10`}
                     />
                   </div>
@@ -301,7 +345,7 @@ const CreateRequest = () => {
             </div>
           </div>
 
-          {/* Section: Location */}
+          {/* Request Location */}
           <div className="mb-7">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex size-8 items-center justify-center rounded-xl bg-[#F8E9EC] text-[#963D54]">
@@ -312,6 +356,7 @@ const CreateRequest = () => {
                 <h3 className="text-sm font-semibold text-[#302923]">
                   Request Location
                 </h3>
+
                 <p className="text-xs text-[#91848A]">
                   Help donors identify where the blood is needed.
                 </p>
@@ -333,6 +378,7 @@ const CreateRequest = () => {
                 value={formData.ward}
                 onChange={handleChange}
                 maxLength={100}
+                disabled={loading}
                 placeholder="e.g. ICU, Emergency Ward, Surgical Ward"
                 className={inputClass}
               />
@@ -343,7 +389,7 @@ const CreateRequest = () => {
             </div>
           </div>
 
-          {/* Section: Additional notes */}
+          {/* Additional Information */}
           <div className="mb-7">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex size-8 items-center justify-center rounded-xl bg-[#F8E9EC] text-[#963D54]">
@@ -354,6 +400,7 @@ const CreateRequest = () => {
                 <h3 className="text-sm font-semibold text-[#302923]">
                   Additional Information
                 </h3>
+
                 <p className="text-xs text-[#91848A]">
                   Include any relevant instructions or details.
                 </p>
@@ -375,6 +422,7 @@ const CreateRequest = () => {
                 onChange={handleChange}
                 rows={4}
                 maxLength={500}
+                disabled={loading}
                 placeholder="Add any additional information about this request..."
                 className={`${inputClass} min-h-28 resize-y`}
               />
@@ -397,6 +445,7 @@ const CreateRequest = () => {
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#782B40] px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#612235] hover:shadow-md disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Send size={16} />
+
               {loading ? "Submitting..." : "Submit Blood Request"}
             </button>
           </div>

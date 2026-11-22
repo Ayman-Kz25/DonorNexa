@@ -62,6 +62,14 @@ export default function DonorMatchedRequests() {
   }, [fetchMatches]);
 
   const handleResponse = async (matchId, status, reason = "") => {
+    const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+
+    // Validate the optional decline reason.
+    if (status === "declined" && trimmedReason.length > 500) {
+      setError("Decline reason cannot exceed 500 characters.");
+      return;
+    }
+
     try {
       setProcessingId(matchId);
       setError("");
@@ -72,7 +80,7 @@ export default function DonorMatchedRequests() {
         data: {
           status,
           ...(status === "declined" && {
-            declineReason: reason.trim(),
+            declineReason: trimmedReason,
           }),
         },
       });
@@ -84,7 +92,7 @@ export default function DonorMatchedRequests() {
                 ...match,
                 status,
                 ...(status === "declined" && {
-                  declineReason: reason.trim(),
+                  declineReason: trimmedReason,
                 }),
               }
             : match,
