@@ -236,7 +236,7 @@
 - [x] Admin can view hospitals.
 - [x] Admin can search hospitals.
 - [x] Admin can filter hospitals.
-- [ ] Admin can view hospital licence information.
+- [x] Admin can view hospital licence information.
 - [x] Admin can verify hospitals.
 - [x] Admin can reject hospitals.
 - [x] Admin can change verification status where authorized.
