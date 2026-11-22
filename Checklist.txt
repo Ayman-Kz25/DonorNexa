@@ -407,7 +407,7 @@ These are among the most important CEP requirements. A working interface alone d
 - [x] Timestamp is recorded.
 - [x] Audit logging does not silently fail without an appropriate recovery/error strategy
 
-1. Mandatory Programming Concept Coverage
+Mandatory Programming Concept Coverage
 The CEP explicitly asks students to demonstrate concepts and identify the file/class where each is implemented. Your report should include a concept-to-file mapping.
 
 7.1 Variables, data types, arrays and functions

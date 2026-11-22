@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw,
   Droplet,
@@ -12,16 +12,17 @@ import {
   Info,
   Building2,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { formatDateTime } from "../../utils/dateTime";
 import { useApi } from "../../hooks/useApi";
 
+const ITEMS_PER_PAGE = 6;
+
 const cardStyle = "rounded-xl border border-[#E8DDD4] bg-[#FFFDF9]";
-
 const detailStyle = "flex items-start gap-3 rounded-xl bg-[#F8F5EF] p-3.5";
-
 const labelStyle = "text-xs font-medium text-[#927E70]";
-
 const valueStyle = "mt-1 text-sm font-semibold text-[#302923]";
 
 export default function DonorMatchedRequests() {
@@ -35,6 +36,7 @@ export default function DonorMatchedRequests() {
 
   const [declineTarget, setDeclineTarget] = useState(null);
   const [declineReason, setDeclineReason] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchMatches = useCallback(async () => {
     try {
@@ -48,6 +50,9 @@ export default function DonorMatchedRequests() {
 
       setMatches(response.data.matches || []);
       setDonorBloodGroup(response.data.donorBloodGroup || "");
+      setCurrentPage(1);
+      setDeclineTarget(null);
+      setDeclineReason("");
     } catch (err) {
       setError(
         err.response?.data?.message || "Unable to load matched requests.",
@@ -61,10 +66,37 @@ export default function DonorMatchedRequests() {
     fetchMatches();
   }, [fetchMatches]);
 
+  // Pagination
+  const totalPages = Math.ceil(matches.length / ITEMS_PER_PAGE);
+
+  const paginatedMatches = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+    return matches.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [matches, currentPage]);
+
+  const startItem =
+    matches.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+
+  const endItem = Math.min(currentPage * ITEMS_PER_PAGE, matches.length);
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+
+    setCurrentPage(page);
+    setDeclineTarget(null);
+    setDeclineReason("");
+  };
+
   const handleResponse = async (matchId, status, reason = "") => {
     const trimmedReason = typeof reason === "string" ? reason.trim() : "";
 
-    // Validate the optional decline reason.
     if (status === "declined" && trimmedReason.length > 500) {
       setError("Decline reason cannot exceed 500 characters.");
       return;
@@ -314,7 +346,22 @@ export default function DonorMatchedRequests() {
       {/* Matched Requests */}
       {!loading && !error && matches.length > 0 && (
         <div className="space-y-4">
-          {matches.map((match) => {
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-[#302923]">
+                Matched Requests
+              </h2>
+              <p className="mt-1 text-xs text-[#81756A]">
+                Showing {startItem}–{endItem} of {matches.length} matches
+              </p>
+            </div>
+
+            <span className="self-start rounded-lg bg-[#F2E2DC] px-3 py-1.5 text-xs font-semibold text-[#963D54]">
+              {matches.length} {matches.length === 1 ? "Match" : "Matches"}
+            </span>
+          </div>
+
+          {paginatedMatches.map((match) => {
             const bloodRequest = match.bloodRequest;
 
             if (!bloodRequest) return null;
@@ -416,7 +463,6 @@ export default function DonorMatchedRequests() {
                       </div>
                     </div>
 
-                    {/* Ward - shown only when provided by hospital */}
                     {bloodRequest.ward?.trim() && (
                       <div className={detailStyle}>
                         <Building2
@@ -647,6 +693,56 @@ export default function DonorMatchedRequests() {
               </article>
             );
           })}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-4 sm:flex-row">
+              <p className="text-xs text-[#81756A]">
+                Page {currentPage} of {totalPages}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E8DDD4] bg-white px-3 py-2 text-sm font-medium text-[#782B40] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft size={16} />
+                  Previous
+                </button>
+
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1,
+                ).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handlePageChange(page)}
+                    aria-current={currentPage === page ? "page" : undefined}
+                    className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+                      currentPage === page
+                        ? "bg-[#782B40] text-white"
+                        : "border border-[#E8DDD4] bg-white text-[#81756A] hover:bg-[#F8F5EF]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E8DDD4] bg-white px-3 py-2 text-sm font-medium text-[#782B40] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
