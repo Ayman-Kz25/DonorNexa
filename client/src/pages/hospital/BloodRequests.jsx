@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDateTime, getMinDateTimeLocal } from "../../utils/dateTime";
 import {
   ClipboardList,
@@ -15,9 +15,13 @@ import {
   Pencil,
   Save,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import HospitalMatchResponses from "../../components/hospital/HospitalMatchResponses";
+
+const ITEMS_PER_PAGE = 6;
 
 const BloodRequests = () => {
   const { request } = useApi();
@@ -29,6 +33,7 @@ const BloodRequests = () => {
   const [editingId, setEditingId] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [editForm, setEditForm] = useState({
     unitsRequired: "",
@@ -50,11 +55,12 @@ const BloodRequests = () => {
 
       const data = response.data;
 
-      setRequests(
-        Array.isArray(data)
-          ? data
-          : data?.requests || data?.bloodRequests || [],
-      );
+      const fetchedRequests = Array.isArray(data)
+        ? data
+        : data?.requests || data?.bloodRequests || [];
+
+      setRequests(fetchedRequests);
+      setCurrentPage(1);
     } catch (err) {
       setError(
         err.response?.data?.message || "Unable to load your blood requests.",
@@ -67,6 +73,35 @@ const BloodRequests = () => {
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(requests.length / ITEMS_PER_PAGE);
+
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+    return requests.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [requests, currentPage]);
+
+  const startItem =
+    requests.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+
+  const endItem = Math.min(currentPage * ITEMS_PER_PAGE, requests.length);
+
+  // Keep the current page valid if the number of requests changes.
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+
+    setCurrentPage(page);
+    setEditingId(null);
+    setEditError("");
+  };
 
   const handleRequestAction = async (requestId, action) => {
     const actionLabel = action === "cancel" ? "cancel" : "mark as fulfilled";
@@ -111,6 +146,17 @@ const BloodRequests = () => {
     }
   };
 
+  const getUrgencyStyle = (urgency) => {
+    switch (urgency?.toLowerCase()) {
+      case "critical":
+        return "bg-[#963D54] text-white";
+      case "urgent":
+        return "bg-[#F2E2DC] text-[#963D54]";
+      default:
+        return "bg-[#F8F5EF] text-[#81756A]";
+    }
+  };
+
   const handleEditClick = (item) => {
     setEditingId(item._id);
     setEditError("");
@@ -123,9 +169,11 @@ const BloodRequests = () => {
             const date = new Date(item.requiredBy);
             const pad = (value) => String(value).padStart(2, "0");
 
-            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-              date.getDate(),
-            )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            return `${date.getFullYear()}-${pad(
+              date.getMonth() + 1,
+            )}-${pad(date.getDate())}T${pad(
+              date.getHours(),
+            )}:${pad(date.getMinutes())}`;
           })()
         : "",
       ward: item.ward ?? "",
@@ -166,17 +214,6 @@ const BloodRequests = () => {
       );
     } finally {
       setEditLoading(false);
-    }
-  };
-
-  const getUrgencyStyle = (urgency) => {
-    switch (urgency?.toLowerCase()) {
-      case "critical":
-        return "bg-[#963D54] text-white";
-      case "urgent":
-        return "bg-[#F2E2DC] text-[#963D54]";
-      default:
-        return "bg-[#F8F5EF] text-[#81756A]";
     }
   };
 
@@ -321,21 +358,27 @@ const BloodRequests = () => {
       {/* Request List */}
       {!loading && !error && requests.length > 0 && (
         <section className="space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl font-semibold text-[#302923]">
-              Submitted Requests
-            </h2>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-[#302923]">
+                Submitted Requests
+              </h2>
 
-            <span className="rounded-lg bg-[#F2E2DC] px-3 py-1.5 text-xs font-semibold text-[#963D54]">
+              <p className="mt-1 text-xs text-[#81756A]">
+                Showing {startItem}–{endItem} of {requests.length} requests
+              </p>
+            </div>
+
+            <span className="self-start rounded-lg bg-[#F2E2DC] px-3 py-1.5 text-xs font-semibold text-[#963D54]">
               {requests.length} {requests.length === 1 ? "Request" : "Requests"}
             </span>
           </div>
 
-          {requests.map((item) => {
+          {/* Only six requests are rendered on this page */}
+          {paginatedRequests.map((item) => {
             const status = item.status?.toLowerCase();
             const isOpen = status === "open";
             const isActionLoading = actionLoading === item._id;
-            console.log("Blood request item:", item._id);
 
             return (
               <article
@@ -460,6 +503,7 @@ const BloodRequests = () => {
                     </div>
                   )}
 
+                  {/* Edit Form */}
                   {editingId === item._id && (
                     <div className="mt-5 rounded-xl border border-[#D9BFC5] bg-[#FFF9F7] p-5 sm:p-6">
                       <div className="mb-5 flex items-center justify-between gap-3">
@@ -662,6 +706,56 @@ const BloodRequests = () => {
               </article>
             );
           })}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-[#E8DDD4] bg-[#FFFDF9] p-4 sm:flex-row">
+              <p className="text-xs text-[#81756A]">
+                Page {currentPage} of {totalPages}
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E8DDD4] bg-white px-3 py-2 text-sm font-medium text-[#782B40] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft size={16} />
+                  Previous
+                </button>
+
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1,
+                ).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handlePageChange(page)}
+                    aria-current={currentPage === page ? "page" : undefined}
+                    className={`h-9 min-w-9 rounded-lg px-3 text-sm font-semibold transition ${
+                      currentPage === page
+                        ? "bg-[#782B40] text-white"
+                        : "border border-[#E8DDD4] bg-white text-[#81756A] hover:bg-[#F8F5EF]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#E8DDD4] bg-white px-3 py-2 text-sm font-medium text-[#782B40] transition hover:bg-[#F8F5EF] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </div>

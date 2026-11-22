@@ -245,167 +245,167 @@
 - [x] Hospital status changes are recorded in the audit log.
 
 5.4 User management
-- [ ] Admin can view users.
-- [ ] Admin can search users.
-- [ ] Admin can filter users.
-- [ ] Admin can block/deactivate users.
-- [ ] Admin can unblock/reactivate users.
-- [ ] Blocked users cannot perform restricted operations.
-- [ ] Admin cannot accidentally grant unauthorized privileges.
-- [ ] User status changes are recorded in the audit log.
+- [x] Admin can view users.
+- [x] Admin can search users.
+- [x] Admin can filter users.
+- [x] Admin can block/deactivate users.
+- [x] Admin can unblock/reactivate users.
+- [x] Blocked users cannot perform restricted operations.
+- [x] Admin cannot accidentally grant unauthorized privileges.
+- [x] User status changes are recorded in the audit log.
 
 5.5 City management
-- [ ] Admin can view cities.
-- [ ] Admin can add cities.
-- [ ] Admin can edit cities.
-- [ ] Admin can activate/deactivate cities where supported.
-- [ ] Duplicate city records are prevented.
-- [ ] City data is used by donor and hospital forms.
-- [ ] City changes are validated.
+- [x] Admin can view cities.
+- [x] Admin can add cities.
+- [x] Admin can edit cities.
+- [x] Admin can activate/deactivate cities where supported.
+- [x] Duplicate city records are prevented.
+- [x] City data is used by donor and hospital forms.
+- [x] City changes are validated.
 
 5.6 System settings
-- [ ] Admin can view system settings.
-- [ ] Admin can update donor cooldown days.
-- [ ] Cooldown value is validated.
-- [ ] Updated cooldown is used by donor eligibility calculations.
-- [ ] Default cooldown is 90 days when no valid setting exists.
-- [ ] Settings changes are saved in the database.
-- [ ] Settings changes are recorded in the audit log.
+- [x] Admin can view system settings.
+- [x] Admin can update donor cooldown days.
+- [x] Cooldown value is validated.
+- [x] Updated cooldown is used by donor eligibility calculations.
+- [x] Default cooldown is 90 days when no valid setting exists.
+- [x] Settings changes are saved in the database.
+- [x] Settings changes are recorded in the audit log.
 
 5.7 Search, filters, pagination and reports
-- [ ] Admin can search records.
-- [ ] Admin can filter records.
-- [ ] Admin can sort records.
-- [ ] Admin can paginate records.
-- [ ] Pagination works with different page sizes.
-- [ ] Search and filters work together.
-- [ ] Sorting works correctly.
-- [ ] CSV reports can be exported.
-- [ ] Exported CSV contains correct records.
-- [ ] CSV values are safely formatted.
-- [ ] Export respects the intended filters and permissions.
+- [x] Admin can search records.
+- [x] Admin can filter records.
+- [x] Admin can sort records.
+- [x] Admin can paginate records.
+- [x] Pagination works with different page sizes.
+- [x] Search and filters work together.
+- [x] Sorting works correctly.
+- [x] CSV reports can be exported.
+- [x] Exported CSV contains correct records.
+- [x] CSV values are safely formatted.
+- [x] Export respects the intended filters and permissions.
 
 5.8 Audit logs
-- [ ] Admin can view audit logs.
-- [ ] Audit logs show the responsible user.
-- [ ] Audit logs show the action.
-- [ ] Audit logs identify the affected entity.
-- [ ] Audit logs record old values.
-- [ ] Audit logs record new values.
-- [ ] Audit logs record IP address where available.
-- [ ] Audit logs record timestamps.
-- [ ] Request status changes are logged.
-- [ ] Match status changes are logged.
-- [ ] Donation status changes are logged.
-- [ ] Hospital verification changes are logged.
-- [ ] Sensitive phone number reveal events are logged.
-- [ ] Inventory changes are logged.
-- [ ] Unauthorized users cannot modify or delete audit records.
+- [x] Admin can view audit logs.
+- [x] Audit logs show the responsible user.
+- [x] Audit logs show the action.
+- [x] Audit logs identify the affected entity.
+- [x] Audit logs record old values.
+- [x] Audit logs record new values.
+- [x] Audit logs record IP address where available.
+- [x] Audit logs record timestamps.
+- [x] Request status changes are logged.
+- [x] Match status changes are logged.
+- [x] Donation status changes are logged.
+- [x] Hospital verification changes are logged.
+- [x] Sensitive phone number reveal events are logged.
+- [x] Inventory changes are logged.
+- [x] Unauthorized users cannot modify or delete audit records.
 
 1.Business Rules and Core Matching Engine
 These are among the most important CEP requirements. A working interface alone does not prove that these rules are implemented correctly.
 
 6.1 Blood compatibility
-- [ ] Full ABO/Rh blood compatibility is implemented.
-- [ ] Compatibility is data-driven rather than a long chain of hardcoded conditions.
-- [ ] O− can donate to all blood groups.
-- [ ] AB+ can receive from all blood groups.
-- [ ] O+ compatibility is correct.
-- [ ] A+ compatibility is correct.
-- [ ] A− compatibility is correct.
-- [ ] B+ compatibility is correct.
-- [ ] B− compatibility is correct.
-- [ ] AB− compatibility is correct.
-- [ ] Incompatible donors are never included in matching.
-- [ ] Compatibility is checked by the backend.
+- [x] Full ABO/Rh blood compatibility is implemented.
+- [x] Compatibility is data-driven rather than a long chain of hardcoded conditions.
+- [x] O− can donate to all blood groups.
+- [x] AB+ can receive from all blood groups.
+- [x] O+ compatibility is correct.
+- [x] A+ compatibility is correct.
+- [x] A− compatibility is correct.
+- [x] B+ compatibility is correct.
+- [x] B− compatibility is correct.
+- [x] AB− compatibility is correct.
+- [x] Incompatible donors are never included in matching.
+- [x] Compatibility is checked by the backend.
 
 6.2 Donor eligibility
-- [ ] Minimum donor age is 18.
-- [ ] Maximum donor age is 60.
-- [ ] Donor weight must be at least 50 kg.
-- [ ] Donor availability must be ON.
-- [ ] Donor account must be active.
-- [ ] Donor must satisfy the donation cooldown period.
-- [ ] Default cooldown is 90 days.
-- [ ] Admin can configure the cooldown period.
-- [ ] Eligibility is recalculated using the latest donor information.
-- [ ] Ineligible donors are excluded from matching.
-- [ ] Eligibility is enforced on the backend, not just the frontend.
-- [ ] Ineligible donors receive a clear explanation where appropriate.
+- [x] Minimum donor age is 18.
+- [x] Maximum donor age is 60.
+- [x] Donor weight must be at least 50 kg.
+- [x] Donor availability must be ON.
+- [x] Donor account must be active.
+- [x] Donor must satisfy the donation cooldown period.
+- [x] Default cooldown is 90 days.
+- [x] Admin can configure the cooldown period.
+- [x] Eligibility is recalculated using the latest donor information.
+- [x] Ineligible donors are excluded from matching.
+- [x] Eligibility is enforced on the backend, not just the frontend.
+- [x] Ineligible donors receive a clear explanation where appropriate.
 
 6.3 Matching and ranking score
-- [ ] Exact blood-group match bonus is implemented.
-- [ ] Same-city match bonus is implemented.
-- [ ] Days since last donation contribute to the score.
-- [ ] Donation-day contribution has a cap.
-- [ ] Donor response rate contributes to the score.
-- [ ] Donors are sorted by score.
-- [ ] Tie-breaking is consistent.
-- [ ] Only eligible donors are ranked.
-- [ ] Duplicate donor/request matches are prevented.
-- [ ] Matching results are reproducible for the same input data.
+- [x] Exact blood-group match bonus is implemented.
+- [x] Same-city match bonus is implemented.
+- [x] Days since last donation contribute to the score.
+- [x] Donation-day contribution has a cap.
+- [x] Donor response rate contributes to the score.
+- [x] Donors are sorted by score.
+- [x] Tie-breaking is consistent.
+- [x] Only eligible donors are ranked.
+- [x] Duplicate donor/request matches are prevented.
+- [x] Matching results are reproducible for the same input data.
 
 6.4 Notification limits and urgency
-- [ ] Top-N donors are notified first.
-- [ ] Normal requests use the configured notification limit.
-- [ ] Urgent requests use the configured notification limit.
-- [ ] Critical requests use the configured notification limit.
-- [ ] Critical requests automatically widen the matching pool.
-- [ ] Lower-ranked donors are not unnecessarily notified when higher-ranked donors are available.
-- [ ] Notification limits are enforced by the backend.
-- [ ] Failed notifications can be retried or recovered.
-- [ ] Existing matches do not accidentally prevent a missing notification from being sent.
+- [x] Top-N donors are notified first.
+- [x] Normal requests use the configured notification limit.
+- [x] Urgent requests use the configured notification limit.
+- [x] Critical requests use the configured notification limit.
+- [x] Critical requests automatically widen the matching pool.
+- [x] Lower-ranked donors are not unnecessarily notified when higher-ranked donors are available.
+- [x] Notification limits are enforced by the backend.
+- [x] Failed notifications can be retried or recovered.
+- [x] Existing matches do not accidentally prevent a missing notification from being sent.
 
 6.5 Concurrency safety
-- [ ] Simultaneous donor acceptances are handled safely.
-- [ ] Reserved units are updated atomically.
-- [ ] Reserved units never exceed required units.
-- [ ] Two donors cannot reserve the same remaining units.
-- [ ] Database transaction is used for reservation operations.
-- [ ] Transaction rolls back if an operation fails.
-- [ ] Match status and request reservation status remain consistent.
-- [ ] Duplicate requests/responses cannot cause over-allocation.
+- [x] Simultaneous donor acceptances are handled safely.
+- [x] Reserved units are updated atomically.
+- [x] Reserved units never exceed required units.
+- [x] Two donors cannot reserve the same remaining units.
+- [x] Database transaction is used for reservation operations.
+- [x] Transaction rolls back if an operation fails.
+- [x] Match status and request reservation status remain consistent.
+- [x] Duplicate requests/responses cannot cause over-allocation.
 
 6.6 Automatic expiry
-- [ ] Requests expire after their required-by time.
-- [ ] Expired requests receive the correct status.
-- [ ] Unanswered matches receive the No Response status.
-- [ ] Expired pending matches cannot be accepted.
-- [ ] Reservations are released when appropriate.
-- [ ] Expiry job runs automatically.
-- [ ] Expiry logic handles already-processed records safely.
-- [ ] Expiry changes are reflected in the database.
-- [ ] Expiry notifications are generated where required.
-- [ ] Expiry logic uses the correct timezone.
+- [x] Requests expire after their required-by time.
+- [x] Expired requests receive the correct status.
+- [x] Unanswered matches receive the No Response status.
+- [x] Expired pending matches cannot be accepted.
+- [x] Reservations are released when appropriate.
+- [x] Expiry job runs automatically.
+- [x] Expiry logic handles already-processed records safely.
+- [x] Expiry changes are reflected in the database.
+- [x] Expiry notifications are generated where required.
+- [x] Expiry logic uses the correct timezone.
 
 6.7 Privacy controls
-- [ ] Donor contact details remain hidden before acceptance.
-- [ ] Contact details are revealed only after acceptance.
-- [ ] Backend enforces phone-number privacy.
-- [ ] Unauthorized API requests cannot retrieve masked contact details.
-- [ ] Phone reveal is recorded in the audit log.
-- [ ] Public pages never expose private contact details.
+- [x] Donor contact details remain hidden before acceptance.
+- [x] Contact details are revealed only after acceptance.
+- [x] Backend enforces phone-number privacy.
+- [x] Unauthorized API requests cannot retrieve masked contact details.
+- [x] Phone reveal is recorded in the audit log.
+- [x] Public pages never expose private contact details.
 
 6.8 Anti-misuse rules
-- [ ] A hospital cannot have more than 3 open Critical requests simultaneously.
-- [ ] The restriction is checked on the backend.
-- [ ] Simultaneous Critical request creation cannot bypass the restriction.
-- [ ] Repeated hospital cancellations reduce its trust score.
-- [ ] Cancellation count is tracked correctly.
-- [ ] Trust-score changes are persisted.
-- [ ] Invalid or unauthorized cancellation operations are rejected.
+- [x] A hospital cannot have more than 3 open Critical requests simultaneously.
+- [x] The restriction is checked on the backend.
+- [x] Simultaneous Critical request creation cannot bypass the restriction.
+- [x] Repeated hospital cancellations reduce its trust score.
+- [x] Cancellation count is tracked correctly.
+- [x] Trust-score changes are persisted.
+- [x] Invalid or unauthorized cancellation operations are rejected.
 
 6.9 Audit trail
-- [ ] Request status changes are recorded.
-- [ ] Match status changes are recorded.
-- [ ] Donation status changes are recorded.
-- [ ] Hospital verification changes are recorded.
-- [ ] Every relevant audit record includes the user.
-- [ ] Every relevant audit record includes the action.
-- [ ] Old and new values are recorded.
-- [ ] IP address is recorded where available.
-- [ ] Timestamp is recorded.
-- [ ] Audit logging does not silently fail without an appropriate recovery/error strategy
+- [x] Request status changes are recorded.
+- [x] Match status changes are recorded.
+- [x] Donation status changes are recorded.
+- [x] Hospital verification changes are recorded.
+- [x] Every relevant audit record includes the user.
+- [x] Every relevant audit record includes the action.
+- [x] Old and new values are recorded.
+- [x] IP address is recorded where available.
+- [x] Timestamp is recorded.
+- [x] Audit logging does not silently fail without an appropriate recovery/error strategy
 
 1. Mandatory Programming Concept Coverage
 The CEP explicitly asks students to demonstrate concepts and identify the file/class where each is implemented. Your report should include a concept-to-file mapping.
