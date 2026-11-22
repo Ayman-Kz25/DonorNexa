@@ -20,10 +20,20 @@ const hospitalSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+
     licenseDocument: {
       fileUrl: {
         type: String,
         default: "",
+      },
+      publicId: {
+        type: String,
+        default: "",
+      },
+      storageType: {
+        type: String,
+        enum: ["local", "cloudinary"],
+        default: "local",
       },
       fileName: {
         type: String,
@@ -38,6 +48,7 @@ const hospitalSchema = new mongoose.Schema(
         default: null,
       },
     },
+
     licenseExpiryDate: {
       type: Date,
       default: null,

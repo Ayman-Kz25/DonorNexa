@@ -1,20 +1,10 @@
 import multer from "multer";
-import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-
-const uploadDirectory = path.join(
-  "/tmp",
-  "private_uploads",
-  "hospital-licenses",
-);
-
-fs.mkdirSync(uploadDirectory, { recursive: true });
-
-const storage = multer.memoryStorage();
+import { getCloudinary } from "../config/cloudinary.js";
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024,
     files: 1,
@@ -31,6 +21,28 @@ const upload = multer({
     cb(null, true);
   },
 });
+
+const uploadToCloudinary = (buffer, publicId) => {
+  return new Promise((resolve, reject) => {
+    const cloudinary = getCloudinary();
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        type: "authenticated",
+        folder: "donornexa/hospital-licenses",
+        public_id: publicId,
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
+
+    stream.end(buffer);
+  });
+};
 
 const uploadHospitalLicense = (req, res, next) => {
   upload.single("licenseDocument")(req, res, async (error) => {
@@ -60,10 +72,13 @@ const uploadHospitalLicense = (req, res, next) => {
 
     try {
       const generatedName = `${crypto.randomUUID()}.pdf`;
-      const filePath = path.join(uploadDirectory, generatedName);
+
+      const result = await uploadToCloudinary(req.file.buffer, generatedName);
 
       req.licenseDocument = {
-        fileUrl: generatedName,
+        fileUrl: result.secure_url,
+        publicId: result.public_id,
+        storageType: "cloudinary",
         fileName: path
           .basename(req.file.originalname)
           .replace(/[^a-zA-Z0-9._-]/g, "_")
@@ -72,17 +87,13 @@ const uploadHospitalLicense = (req, res, next) => {
         uploadedAt: new Date(),
       };
 
-      await fs.promises.writeFile(filePath, req.file.buffer, {
-        flag: "wx",
-      });
-
       next();
-    } catch (saveError) {
-      console.error("License upload error:", saveError);
+    } catch (uploadError) {
+      console.error("Cloudinary license upload error:", uploadError);
 
       return res.status(500).json({
         success: false,
-        message: "Unable to save hospital license document.",
+        message: "Unable to upload hospital license document.",
       });
     }
   });

@@ -6,16 +6,34 @@ import Hospital from "../models/Hospital.js";
 import City from "../models/City.js";
 import logAdminAction from "../utils/logAdminAction.js";
 import mongoose from "mongoose";
+import axios from "axios";
+import { getCloudinary } from "../config/cloudinary.js";
 
 const licenseDirectory = path.resolve("private_uploads", "hospital-licenses");
 
 const removeUploadedLicense = async (req) => {
-  if (!req.licenseDocument?.fileUrl) return;
+  if (!req.licenseDocument) return;
 
   try {
-    await fs.promises.unlink(
-      path.join(licenseDirectory, req.licenseDocument.fileUrl),
-    );
+    if (
+      req.licenseDocument.storageType === "cloudinary" &&
+      req.licenseDocument.publicId
+    ) {
+      const cloudinary = getCloudinary();
+
+      await cloudinary.uploader.destroy(req.licenseDocument.publicId, {
+        resource_type: "raw",
+        type: "authenticated",
+      });
+
+      return;
+    }
+
+    if (req.licenseDocument.fileUrl) {
+      await fs.promises.unlink(
+        path.join(licenseDirectory, req.licenseDocument.fileUrl),
+      );
+    }
   } catch (error) {
     if (error.code !== "ENOENT") {
       console.error("License cleanup error:", error);
@@ -432,6 +450,7 @@ export const getVerifiedHospitals = async (req, res) => {
 };
 
 // Securely view/download a hospital license (admin only)
+
 export const getHospitalLicenseDocument = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -452,10 +471,58 @@ export const getHospitalLicenseDocument = async (req, res) => {
       });
     }
 
-    const filename = hospital.licenseDocument.fileUrl;
+    const license = hospital.licenseDocument;
 
-    // Only allow generated PDF filenames, not arbitrary paths.
-    if (path.basename(filename) !== filename || !filename.endsWith(".pdf")) {
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="hospital-license.pdf"',
+    );
+
+    // New Cloudinary documents
+    if (license.storageType === "cloudinary" && license.publicId) {
+      const cloudinary = getCloudinary();
+
+      const signedUrl = cloudinary.url(license.publicId, {
+        resource_type: "raw",
+        type: "authenticated",
+        sign_url: true,
+        secure: true,
+      });
+
+      const cloudinaryResponse = await axios.get(signedUrl, {
+        responseType: "stream",
+        timeout: 30000,
+      });
+
+      if (cloudinaryResponse.headers["content-length"]) {
+        res.setHeader(
+          "Content-Length",
+          cloudinaryResponse.headers["content-length"],
+        );
+      }
+
+      cloudinaryResponse.data.on("error", (error) => {
+        console.error("Cloudinary license stream error:", error);
+
+        if (!res.headersSent) {
+          res.status(502).end();
+        } else {
+          res.destroy(error);
+        }
+      });
+
+      return cloudinaryResponse.data.pipe(res);
+    }
+
+    // Legacy local documents
+    const filename = license.fileUrl;
+
+    if (
+      path.basename(filename) !== filename ||
+      !filename.toLowerCase().endsWith(".pdf")
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid license document reference.",
@@ -466,16 +533,9 @@ export const getHospitalLicenseDocument = async (req, res) => {
 
     await fs.promises.access(filePath, fs.constants.R_OK);
 
-    res.setHeader("Cache-Control", "private, no-store");
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      'inline; filename="hospital-license.pdf"',
-    );
-
     return res.sendFile(filePath);
   } catch (error) {
-    if (error.code === "ENOENT") {
+    if (error.code === "ENOENT" || error.response?.status === 404) {
       return res.status(404).json({
         success: false,
         message: "License file is no longer available.",
@@ -484,9 +544,13 @@ export const getHospitalLicenseDocument = async (req, res) => {
 
     console.error("Get hospital license error:", error);
 
-    return res.status(500).json({
-      success: false,
-      message: "Unable to retrieve license document.",
-    });
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to retrieve license document.",
+      });
+    }
+
+    res.destroy(error);
   }
 };
