@@ -543,15 +543,15 @@ The CEP explicitly asks students to demonstrate concepts and identify the file/c
 - [x] Rate limiting is implemented where appropriate.
 
 7.13 Pagination, sorting and search
-- [ ] Request lists support pagination.
-- [ ] Donor lists support pagination.
-- [ ] Hospital lists support pagination.
-- [ ] Audit logs support pagination.
-- [ ] Search is implemented.
-- [ ] Filtering is implemented.
-- [ ] Sorting is implemented.
-- [ ] Backend pagination is used for large datasets.
-- [ ] Invalid page and sort parameters are handled safely.
+- [x] Request lists support pagination.
+- [x] Donor lists support pagination.
+- [x] Hospital lists support pagination.
+- [x] Audit logs support pagination.
+- [x] Search is implemented.
+- [x] Filtering is implemented.
+- [x] Sorting is implemented.
+- [x] Backend pagination is used for large datasets.
+- [x] Invalid page and sort parameters are handled safely.
 
 1. Database Requirements
 The original CEP specifies relational database concepts. Since your instructor approved MERN, verify that you demonstrate their equivalent using MongoDB and clearly explain the design choices in your report.

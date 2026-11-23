@@ -1,0 +1,58 @@
+Phase 1 — Database documentation and design
+Start here
+- [x] ERD (Entity Relationship Diagram)
+- [x] MongoDB database schema/design documentation
+- [x] Document all collections and their fields
+- [ ] Document relationships and references
+- [ ] Explain required fields, validation, unique constraints and indexes
+- [ ] Explain normalization and 3NF in relation to MongoDB
+- [ ] Document MongoDB views or equivalent
+- [ ] Document Mongoose middleware/hooks or equivalent
+- [ ] Document transactions and rollback
+- [ ] Prepare five meaningful aggregation/query examples
+- [ ] Document seed data and its generation
+
+Phase 2 — Technical and system documentation
+- [ ] Problem analysis
+- [ ] Functional requirements
+- [ ] Non-functional requirements
+- [ ] Use-case diagram
+- [ ] System architecture diagram
+- [ ] Database design explanation
+- [ ] Wireframes or final UI screenshots
+- [ ] Matching algorithm explanation
+- [ ] Programming concept-to-file mapping
+- [ ] Security measures and OWASP considerations
+
+Phase 3 — Testing and verification
+- [ ] Functional test cases
+- [ ] Donor eligibility tests
+- [ ] Blood compatibility tests
+- [ ] Matching and ranking tests
+- [ ] Concurrency and reservation tests
+- [ ] Automatic expiry tests
+- [ ] Security tests
+- [ ] API error handling tests
+- [ ] Responsive UI tests
+- [ ] Record actual results and screenshots
+
+Phase 4 — Project report
+- [ ] Prepare the 10–15 page report
+- [ ] Add diagrams and screenshots
+- [ ] Add database query examples
+- [ ] Add test-case table
+- [ ] Explain MERN equivalents of PHP/MySQL concepts
+- [ ] Add limitations and future improvements
+- [ ] Add references and academic AI declaration, as applicable
+
+Phase 5 — Final submission
+- [ ] Complete README
+- [ ] Document installation and environment variables
+- [ ] Add frontend/backend setup instructions
+- [ ] Add seed instructions
+- [ ] Prepare test credentials for all roles
+- [ ] Prepare MongoDB backup/dump
+- [ ] Verify source code and ZIP contents
+- [ ] Exclude environment secrets
+- [ ] Prepare optional 3–5 minute demo video
+- [ ] Prepare individual viva explanations

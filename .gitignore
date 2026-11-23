@@ -182,3 +182,6 @@ pid
 *.seed
 *.pid.lock
 .history/
+
+
+.txt
