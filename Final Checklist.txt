@@ -2,7 +2,7 @@ Phase 1 — Database documentation and design
 Start here
 - [x] ERD (Entity Relationship Diagram)
 - [x] MongoDB database schema/design documentation
-- [x] Document all collections and their fields
+- [ ] Document all collections and their fields
 - [ ] Document relationships and references
 - [ ] Explain required fields, validation, unique constraints and indexes
 - [ ] Explain normalization and 3NF in relation to MongoDB
