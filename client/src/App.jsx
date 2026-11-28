@@ -12,12 +12,20 @@ import { useApi } from "./hooks/useApi";
 import { useSocket } from "./hooks/useSocket";
 import { UserProvider, useCurrentUser } from "./context/UserContext";
 
+// Loading Components
+import LoadingScreen from "./components/common/LoadingScreen";
+
+// Layouts
 import PublicLayout from "./layouts/PublicLayout";
+import DonorLayout from "./layouts/DonorLayout";
+import HospitalLayout from "./layouts/HospitalLayout";
+import AdminLayout from "./layouts/AdminLayout";
+
+// Public Pages
 import Home from "./pages/public/Home";
 import ActiveEmergencies from "./pages/public/ActiveEmergencies";
 
-// Donor
-import DonorLayout from "./layouts/DonorLayout";
+// Donor Pages
 import DonorDashboard from "./pages/donor/DonorDashboard";
 import DonorProfile from "./pages/donor/DonorProfile";
 import DonorRequests from "./pages/donor/DonorRequests";
@@ -25,8 +33,7 @@ import MyDonations from "./pages/donor/MyDonations";
 import Hospitals from "./pages/donor/Hospitals";
 import DonorProfileForm from "./components/donor/DonorProfileForm";
 
-// Hospital
-import HospitalLayout from "./layouts/HospitalLayout";
+// Hospital Pages
 import HospitalDashboard from "./pages/hospital/HospitalDashboard";
 import BloodRequests from "./pages/hospital/BloodRequests";
 import CreateRequest from "./pages/hospital/CreateRequest";
@@ -35,8 +42,7 @@ import FindDonors from "./pages/hospital/FindDonors";
 import HospitalProfile from "./pages/hospital/HospitalProfile";
 import HospitalRegistrationForm from "./components/hospital/HospitalRegistrationForm";
 
-// Admin
-import AdminLayout from "./layouts/AdminLayout";
+// Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
 import DonorManagement from "./pages/admin/DonorManagement";
@@ -46,27 +52,20 @@ import AuditLogs from "./pages/admin/AuditLogs";
 import AdminBloodRequests from "./pages/admin/BloodRequests";
 import AdminSettings from "./pages/admin/AdminSettings";
 
+// Dashboard routes by role
 const dashboardPaths = {
   donor: "/donor/dashboard",
   hospital: "/hospital/dashboard",
   admin: "/admin/dashboard",
 };
 
-function LoadingScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F8F5EF]">
-      <p className="text-sm text-[#81756A]">Loading...</p>
-    </div>
-  );
-}
-
-// Redirect users who already have an assigned role
+// Guest routes
 function GuestRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user, userLoading, refreshUser, syncError } = useCurrentUser();
+  const { user, userLoading } = useCurrentUser();
 
   if (!isLoaded || (isSignedIn && userLoading)) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Preparing your DonorNexa experience..." />;
   }
 
   if (isSignedIn && dashboardPaths[user?.role]) {
@@ -76,13 +75,13 @@ function GuestRoute({ children }) {
   return children;
 }
 
-// Protect role-specific routes
+// Protected role-specific routes
 function ProtectedRoute({ children, allowedRole }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { user, userLoading } = useCurrentUser();
 
   if (!isLoaded || userLoading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Verifying your account..." />;
   }
 
   if (!isSignedIn || !user) {
@@ -96,13 +95,14 @@ function ProtectedRoute({ children, allowedRole }) {
   return children;
 }
 
-// Allow only authenticated users without an assigned role
+// Onboarding routes
 function OnboardingRoute({ children }) {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user, userLoading } = useCurrentUser();
+
+  const { user, userLoading, refreshUser, syncError } = useCurrentUser();
 
   if (!isLoaded || (isSignedIn && userLoading)) {
-    return <LoadingScreen />;
+    return <LoadingScreen message="Setting up your account..." />;
   }
 
   if (!isSignedIn) {
@@ -112,14 +112,15 @@ function OnboardingRoute({ children }) {
   if (!user) {
     if (syncError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8F5EF]">
-          <p className="text-sm text-[#81756A]">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F8F5EF] px-4">
+          <p className="text-center text-sm font-medium text-[#59483F]">
             Unable to load your account. Please try again.
           </p>
+
           <button
             type="button"
             onClick={refreshUser}
-            className="rounded-xl bg-[#963D54] px-5 py-2.5 text-sm font-medium text-white"
+            className="rounded-xl bg-[#963D54] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#782B40]"
           >
             Retry
           </button>
@@ -127,7 +128,7 @@ function OnboardingRoute({ children }) {
       );
     }
 
-    return <LoadingScreen />;
+    return <LoadingScreen message="Preparing your registration..." />;
   }
 
   if (dashboardPaths[user.role]) {
@@ -161,10 +162,12 @@ function DonorOnboarding() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#963D54]">
             DonorNexa
           </p>
+
           <h1 className="mt-3 font-serif text-3xl font-semibold text-[#302923]">
             Complete your donor profile
           </h1>
-          <p className="mt-2 text-sm text-[#81756A]">
+
+          <p className="mt-2 text-sm text-[#59483F]">
             Provide your details to get started as a blood donor.
           </p>
         </div>
@@ -197,10 +200,12 @@ function HospitalOnboarding() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#963D54]">
             DonorNexa
           </p>
+
           <h1 className="mt-3 font-serif text-3xl font-semibold text-[#302923]">
             Register your hospital
           </h1>
-          <p className="mt-2 text-sm text-[#81756A]">
+
+          <p className="mt-2 text-sm text-[#59483F]">
             Submit your hospital information for administrator verification.
           </p>
         </div>
@@ -211,6 +216,7 @@ function HospitalOnboarding() {
   );
 }
 
+// Scroll to top when navigating
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
 
@@ -236,10 +242,12 @@ function ScrollToTop() {
   return null;
 }
 
+// Application routes
 function AppRoutes() {
   return (
     <>
       <ScrollToTop />
+
       <Routes>
         {/* Public Website */}
         <Route element={<PublicLayout />}>
@@ -251,6 +259,7 @@ function AppRoutes() {
               </GuestRoute>
             }
           />
+
           <Route path="/emergencies" element={<ActiveEmergencies />} />
         </Route>
 
@@ -282,9 +291,13 @@ function AppRoutes() {
           }
         >
           <Route path="/donor/dashboard" element={<DonorDashboard />} />
+
           <Route path="/donor/requests" element={<DonorRequests />} />
+
           <Route path="/donor/donations" element={<MyDonations />} />
+
           <Route path="/donor/hospitals" element={<Hospitals />} />
+
           <Route path="/donor/profile" element={<DonorProfile />} />
         </Route>
 
@@ -297,10 +310,15 @@ function AppRoutes() {
           }
         >
           <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
+
           <Route path="/hospital/requests" element={<BloodRequests />} />
+
           <Route path="/hospital/create-request" element={<CreateRequest />} />
+
           <Route path="/hospital/inventory" element={<BloodInventory />} />
+
           <Route path="/hospital/find-donors" element={<FindDonors />} />
+
           <Route path="/hospital/profile" element={<HospitalProfile />} />
         </Route>
 
@@ -313,15 +331,22 @@ function AppRoutes() {
           }
         >
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
           <Route path="/admin/users" element={<UserManagement />} />
+
           <Route path="/admin/donors" element={<DonorManagement />} />
+
           <Route path="/admin/hospitals" element={<HospitalManagement />} />
+
           <Route path="/admin/cities" element={<CityManagement />} />
+
           <Route
             path="/admin/blood-requests"
             element={<AdminBloodRequests />}
           />
+
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
+
           <Route path="/admin/settings" element={<AdminSettings />} />
         </Route>
 
@@ -332,6 +357,7 @@ function AppRoutes() {
   );
 }
 
+// Main App
 function App() {
   useSocket();
 
@@ -340,15 +366,16 @@ function App() {
 
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-
   const [syncError, setSyncError] = useState(false);
 
+  // Synchronize authenticated user with backend
   const refreshUser = useCallback(async () => {
     if (!isLoaded) return null;
 
     if (!isSignedIn) {
       setUser(null);
       setUserLoading(false);
+      setSyncError(false);
       return null;
     }
 
@@ -373,6 +400,7 @@ function App() {
 
       setUser(null);
       setSyncError(true);
+
       return null;
     } finally {
       setUserLoading(false);
